@@ -3,11 +3,23 @@ use std::path::PathBuf;
 use tokio::fs;
 use log::{info, warn};
 
+pub fn default_min_fan_rpm() -> u32 {
+    2600
+}
+
+pub fn default_acoustic_ceiling() -> usize {
+    5
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FanConfig {
     pub fan_mode: String,
     pub custom_curve: String,
     pub thermal_protection_enabled: bool,
+    #[serde(default = "default_min_fan_rpm")]
+    pub min_fan_rpm: u32,
+    #[serde(default = "default_acoustic_ceiling")]
+    pub acoustic_ceiling: usize,
 }
 
 impl Default for FanConfig {
@@ -16,6 +28,8 @@ impl Default for FanConfig {
             fan_mode: "auto".to_string(),
             custom_curve: "[]".to_string(),
             thermal_protection_enabled: true,
+            min_fan_rpm: default_min_fan_rpm(),
+            acoustic_ceiling: default_acoustic_ceiling(),
         }
     }
 }

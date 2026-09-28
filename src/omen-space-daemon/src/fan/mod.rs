@@ -19,6 +19,56 @@ pub const AUTO_PEAK_HOLD_SECS: u64 = 15;
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct CurvePoint(pub f64, pub f64); // [Temp, Pct]
 
+pub fn get_effective_acoustic_ceiling(profile: &str, user_ceiling: usize) -> usize {
+    match profile {
+        "performance" => 8,
+        "power-saver" | "quiet" | "eco" => user_ceiling.min(3),
+        "balanced" => user_ceiling.clamp(3, 8),
+        _ => user_ceiling.clamp(3, 8),
+    }
+}
+
+pub fn update_cooldown(
+    target_level: usize,
+    now: std::time::Instant,
+    cooldown_level: &mut usize,
+    cooldown_until: &mut std::time::Instant,
+) -> usize {
+    if target_level >= 7 {
+        *cooldown_level = 7;
+        *cooldown_until = now + std::time::Duration::from_secs(30);
+    } else if target_level >= 5 && (now >= *cooldown_until || *cooldown_level < 5) {
+        *cooldown_level = 5;
+        *cooldown_until = now + std::time::Duration::from_secs(15);
+    }
+
+    if now < *cooldown_until && target_level < *cooldown_level {
+        *cooldown_level
+    } else {
+        if now >= *cooldown_until {
+            *cooldown_level = 0;
+        }
+        target_level
+    }
+}
+
+pub async fn detect_power_profile() -> String {
+    let platform_paths = [
+        "/sys/firmware/acpi/platform_profile",
+        "/sys/devices/platform/hp-wmi/platform_profile",
+        "/sys/devices/platform/hp-wmi/platform-profile",
+    ];
+    for p in platform_paths {
+        if let Ok(val) = tokio::fs::read_to_string(p).await {
+            let s = val.trim().to_lowercase();
+            if !s.is_empty() {
+                return s;
+            }
+        }
+    }
+    "balanced".to_string()
+}
+
 pub struct FanState {
     pub hwmon_path: Option<PathBuf>,
     pub found_fans: Vec<u32>,
@@ -50,6 +100,55 @@ pub struct FanState {
     pub last_written_duty_time: Option<std::time::Instant>,
     pub last_hw_detect_attempt: std::time::Instant,
     pub signal_ctx: Option<zbus::SignalContext<'static>>,
+    pub min_fan_rpm: u32,
+    pub acoustic_ceiling: usize,
+    pub better_auto_level: usize,
+    pub better_auto_last_apply: std::time::Instant,
+    pub better_auto_last_manual_assert: std::time::Instant,
+    pub better_auto_cooldown_level: usize,
+    pub better_auto_cooldown_until: std::time::Instant,
+}
+
+impl Default for FanState {
+    fn default() -> Self {
+        Self {
+            hwmon_path: None,
+            found_fans: Vec::new(),
+            max_speeds: HashMap::new(),
+            fallback_paths: HashMap::new(),
+            fan_count: 0,
+            mode: "auto".to_string(),
+            custom_curve_json: "[]".to_string(),
+            last_targets: HashMap::new(),
+            thermal_protection_active: false,
+            thermal_protection_enabled: true,
+            thermal_protection_entered_at: std::time::Instant::now(),
+            pre_protection_mode: None,
+            manual_target_pct: None,
+            last_keepalive: std::time::Instant::now(),
+            auto_fan_activated_at: None,
+            temp_history: std::collections::VecDeque::new(),
+            last_auto_pct: 0,
+            last_auto_pct_time: std::time::Instant::now(),
+            perf_cooldown_start: None,
+            last_perf_pct: 0,
+            last_perf_pct_time: std::time::Instant::now(),
+            last_power_profile_was_perf: false,
+            last_written_duty: None,
+            last_written_duty_time: None,
+            last_hw_detect_attempt: std::time::Instant::now(),
+            signal_ctx: None,
+            min_fan_rpm: crate::config::default_min_fan_rpm(),
+            acoustic_ceiling: crate::config::default_acoustic_ceiling(),
+            better_auto_level: 0,
+            better_auto_last_apply: std::time::Instant::now()
+                .checked_sub(std::time::Duration::from_secs(100))
+                .unwrap_or_else(std::time::Instant::now),
+            better_auto_last_manual_assert: std::time::Instant::now(),
+            better_auto_cooldown_level: 0,
+            better_auto_cooldown_until: std::time::Instant::now(),
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -108,6 +207,15 @@ impl FanService {
             last_written_duty_time: None,
             last_hw_detect_attempt: std::time::Instant::now(),
             signal_ctx: None,
+            min_fan_rpm: config.min_fan_rpm,
+            acoustic_ceiling: config.acoustic_ceiling,
+            better_auto_level: 0,
+            better_auto_last_apply: std::time::Instant::now()
+                .checked_sub(std::time::Duration::from_secs(100))
+                .unwrap_or_else(std::time::Instant::now),
+            better_auto_last_manual_assert: std::time::Instant::now(),
+            better_auto_cooldown_level: 0,
+            better_auto_cooldown_until: std::time::Instant::now(),
         };
         Self::detect_hardware(&mut state).await;
         
@@ -442,6 +550,55 @@ impl FanService {
         }
     }
 
+    pub async fn write_fan_targets_staggered(state: &mut FanState, rpm1: u32, rpm2: u32) -> bool {
+        Self::write_fan_targets_staggered_with_delay(
+            state,
+            rpm1,
+            rpm2,
+            std::time::Duration::from_secs(10),
+        ).await
+    }
+
+    pub async fn write_fan_targets_staggered_with_delay(
+        state: &mut FanState,
+        rpm1: u32,
+        rpm2: u32,
+        delay: std::time::Duration,
+    ) -> bool {
+        if let Some(ref hwmon) = state.hwmon_path {
+            let fan1_target = hwmon.join("fan1_target");
+            let fan2_target = hwmon.join("fan2_target");
+
+            if sysfs_exists(&fan1_target).await {
+                let ok1 = sysfs_write(&fan1_target, rpm1.to_string()).await;
+                if ok1 {
+                    state.last_targets.insert(1, rpm1);
+                }
+
+                if state.found_fans.contains(&2) && sysfs_exists(&fan2_target).await {
+                    let target_path = fan2_target.clone();
+                    tokio::spawn(async move {
+                        tokio::time::sleep(delay).await;
+                        let _ = tokio::fs::write(&target_path, rpm2.to_string().as_bytes()).await;
+                    });
+                    state.last_targets.insert(2, rpm2);
+                }
+                return ok1;
+            }
+        }
+
+        // Fallback: If fan*_target does not exist on the board, calculate duty cycle percentage
+        // (target_rpm as f64 / max_rpm as f64 * 100.0) and write via write_pwm_duty.
+        let max_speed = state.max_speeds.values().max().copied().unwrap_or(6000);
+        let target_rpm = rpm1.max(rpm2);
+        let pct = if max_speed > 0 {
+            ((target_rpm as f64 / max_speed as f64) * 100.0).round() as u32
+        } else {
+            0
+        };
+        Self::write_pwm_duty(state, pct.clamp(0, 100)).await
+    }
+
     async fn run_monitor_loop(&self) {
         // Run every 1 second to gather more frequent samples for the 5-second average
         let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(1));
@@ -740,6 +897,57 @@ impl FanService {
                         Self::write_pwm_duty(&mut state, target_pct).await;
                     }
                 }
+                "better_auto" => {
+                    let load_snap = crate::sysmon::collect_load_snapshot();
+                    let usage = load_snap.cpu_usage_pct.unwrap_or(0.0).max(load_snap.gpu_usage_pct.unwrap_or(0.0));
+                    
+                    let mut state = self.state.lock().await;
+                    let profile = detect_power_profile().await;
+                    let ceiling = get_effective_acoustic_ceiling(&profile, state.acoustic_ceiling);
+                    
+                    let computed = better_auto::compute_better_auto_level(
+                        temp,
+                        usage,
+                        state.better_auto_level,
+                        ceiling,
+                    );
+
+                    let now = std::time::Instant::now();
+                    let s = &mut *state;
+                    let target_level = update_cooldown(
+                        computed,
+                        now,
+                        &mut s.better_auto_cooldown_level,
+                        &mut s.better_auto_cooldown_until,
+                    );
+
+                    // Check 80s manual reassert: if now.duration_since(last_manual_assert).as_secs() >= 80, write pwm1_enable = 1
+                    if now.duration_since(state.better_auto_last_manual_assert).as_secs() >= 80 {
+                        if let Some(ref hwmon) = state.hwmon_path {
+                            let _ = sysfs_write(hwmon.join("pwm1_enable"), "1").await;
+                        }
+                        state.better_auto_last_manual_assert = now;
+                    }
+
+                    // Check if apply needed: level != current_level || now.duration_since(last_apply).as_secs() >= 90
+                    let level_changed = target_level != state.better_auto_level;
+                    let watchdog_expired = now.duration_since(state.better_auto_last_apply).as_secs() >= 90;
+
+                    if level_changed || watchdog_expired {
+                        let max_fan1 = state.max_speeds.get(&1).copied().unwrap_or(6000);
+                        let max_fan2 = state.max_speeds.get(&2).copied().unwrap_or(max_fan1);
+                        let (rpm1, rpm2) = better_auto::calculate_target_rpms(
+                            target_level,
+                            state.min_fan_rpm,
+                            max_fan1,
+                            max_fan2,
+                        );
+
+                        Self::write_fan_targets_staggered(&mut state, rpm1, rpm2).await;
+                        state.better_auto_level = target_level;
+                        state.better_auto_last_apply = now;
+                    }
+                }
                 _ => {}
             }
         }
@@ -757,18 +965,18 @@ impl FanService {
     ///
     /// Modes and their hardware mapping (based on OmenCore SetFanProfileViaAcpiHwmon):
     ///   ec   → platform_profile=balanced, pwm1_enable=2 (BIOS hardware control)
-    ///   auto/custom/performance → pwm1_enable=1 (manual), duty set by monitor loop or manual target
+    ///   auto/custom/performance/better_auto → pwm1_enable=1 (manual), duty set by monitor loop or manual target
     ///   max  → platform_profile=performance, pwm1_enable=0 (full speed)
-    async fn set_mode_internal(state: &mut FanState, mode: &str) -> bool {
+    pub async fn set_mode_internal(state: &mut FanState, mode: &str) -> bool {
         // Determine pwm1_enable value (OmenCore mapping)
         let pwm_enable_val = match mode {
             "ec" => 2,       // BIOS hardware control
             "max" => 0,      // BIOS max hardware speed
-            "auto" | "custom" | "performance" => 1, // Manual/software control
+            "auto" | "custom" | "performance" | "better_auto" => 1, // Manual/software control
             _ => return false,
         };
 
-        // FIX #3: Hard-block software fan modes (auto/custom/performance) when the
+        // FIX #3: Hard-block software fan modes (auto/custom/performance/better_auto) when the
         // board's capability DB says WMI fan writes are unsupported. On abort-prone
         // boards (878A etc.), falling through to pwm1_enable=1 causes endless 0x2E
         // floods. Force EC (BIOS thermal) mode with user notification instead.
@@ -777,7 +985,7 @@ impl FanService {
         let caps = crate::capabilities::detect(board_id, "", "");
         
         let only_ec_safe = caps.supports_fan_control_ec && !caps.supports_fan_control_wmi;
-        if only_ec_safe && matches!(mode, "auto" | "custom" | "performance") {
+        if only_ec_safe && matches!(mode, "auto" | "custom" | "performance" | "better_auto") {
             warn!("Board {} supports only EC fan control (WMI 0x2E writes proven rejected by BIOS). Forcing EC mode.", board_id);
             // (a) Override mode
             let _ = Box::pin(Self::set_mode_internal(state, "ec")).await;
@@ -828,8 +1036,17 @@ impl FanService {
             state.last_perf_pct = 0;
             state.auto_fan_activated_at = None;
             // Clear manual target when switching modes
-            if mode == "auto" || mode == "max" || mode == "ec" || mode == "performance" {
+            if mode == "auto" || mode == "max" || mode == "ec" || mode == "performance" || mode == "better_auto" {
                 state.manual_target_pct = None;
+            }
+            if mode == "better_auto" {
+                state.better_auto_last_apply = std::time::Instant::now()
+                    .checked_sub(std::time::Duration::from_secs(100))
+                    .unwrap_or_else(std::time::Instant::now);
+                state.better_auto_last_manual_assert = std::time::Instant::now();
+                state.better_auto_cooldown_level = 0;
+                state.better_auto_cooldown_until = std::time::Instant::now();
+                state.better_auto_level = 0;
             }
             if mode == "max" {
                 state.last_written_duty = Some(255);
@@ -853,8 +1070,17 @@ impl FanService {
             state.last_targets.clear();
             state.last_written_duty = None;
             state.last_auto_pct = 0;
-            if mode == "auto" || mode == "max" || mode == "ec" || mode == "performance" {
+            if mode == "auto" || mode == "max" || mode == "ec" || mode == "performance" || mode == "better_auto" {
                 state.manual_target_pct = None;
+            }
+            if mode == "better_auto" {
+                state.better_auto_last_apply = std::time::Instant::now()
+                    .checked_sub(std::time::Duration::from_secs(100))
+                    .unwrap_or_else(std::time::Instant::now);
+                state.better_auto_last_manual_assert = std::time::Instant::now();
+                state.better_auto_cooldown_level = 0;
+                state.better_auto_cooldown_until = std::time::Instant::now();
+                state.better_auto_level = 0;
             }
             if mode == "performance" {
                 state.perf_cooldown_start = None;
