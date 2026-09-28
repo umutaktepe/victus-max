@@ -1,3 +1,5 @@
+pub mod better_auto;
+
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use zbus::interface;
