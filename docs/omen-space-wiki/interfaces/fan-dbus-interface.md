@@ -9,11 +9,16 @@
 
 | Metot İmzası | Parametreler | Dönüş Tipi | Açıklama |
 | :--- | :--- | :--- | :--- |
-| `set_fan_mode(mode: &str)` | `"auto"`, `"max"`, `"custom"`, veya `"50"` (yüzde) | `String` (`"OK"`, `"FAIL"`) | Aktif fan çalışma modunu ayarlar. |
+| `set_fan_mode(mode: &str)` | `"auto"`, `"better_auto"`, `"max"`, `"custom"`, veya `"50"` (yüzde) | `String` (`"OK"`, `"FAIL"`) | Aktif fan çalışma modunu ayarlar. |
 | `get_fan_mode()` | Yok | `String` | Aktif modu döner. |
-| `get_fan_info()` | Yok | `String` (JSON) | Fan hızları, RPM değerleri ve sınırları döner. |
+| `get_fan_info()` | Yok | `String` (JSON) | Fan hızları, RPM değerleri, `min_fan_rpm` ve `acoustic_ceiling` sınırlarını döner. |
 | `save_custom_curve(curve_json: &str)` | Özel eğri JSON metni | `String` (`"OK"`) | Özel fan eğrisini sisteme kaydeder. |
 | `set_thermal_protection(enabled: bool)` | `true` / `false` | `String` (`"OK"`) | 95°C termal koruma devresini açar/kapatır. |
+| `get_min_fan_rpm()` | Yok | `u32` | Better Auto için asgari devir tabanını döner (varsayılan 2600 RPM). |
+| `set_min_fan_rpm(rpm: u32)` | `2000..=3500` | `bool` | Asgari fan devir tabanını ayarlar ve yapılandırmaya kaydeder. |
+| `get_acoustic_ceiling()` | Yok | `u32` | Balanced modundaki akustik tavan seviyesini döner (3–8, varsayılan 5). |
+| `set_acoustic_ceiling(level: u32)` | `3..=8` | `bool` | Akustik tavan seviyesini ayarlar ve yapılandırmaya kaydeder. |
+| `notify_power_profile(profile: &str)` | `"balanced"`, `"performance"`, `"quiet"` vb. | `String` | Güç profili geçişini bildirir, histerezis/cooldown sıfırlar ve tavanı uyarlar. |
 
 ## Sinyaller (Signals)
 
@@ -39,3 +44,4 @@
 - Servis Katmanı: [[fan-service]]
 - Grafik Düzenleyici: [[fan-curve-editor-ui]]
 - D-Bus Protokolü: [[dbus-ipc-protocol]]
+- Mimari Kararlar: [[adr-002-wmi-vs-direct-ec-arbitration]], [[adr-005-better-auto-proactive-fan-and-victus-max]]

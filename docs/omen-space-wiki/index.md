@@ -11,6 +11,7 @@ Sistem mimarisindeki temel teknik seçimler, gerekçeleri, değerlendirilen alte
 - [[adr-002-wmi-vs-direct-ec-arbitration]] — Güvensiz anakartlarda doğrudan EC yazımlarını engelleyen ve güvenli modellerde hwmon fallback sağlayan hibrit tahkim mekanizması.
 - [[adr-003-companion-dkms-driver-non-clashing]] — Stock `hp-wmi` çekirdek sürücüsüyle çakışmadan WMI GUID paylaşımı yapan yoldaş DKMS RGB modülü mimarisi.
 - [[adr-004-native-msr-and-smu-mailbox-tuning]] — Dış CLI araçlarına bağımlı kalmadan Intel MSR ve AMD SMU posta kutusu protokollerinin yerel Rust ile işletilmesi.
+- [[adr-005-better-auto-proactive-fan-and-victus-max]] — Proaktif Better Auto çift matrisli fan algoritması, 10s EC yazma aralığı, ayarlanabilir taban/tavan ve bağımsız Victus Max mimarisi.
 
 ---
 

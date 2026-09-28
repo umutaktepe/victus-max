@@ -8,9 +8,19 @@ Servis, `org.hp.omen.Fan` D-Bus arayüzü ([[fan-dbus-interface]]) üzerinden is
 ## Çalışma Modları
 
 1. **Auto (Otomatik):** BIOS'un veya dahili histerezis algoritmasının fan hızını yönettiği varsayılan mod.
-2. **Max (Maksimum):** Fanların %100 PWM görev döngüsü ve tam devirde (RPM) çalıştığı soğutma modu.
-3. **Custom (Özel Eğri):** Kullanıcı tarafından tanımlanan sıcaklık-devir noktalarına göre dinamik spline interpolasyonu uygulayan mod.
-4. **Manual Percentage:** Kullanıcının terminalden veya arayüzden tekil bir yüzde (örneğin `%60`) belirlediği durum.
+2. **Better Auto (Proaktif Otomatik):** CPU yükü (`/proc/stat` delta) ve sıcaklık çift matrisini izleyerek sıcaklık yükselmeden fan devrini proaktif artıran, iniş sınırlayıcılı (single-step ramp-down), ayarlanabilir asgari RPM (varsayılan 2600 RPM) ve akustik tavanlı (Balanced modunda varsayılan Seviye 5 / ~4100 RPM) akıllı fan motoru.
+3. **Max (Maksimum):** Fanların %100 PWM görev döngüsü ve tam devirde (RPM) çalıştığı soğutma modu.
+4. **Custom (Özel Eğri):** Kullanıcı tarafından tanımlanan sıcaklık-devir noktalarına göre dinamik spline interpolasyonu uygulayan mod.
+5. **Manual Percentage:** Kullanıcının terminalden veya arayüzden tekil bir yüzde (örneğin `%60`) belirlediği durum.
+
+## Proaktif Better Auto Algoritması ve Akustik Tavan
+`BetterAutoEngine` (`src/victus-max-daemon/src/fan/better_auto.rs`), `victus-control` projesinin proaktif iş yükü algısını Rust mimarisine kazandırır:
+- **Çift Matrisli Seviye Tespiti:** Sistem sıcaklığı (CPU/GPU) ve işlemci yükü (CPU delta) bağımsız 8 kademeli baremlerde değerlendirilir ve büyük olan seviye seçilir. Yük %70 üzerine fırladığında sıcaklık henüz 50°C olsa bile fanlar anında Seviye 6'ya yükselir.
+- **Asgari Devir Tabanı (Minimum RPM):** Balanced profilinde fanlar hem CPU hem GPU için varsayılan **2600 RPM** tabanında tutulur. Kullanıcı bunu GUI ve CLI üzerinden 2000–3500 RPM arasında değiştirebilir.
+- **Akustik Tavan (Acoustic Ceiling):** Balanced modunda gürültüyü sınırlamak için fan seviyesi kullanıcının seçtiği akustik tavana (varsayılan Seviye 5) sınırlandırılır. `performance` profilinde tavan Seviye 8'e (%100) çıkarılır.
+- **88°C Termal Baypas (Thermal Bypass):** Donanım sıcaklığı 88.0°C ve üzerine ulaştığında akustik tavan ve bekleme süreleri tamamen göz ardı edilir; fanlar anında Seviye 8'e çekilir.
+- **EC Güvenliği ve Koruması (10s Stagger Gap):** HP Victus EC veri yolunun kilitlenmesini engellemek için Fan 1 ve Fan 2 yazımları arasında asenkron 10 saniyelik gecikme uygulanır ([[adr-005-better-auto-proactive-fan-and-victus-max]]).
+- **90s Watchdog Tazelemesi:** BIOS'un fan kontrolünü zorla devralmasını önlemek için her 90 saniyede bir manuel fan hedefleri EC'ye yeniden yazılır.
 
 ## Termal Koruma Mekanizması (Emergency Thermal Protection)
 
@@ -34,4 +44,4 @@ HP anakartları belirli bir süre müdahale edilmediğinde fan kontrolünü tekr
 - Donanım Katmanı: [[embedded-controller-ec]], [[hp-wmi-driver]]
 - D-Bus Sözleşmesi: [[fan-dbus-interface]]
 - Görsel Editör: [[fan-curve-editor-ui]]
-- Mimari Karar: [[adr-002-wmi-vs-direct-ec-arbitration]]
+- Mimari Kararlar: [[adr-002-wmi-vs-direct-ec-arbitration]], [[adr-005-better-auto-proactive-fan-and-victus-max]]
