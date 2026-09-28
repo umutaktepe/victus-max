@@ -19,11 +19,19 @@ pub const AUTO_PEAK_HOLD_SECS: u64 = 15;
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct CurvePoint(pub f64, pub f64); // [Temp, Pct]
 
+pub fn normalize_profile(raw: &str) -> String {
+    match raw.to_lowercase().as_str() {
+        "performance" | "custom" => "performance".to_string(),
+        "low-power" | "quiet" | "cool" | "power-saver" | "battery" | "eco" => "power-saver".to_string(),
+        _ => "balanced".to_string(),
+    }
+}
+
 pub fn get_effective_acoustic_ceiling(profile: &str, user_ceiling: usize) -> usize {
     match profile {
-        "performance" => 8,
-        "power-saver" | "quiet" | "eco" => user_ceiling.min(3),
+        "power-saver" | "quiet" | "eco" | "battery" | "low-power" | "cool" => user_ceiling.min(3),
         "balanced" => user_ceiling.clamp(3, 8),
+        "performance" => 8,
         _ => user_ceiling.clamp(3, 8),
     }
 }
@@ -62,7 +70,7 @@ pub async fn detect_power_profile() -> String {
         if let Ok(val) = tokio::fs::read_to_string(p).await {
             let s = val.trim().to_lowercase();
             if !s.is_empty() {
-                return s;
+                return normalize_profile(&s);
             }
         }
     }
@@ -102,6 +110,7 @@ pub struct FanState {
     pub signal_ctx: Option<zbus::SignalContext<'static>>,
     pub min_fan_rpm: u32,
     pub acoustic_ceiling: usize,
+    pub last_power_profile: String,
     pub better_auto_level: usize,
     pub better_auto_last_apply: std::time::Instant,
     pub better_auto_last_manual_assert: std::time::Instant,
@@ -140,6 +149,7 @@ impl Default for FanState {
             signal_ctx: None,
             min_fan_rpm: crate::config::default_min_fan_rpm(),
             acoustic_ceiling: crate::config::default_acoustic_ceiling(),
+            last_power_profile: "balanced".to_string(),
             better_auto_level: 0,
             better_auto_last_apply: std::time::Instant::now()
                 .checked_sub(std::time::Duration::from_secs(100))
@@ -153,7 +163,7 @@ impl Default for FanState {
 
 #[derive(Clone)]
 pub struct FanService {
-    state: Arc<Mutex<FanState>>,
+    pub state: Arc<Mutex<FanState>>,
 }
 
 // Helpers for sysfs using tokio::fs to avoid blocking the async executor
@@ -209,6 +219,7 @@ impl FanService {
             signal_ctx: None,
             min_fan_rpm: config.min_fan_rpm,
             acoustic_ceiling: config.acoustic_ceiling,
+            last_power_profile: "balanced".to_string(),
             better_auto_level: 0,
             better_auto_last_apply: std::time::Instant::now()
                 .checked_sub(std::time::Duration::from_secs(100))
@@ -251,6 +262,16 @@ impl FanService {
         });
         
         Ok(service)
+    }
+
+    #[allow(dead_code)]
+    pub fn new_with_state(state: Arc<Mutex<FanState>>) -> Self {
+        Self { state }
+    }
+
+    #[allow(dead_code)]
+    pub fn state(&self) -> Arc<Mutex<FanState>> {
+        self.state.clone()
     }
 
     pub fn set_signal_ctx(&self, ctx: zbus::SignalContext<'static>) {
@@ -901,9 +922,24 @@ impl FanService {
                     let load_snap = crate::sysmon::collect_load_snapshot();
                     let usage = load_snap.cpu_usage_pct.unwrap_or(0.0).max(load_snap.gpu_usage_pct.unwrap_or(0.0));
                     
-                    let mut state = self.state.lock().await;
                     let profile = detect_power_profile().await;
-                    let ceiling = get_effective_acoustic_ceiling(&profile, state.acoustic_ceiling);
+                    let mut state = self.state.lock().await;
+                    let now = std::time::Instant::now();
+
+                    if profile != state.last_power_profile {
+                        info!(
+                            "Power profile changed from '{}' to '{}': resetting Better Auto hysteresis & cooldown",
+                            state.last_power_profile, profile
+                        );
+                        state.last_power_profile = profile.clone();
+                        state.better_auto_cooldown_level = 0;
+                        state.better_auto_cooldown_until = now;
+                        state.better_auto_last_apply = now
+                            .checked_sub(std::time::Duration::from_secs(100))
+                            .unwrap_or(now);
+                    }
+
+                    let ceiling = get_effective_acoustic_ceiling(&state.last_power_profile, state.acoustic_ceiling);
                     
                     let computed = better_auto::compute_better_auto_level(
                         temp,
@@ -912,14 +948,22 @@ impl FanService {
                         ceiling,
                     );
 
-                    let now = std::time::Instant::now();
                     let s = &mut *state;
-                    let target_level = update_cooldown(
+                    let raw_target = update_cooldown(
                         computed,
                         now,
                         &mut s.better_auto_cooldown_level,
                         &mut s.better_auto_cooldown_until,
                     );
+
+                    let target_level = if temp >= better_auto::EMERGENCY_TEMP_C {
+                        raw_target
+                    } else {
+                        if s.better_auto_cooldown_level > ceiling {
+                            s.better_auto_cooldown_level = ceiling;
+                        }
+                        raw_target.min(ceiling)
+                    };
 
                     // Check 80s manual reassert: if now.duration_since(last_manual_assert).as_secs() >= 80, write pwm1_enable = 1
                     if now.duration_since(state.better_auto_last_manual_assert).as_secs() >= 80 {
@@ -1294,6 +1338,21 @@ impl FanService {
 
     async fn ping(&self) -> String {
         "pong".to_string()
+    }
+
+    pub async fn notify_power_profile(&self, profile: String) -> String {
+        let mut state = self.state.lock().await;
+        info!(
+            "Notified of power profile change to '{}': resetting Better Auto hysteresis & cooldown",
+            profile
+        );
+        state.last_power_profile = profile;
+        state.better_auto_cooldown_level = 0;
+        state.better_auto_cooldown_until = std::time::Instant::now();
+        state.better_auto_last_apply = std::time::Instant::now()
+            .checked_sub(std::time::Duration::from_secs(100))
+            .unwrap_or_else(std::time::Instant::now);
+        "OK".to_string()
     }
     
     #[zbus(signal)]

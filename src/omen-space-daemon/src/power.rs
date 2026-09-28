@@ -248,6 +248,7 @@ impl PowerService {
                         
                         if let Some(c) = conn.as_ref() {
                             let _ = c.call_method(Some("org.hp.omen"), "/org/hp/omen/Fan", Some("org.hp.omen.Fan"), "SetFanMode", &p_fan).await;
+                            let _ = c.call_method(Some("org.hp.omen"), "/org/hp/omen/Fan", Some("org.hp.omen.Fan"), "NotifyPowerProfile", &p_prof).await;
                         }
                     }
                 }
@@ -272,6 +273,7 @@ impl PowerService {
             
             if let Some(c) = conn {
                 let _ = c.call_method(Some("org.hp.omen"), "/org/hp/omen/Fan", Some("org.hp.omen.Fan"), "SetFanMode", &p_fan).await;
+                let _ = c.call_method(Some("org.hp.omen"), "/org/hp/omen/Fan", Some("org.hp.omen.Fan"), "NotifyPowerProfile", &p_prof).await;
             }
         }
         st.active_app = None;
@@ -604,6 +606,21 @@ impl PowerService {
                 tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
                 Self::sync_gpu_power(&p).await;
             });
+
+            // Dispatch async notification to /org/hp/omen/Fan with NotifyPowerProfile
+            let p_notify = normalized.clone();
+            tokio::spawn(async move {
+                if let Ok(conn) = zbus::Connection::system().await {
+                    let _ = conn.call_method(
+                        Some("org.hp.omen"),
+                        "/org/hp/omen/Fan",
+                        Some("org.hp.omen.Fan"),
+                        "NotifyPowerProfile",
+                        &p_notify,
+                    ).await;
+                }
+            });
+
             info!("Power profile set to '{}'", normalized);
             "OK".to_string()
         } else {

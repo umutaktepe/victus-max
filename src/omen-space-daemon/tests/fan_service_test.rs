@@ -44,7 +44,9 @@ pub mod fan;
 
 use config::{default_acoustic_ceiling, default_min_fan_rpm, FanConfig};
 use fan::{get_effective_acoustic_ceiling, update_cooldown, FanService, FanState};
+use std::sync::Arc;
 use std::time::{Duration, Instant};
+use tokio::sync::Mutex;
 
 #[test]
 fn test_fan_config_defaults() {
@@ -113,10 +115,13 @@ fn test_effective_acoustic_ceiling_resolution() {
     assert_eq!(get_effective_acoustic_ceiling("performance", 4), 8);
     assert_eq!(get_effective_acoustic_ceiling("performance", 5), 8);
 
-    // Power-saver / quiet / eco: min(user_ceiling, 3)
+    // Power-saver / quiet / eco / battery / low-power / cool: min(user_ceiling, 3)
     assert_eq!(get_effective_acoustic_ceiling("power-saver", 5), 3);
     assert_eq!(get_effective_acoustic_ceiling("quiet", 2), 2);
     assert_eq!(get_effective_acoustic_ceiling("eco", 4), 3);
+    assert_eq!(get_effective_acoustic_ceiling("battery", 5), 3);
+    assert_eq!(get_effective_acoustic_ceiling("low-power", 5), 3);
+    assert_eq!(get_effective_acoustic_ceiling("cool", 5), 3);
 
     // Balanced: clamp(3, 8)
     assert_eq!(get_effective_acoustic_ceiling("balanced", 5), 5);
@@ -245,3 +250,114 @@ fn test_watchdog_timing_calculations() {
     assert!(!(now.duration_since(recent).as_secs() >= 80));
     assert!(!(now.duration_since(recent).as_secs() >= 90));
 }
+
+#[tokio::test]
+async fn test_notify_power_profile_dbus_handler() {
+    let mut state = FanState::default();
+    state.last_power_profile = "performance".to_string();
+    state.better_auto_cooldown_level = 7;
+    state.better_auto_cooldown_until = Instant::now() + Duration::from_secs(30);
+    state.better_auto_last_apply = Instant::now();
+
+    let state_arc = Arc::new(Mutex::new(state));
+    let service = FanService::new_with_state(state_arc.clone());
+
+    let res = service.notify_power_profile("balanced".to_string()).await;
+    assert_eq!(res, "OK");
+
+    let st = state_arc.lock().await;
+    assert_eq!(st.last_power_profile, "balanced");
+    assert_eq!(st.better_auto_cooldown_level, 0);
+    assert!(st.better_auto_cooldown_until <= Instant::now());
+    let now = Instant::now();
+    assert!(now.duration_since(st.better_auto_last_apply).as_secs() >= 90);
+}
+
+#[tokio::test]
+async fn test_profile_change_resets_cooldown_and_applies_ceiling() {
+    // 1. Start with "performance" profile, active level 7 cooldown, ceiling 5
+    let mut state = FanState::default();
+    state.last_power_profile = "performance".to_string();
+    state.acoustic_ceiling = 5;
+    state.better_auto_level = 7;
+    state.better_auto_cooldown_level = 7;
+    state.better_auto_cooldown_until = Instant::now() + Duration::from_secs(30);
+
+    let state_arc = Arc::new(Mutex::new(state));
+    let service = FanService::new_with_state(state_arc.clone());
+
+    // Switch from "performance" to "balanced"
+    let res = service.notify_power_profile("balanced".to_string()).await;
+    assert_eq!(res, "OK");
+
+    {
+        let mut st = state_arc.lock().await;
+        assert_eq!(st.last_power_profile, "balanced");
+        // Verify cooldown floor was reset (0 <= 5)
+        assert_eq!(st.better_auto_cooldown_level, 0);
+
+        let ceiling = get_effective_acoustic_ceiling(&st.last_power_profile, st.acoustic_ceiling);
+        assert_eq!(ceiling, 5);
+
+        // Under 76°C where raw computed level would be 6,
+        // it must be clamped to ceiling 5
+        let computed = fan::better_auto::compute_better_auto_level(76.0, 40.0, st.better_auto_level, ceiling);
+        assert!(computed <= 5);
+
+        let now = Instant::now();
+        let s = &mut *st;
+        let target = update_cooldown(computed, now, &mut s.better_auto_cooldown_level, &mut s.better_auto_cooldown_until);
+        let clamped_target = if 76.0 >= fan::better_auto::EMERGENCY_TEMP_C {
+            target
+        } else {
+            if s.better_auto_cooldown_level > ceiling {
+                s.better_auto_cooldown_level = ceiling;
+            }
+            target.min(ceiling)
+        };
+        assert_eq!(clamped_target, 5);
+        assert!(s.better_auto_cooldown_level <= 5);
+    }
+
+    // 2. Switch from "balanced" to "power-saver"
+    let res = service.notify_power_profile("power-saver".to_string()).await;
+    assert_eq!(res, "OK");
+
+    {
+        let mut st = state_arc.lock().await;
+        assert_eq!(st.last_power_profile, "power-saver");
+        assert_eq!(st.better_auto_cooldown_level, 0);
+
+        let ceiling = get_effective_acoustic_ceiling(&st.last_power_profile, st.acoustic_ceiling);
+        assert_eq!(ceiling, 3);
+
+        // Under 76°C, Better Auto computes level <= 3
+        let computed = fan::better_auto::compute_better_auto_level(76.0, 40.0, st.better_auto_level, ceiling);
+        assert!(computed <= 3);
+
+        let now = Instant::now();
+        let s = &mut *st;
+        let target = update_cooldown(computed, now, &mut s.better_auto_cooldown_level, &mut s.better_auto_cooldown_until);
+        let clamped_target = if 76.0 >= fan::better_auto::EMERGENCY_TEMP_C {
+            target
+        } else {
+            if s.better_auto_cooldown_level > ceiling {
+                s.better_auto_cooldown_level = ceiling;
+            }
+            target.min(ceiling)
+        };
+        assert!(clamped_target <= 3);
+        assert!(s.better_auto_cooldown_level <= 3);
+
+        // Emergency temperature bypass: at 89°C >= EMERGENCY_TEMP_C (88°C), ceiling is bypassed to level 8
+        let emerg_computed = fan::better_auto::compute_better_auto_level(89.0, 40.0, clamped_target, ceiling);
+        assert_eq!(emerg_computed, 8);
+        let emerg_target = if 89.0 >= fan::better_auto::EMERGENCY_TEMP_C {
+            emerg_computed
+        } else {
+            emerg_computed.min(ceiling)
+        };
+        assert_eq!(emerg_target, 8);
+    }
+}
+
