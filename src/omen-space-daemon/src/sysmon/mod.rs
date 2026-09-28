@@ -3,9 +3,13 @@ pub mod gpu;
 pub mod stats;
 pub mod utils;
 pub mod interface;
+pub mod load;
 
 pub use interface::SysMonInterface;
 pub use sensors::*;
 pub use gpu::*;
 pub use stats::*;
 pub use utils::*;
+#[allow(unused_imports)]
+pub use load::*;
+
