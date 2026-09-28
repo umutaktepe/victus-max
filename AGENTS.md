@@ -1,6 +1,6 @@
-# AGENTS.md — OMEN Space Geliştirici ve Ajan Kuralları (LLM Wiki Sözleşmesi)
+# AGENTS.md — Victus Max Geliştirici ve Ajan Kuralları (LLM Wiki Sözleşmesi)
 
-Bu belge, bu kod tabanında (`omen-space`) geliştirme yapacak, kod tabanını değiştirecek, yeni özellik ekleyecek veya dokümantasyonu sürdürecek **tüm yapay zeka ajanları ve mühendisler** için bağlayıcı kural setidir.
+Bu belge, bu kod tabanında (`victus-max`) geliştirme yapacak, kod tabanını değiştirecek, yeni özellik ekleyecek veya dokümantasyonu sürdürecek **tüm yapay zeka ajanları ve mühendisler** için bağlayıcı kural setidir.
 
 Bu depo, **Andrej Karpathy'nin "LLM Wiki / Living Architecture"** paradigmasına göre yönetilmektedir.
 
@@ -27,7 +27,7 @@ Bu depo, **Andrej Karpathy'nin "LLM Wiki / Living Architecture"** paradigmasına
 - Bir sayfa yalnızca doğrudan bağımlı olduğu mimari karara (`[[adr-...]]`), veri şemasına veya donanım sürücüsüne bağlanmalıdır. Bağlantılar cümle içinde doğal bir bağlamla kurulmalıdır.
 
 ### Kural 4: Yaşayan Bellek ve Zorunlu ADR (Architectural Decision Records)
-- Kod tabanında yapılan herhangi bir kritik mimari değişiklik (yeni kütüphane seçimi, veri formatı değişikliği, donanım register yaklaşımı, güvenlik politikası vb.) için `docs/omen-space-wiki/decisions/` altında yeni bir `adr-00x-[konu].md` oluşturulması **ZORUNLUDUR**.
+- Kod tabanında yapılan herhangi bir kritik mimari değişiklik (yeni kütüphane seçimi, veri formatı değişikliği, donanım register yaklaşımı, güvenlik politikası vb.) için `docs/victus-max-wiki/decisions/` altında yeni bir `adr-00x-[konu].md` oluşturulması **ZORUNLUDUR**.
 - Her ADR; **Bağlam**, **Alternatifler**, **Karar**, **Sonuçlar (Olumlu/Olumsuz Trade-off)** ve **İlgili Bağlantılar** bölümlerini eksiksiz içermelidir.
 
 ### Kural 5: Adlandırma Standartları (Kebab-Case)
@@ -43,9 +43,9 @@ Bu depo, **Andrej Karpathy'nin "LLM Wiki / Living Architecture"** paradigmasına
 3. **Wiki'yi Güncelle:**
    - Değişiklikten etkilenen mevcut atomik `.md` sayfasını güncelle.
    - Eğer yeni bir kavram veya servis eklendiyse uygun domain klasöründe yeni atomik sayfa aç.
-   - `docs/omen-space-wiki/index.md` (MOC) dosyasına yeni sayfayı tek satırlık özetle ekle.
+   - `docs/victus-max-wiki/index.md` (MOC) dosyasına yeni sayfayı tek satırlık özetle ekle.
 4. **Log Düş (Günlük Tut):**
-   - `docs/omen-space-wiki/log.md` dosyasının sonuna formatına uygun olarak append-only kayıt ekle:
+   - `docs/victus-max-wiki/log.md` dosyasının sonuna formatına uygun olarak append-only kayıt ekle:
      `## [YYYY-MM-DD] İşlem_Türü | Başlık ve kısa özet`
 
 ### Bilgi Tabanını Denetlerken (Linting Pass):
@@ -58,7 +58,7 @@ Bu depo, **Andrej Karpathy'nin "LLM Wiki / Living Architecture"** paradigmasına
 ## 3. Dizin Yapısı Referansı
 
 ```
-docs/omen-space-wiki/
+docs/victus-max-wiki/
 ├── index.md                 # Ana İçerik Haritası (MOC)
 ├── log.md                   # Kronolojik İşlem Günlüğü
 ├── decisions/               # Mimari Karar Kayıtları (ADR-001, ADR-002, ...)

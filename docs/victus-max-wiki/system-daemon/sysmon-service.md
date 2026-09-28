@@ -1,7 +1,7 @@
 # Sistem Telemetrisi ve Donanım İzleme Servisi (SysMon)
 
 ## Genel Bakış
-`SysMonInterface` ve telemetri altyapısı (`src/omen-space-daemon/src/sysmon/`), sistem donanım sensörlerini düşük ek yük ile sürekli izleyen ve istemcilere canlı telemetri akışı sağlayan bileşendir.
+`SysMonInterface` ve telemetri altyapısı (`src/victus-max-daemon/src/sysmon/`), sistem donanım sensörlerini düşük ek yük ile sürekli izleyen ve istemcilere canlı telemetri akışı sağlayan bileşendir.
 
 Servis, D-Bus üzerinde `org.hp.omen.SysMon` arayüzünü ([[sysmon-dbus-interface]]) sunar.
 

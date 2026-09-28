@@ -1,6 +1,6 @@
-# OMEN Space MOC — Yaşayan Mimari İçerik Haritası (Index)
+# Victus Max MOC — Yaşayan Mimari İçerik Haritası (Index)
 
-Bu dizin, OMEN Space kod tabanının **Andrej Karpathy LLM Wiki / Living Architecture** paradigmasına göre modellenmiş ana İçerik Haritasıdır (Map of Content - MOC). Sistem hiyerarşisi sayısal kitap bölümleriyle değil; fonksiyonel mühendislik rolleri, mimari kararlar ve atomik ilişkisel kümeler (clusters) ile yapılandırılmıştır.
+Bu dizin, Victus Max kod tabanının **Andrej Karpathy LLM Wiki / Living Architecture** paradigmasına göre modellenmiş ana İçerik Haritasıdır (Map of Content - MOC). Sistem hiyerarşisi sayısal kitap bölümleriyle değil; fonksiyonel mühendislik rolleri, mimari kararlar ve atomik ilişkisel kümeler (clusters) ile yapılandırılmıştır.
 
 ---
 
@@ -27,10 +27,10 @@ Linux çekirdeği, ACPI, Gömülü Denetleyici (EC), MSR ve SMU seviyesinde dona
 ---
 
 ## 🧠 Sistem Katmanı ve Çekirdek Servisler (System Daemon)
-Root yetkileriyle arka planda çalışan `omen-space-daemon` mikroservisleri ve koruma mekanizmaları:
+Root yetkileriyle arka planda çalışan `victus-max-daemon` mikroservisleri ve koruma mekanizmaları:
 
 - [[daemon-overview]] — Daemon mimarisi, Tokio asenkron çalışma zamanı, D-Bus nesne sunucusu ve başlatma sırası.
-- [[fan-service]] — Fan hız modları, özel spline eğrileri, keep-alive döngüsü ve 95°C acil durum termal koruma devresi.
+- [[fan-service]] — Fan hız modları, Better Auto proaktif algoritması, özel spline eğrileri, keep-alive döngüsü ve 95°C acil durum termal koruma devresi.
 - [[power-service]] — ACPI termal profilleri (`power-saver`, `balanced`, `performance`), Intel RAPL PL1/PL2 tavanları ve GPU TGP sınırlama.
 - [[rgb-service]] — 4-Zone, Per-Key ve Lightbar donanımları için statik renkler, dinamik LED animasyonları ve eşleme motoru.
 - [[mux-service]] — dGPU ve iGPU ekran paneli yönlendirmesi, WMI anahtarlama ve yeniden başlatma gereksinim koordinasyonu.
@@ -68,7 +68,7 @@ Kullanıcı alanında (unprivileged) koşan grafik, komut satırı ve panel aray
 - [[gui-application]] — GTK4 ve Libadwaita ile inşa edilmiş ana masaüstü kontrol merkezi, sekme mimarisi ve D-Bus istemcisi.
 - [[quick-hud-overlay]] — Oyun esnasında Shift+F2 ile ekrana gelen, sıfır gecikmeli yarı saydam Wayland GTK4 HUD paneli.
 - [[system-tray]] — Masaüstü bildirim alanında çalışan hafif (<2MB) hızlı profil seçici ve gösterge simgesi.
-- [[command-line-interface]] — Terminal ve otomasyon betikleri için `omen-cli` komut hiyerarşisi ve ASCII donanım bilgi çıktısı (`fetch`).
+- [[command-line-interface]] — Terminal ve otomasyon betikleri için `victus-max-cli` (ve `omen-cli`) komut hiyerarşisi ve ASCII donanım bilgi çıktısı (`fetch`).
 - [[fan-curve-editor-ui]] — GTK4 DrawingArea üzerinde çalışan etkileşimli fan eğrisi ve spline çizim bileşeni.
 
 ---
@@ -76,7 +76,7 @@ Kullanıcı alanında (unprivileged) koşan grafik, komut satırı ve panel aray
 ## 🔒 Sistem Entegrasyonu ve Güvenlik (Platform Integration)
 Sistem seviyesinde kurulum, güvenlik sınırları, izin kuralları ve paketleme:
 
-- [[systemd-services]] — `omen-space-daemon.service` ve D-Bus etkinleştirilebilir servis tanımları.
+- [[systemd-services]] — `victus-max-daemon.service` (ve geriye dönük `omen-space-daemon.service` alias) ve D-Bus etkinleştirilebilir servis tanımları.
 - [[polkit-dbus-security]] — `org.hp.omen.conf` güvenlik politikası, `omen-hw` kullanıcı grubu ve root yetkilendirmesi.
 - [[udev-device-rules]] — `99-omen-space.rules` ile `/dev/cpu/*/msr` ve evdev girdi aygıt izinleri.
 - [[packaging-and-dkms]] — Cargo ikili optimizasyonları, Arch PKGBUILD, Nix Flakes ve DKMS otomatik derleme zinciri.

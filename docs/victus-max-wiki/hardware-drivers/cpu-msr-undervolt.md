@@ -3,7 +3,7 @@
 ## Genel Bakış
 Intel Core işlemcilerde voltaj düşürme (undervolting) ve termal tavanı kısıtlama (TCC offset), Model-Specific Register (MSR) adı verilen donanımsal kayıt yazmaçları üzerinden gerçekleştirilir.
 
-OMEN Space (`src/omen-space-daemon/src/undervolt.rs`), harici hiçbir CLI aracı (örneğin `intel-undervolt`) kullanmadan doğrudan `/dev/cpu/0/msr` aygıtına 64-bit hassasiyette ikili veri yazarak voltaj ofsetlerini uygular.
+OMEN Space (`src/victus-max-daemon/src/undervolt.rs`), harici hiçbir CLI aracı (örneğin `intel-undervolt`) kullanmadan doğrudan `/dev/cpu/0/msr` aygıtına 64-bit hassasiyette ikili veri yazarak voltaj ofsetlerini uygular.
 
 ## MSR Kayıt Haritası ve Düzlem Mimarisi
 

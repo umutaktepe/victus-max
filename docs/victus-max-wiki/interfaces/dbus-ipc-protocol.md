@@ -3,7 +3,7 @@
 ## Genel Bakış
 OMEN Space, Linux sistem mimarisinde ayrıcalık izolasyonunu sağlamak amacıyla D-Bus (Desktop Bus) IPC protokolünü kullanır.
 
-Tüm D-Bus arayüz tanımları, tipleri ve proxy makroları `omen-types` kütüphanesinde (`src/omen-types/src/lib.rs`) toplanmıştır. Bu sayede hem sunucu tarafı (`omen-space-daemon`) hem de istemciler (`omen-gui`, `omen-cli`, `omen-overlay`, `omen-tray`) aynı tip tanımlarını ve arayüz sözleşmelerini derleme anında doğrular.
+Tüm D-Bus arayüz tanımları, tipleri ve proxy makroları `omen-types` kütüphanesinde (`src/victus-max-types/src/lib.rs`) toplanmıştır. Bu sayede hem sunucu tarafı (`omen-space-daemon`) hem de istemciler (`omen-gui`, `omen-cli`, `omen-overlay`, `omen-tray`) aynı tip tanımlarını ve arayüz sözleşmelerini derleme anında doğrular.
 
 ## D-Bus Ad Alanı ve Nesne Yolu Hiyerarşisi
 

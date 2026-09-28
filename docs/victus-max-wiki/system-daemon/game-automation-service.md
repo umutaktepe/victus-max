@@ -1,7 +1,7 @@
 # Oyun ve Uygulama Otomasyon Servisi (Game Automation)
 
 ## Genel Bakış
-`GameAutomationService` (`src/omen-space-daemon/src/game_automation.rs`), sistemde belirli oyunlar veya ağır iş yükü uygulamaları başlatıldığında güç profilini ve fan modunu otomatik olarak ayarlayan arka plan servisidir.
+`GameAutomationService` (`src/victus-max-daemon/src/game_automation.rs`), sistemde belirli oyunlar veya ağır iş yükü uygulamaları başlatıldığında güç profilini ve fan modunu otomatik olarak ayarlayan arka plan servisidir.
 
 Servis, D-Bus üzerinde `org.hp.omen.AppProfiles` arayüzünü sunar ve `/etc/omenspace/app_profiles.json` dosyasında saklanan profil kurallarını ([[app-profiles-spec]]) uygular.
 

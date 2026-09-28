@@ -1,7 +1,7 @@
 # Sıfır Gecikmeli Donanım Kısayol İzleyicisi (Hotkey Monitor)
 
 ## Genel Bakış
-`HotkeyMonitor` (`src/omen-space-daemon/src/hotkey_monitor.rs`), Linux masaüstü ortamından (X11 / Wayland pencere yöneticilerinden) bağımsız olarak, doğrudan Linux çekirdeğinin `evdev` girdi alt sistemi üzerinden çalışan küresel kısayol yakalayıcıdır.
+`HotkeyMonitor` (`src/victus-max-daemon/src/hotkey_monitor.rs`), Linux masaüstü ortamından (X11 / Wayland pencere yöneticilerinden) bağımsız olarak, doğrudan Linux çekirdeğinin `evdev` girdi alt sistemi üzerinden çalışan küresel kısayol yakalayıcıdır.
 
 ## Mimari ve Algılama Yöntemi
 

@@ -1,7 +1,7 @@
 # OMEN Space Daemon Mimarisi ve Yaşam Döngüsü
 
 ## Genel Bakış
-`omen-space-daemon`, OMEN Space ekosisteminin merkezinde yer alan, root yetkileriyle arka planda çalışan ve donanım kontrolünü soyutlayan çekirdek sistem servisidir (`src/omen-space-daemon/src/main.rs`).
+`omen-space-daemon`, OMEN Space ekosisteminin merkezinde yer alan, root yetkileriyle arka planda çalışan ve donanım kontrolünü soyutlayan çekirdek sistem servisidir (`src/victus-max-daemon/src/main.rs`).
 
 Daemon; Tokio asenkron çalışma zamanı üzerinde koşan, `zbus` kütüphanesiyle Linux System Bus üzerinde `org.hp.omen` adıyla yayın yapan mikroservis tabanlı bir mimariye sahiptir.
 

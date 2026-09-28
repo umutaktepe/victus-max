@@ -1,7 +1,7 @@
 # Komut Satırı Arayüzü (CLI & Scripting)
 
 ## Genel Bakış
-`omen-cli` (`src/omen-cli/`), terminal tutkunları ve otomasyon betikleri için tasarlanmış tam yetenekli, hızlı bir komut satırı arayüzüdür.
+`omen-cli` (`src/victus-max-cli/`), terminal tutkunları ve otomasyon betikleri için tasarlanmış tam yetenekli, hızlı bir komut satırı arayüzüdür.
 
 CLI, D-Bus üzerinden [[daemon-overview]] ile konuşarak grafik arayüzde ([[gui-application]]) yapılabilen tüm işlemleri saniyeler içinde terminalden gerçekleştirir.
 

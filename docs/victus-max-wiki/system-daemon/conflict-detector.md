@@ -1,7 +1,7 @@
 # Donanım Çakışma Dedektörü (Conflict Detector)
 
 ## Genel Bakış
-`ConflictDetector` (`src/omen-space-daemon/src/conflict_detector.rs`), sistemde OMEN Space ile aynı donanım yazmaçlarına (EC, MSR, SMU, WMI) müdahale edebilecek rakip süreçleri tespit eden koruma modülüdür.
+`ConflictDetector` (`src/victus-max-daemon/src/conflict_detector.rs`), sistemde OMEN Space ile aynı donanım yazmaçlarına (EC, MSR, SMU, WMI) müdahale edebilecek rakip süreçleri tespit eden koruma modülüdür.
 
 Daemon başlatıldığında ilk olarak bu modül devreye girer ve olası yarış durumlarını (race conditions) raporlar.
 

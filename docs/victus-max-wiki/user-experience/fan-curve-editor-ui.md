@@ -1,7 +1,7 @@
 # Etkileşimli Fan Eğrisi Düzenleyicisi (Fan Curve Editor UI)
 
 ## Genel Bakış
-`fan_curve_editor.rs` (`src/omen-gui/src/`), GTK4 `DrawingArea` üzerinde çalışan ve kullanıcının fare hareketleriyle sıcaklığa bağlı fan hız eğrilerini (spline) çizmesini sağlayan interaktif bir grafik bileşendir.
+`fan_curve_editor.rs` (`src/victus-max-gui/src/`), GTK4 `DrawingArea` üzerinde çalışan ve kullanıcının fare hareketleriyle sıcaklığa bağlı fan hız eğrilerini (spline) çizmesini sağlayan interaktif bir grafik bileşendir.
 
 ## Arayüz Yetenekleri ve Çizim Motoru
 

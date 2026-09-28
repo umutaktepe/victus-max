@@ -1,7 +1,7 @@
 # Oyun İçi Hızlı HUD Paneli (Quick HUD Overlay)
 
 ## Genel Bakış
-`omen-overlay` (`src/omen-overlay/`), tam ekran oyun oynarken oyuncunun masaüstüne dönmesine gerek kalmadan sıcaklıkları, fan hızlarını ve güç profillerini anlık izleyip değiştirmesini sağlayan hafif, yarı saydam bir GTK4 HUD bileşenidir.
+`omen-overlay` (`src/victus-max-overlay/`), tam ekran oyun oynarken oyuncunun masaüstüne dönmesine gerek kalmadan sıcaklıkları, fan hızlarını ve güç profillerini anlık izleyip değiştirmesini sağlayan hafif, yarı saydam bir GTK4 HUD bileşenidir.
 
 Topluluk katkısıyla mimariye eklenen bu özellik (`GDK_BACKEND=wayland` öncelikli), Linux gaming deneyimini Windows OMEN Gaming Hub'ın ötesine taşımaktadır.
 

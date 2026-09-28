@@ -1,10 +1,10 @@
-# OMEN Space Wiki Kronolojik İşlem Günlüğü (Log)
+# Victus Max Wiki Kronolojik İşlem Günlüğü (Log)
 
-Bu dosya, OMEN Space LLM Wiki bilgi tabanında gerçekleştirilen tüm modelleme, kaynak işleme (ingest), sorgulama (query) ve doğrulama (lint) adımlarının zamana göre sıralı (append-only) kayıt defteridir.
+Bu dosya, Victus Max LLM Wiki bilgi tabanında gerçekleştirilen tüm modelleme, kaynak işleme (ingest), sorgulama (query) ve doğrulama (lint) adımlarının zamana göre sıralı (append-only) kayıt defteridir.
 
 Kayıtlar standart Unix komutlarıyla filtrelenebilir formatta tutulur:
 ```bash
-grep "^## \[" docs/omen-space-wiki/log.md | tail -5
+grep "^## \[" docs/victus-max-wiki/log.md | tail -5
 ```
 
 ---
@@ -47,4 +47,17 @@ grep "^## \[" docs/omen-space-wiki/log.md | tail -5
   - Proje tekil bağımsız kök depoya (`/home/umutaktepe/victus-max`) taşındı, ikili dosyalar `victus-max*` olarak adlandırıldı.
 - **Mimari Karar:** [[adr-005-better-auto-proactive-fan-and-victus-max]]
 - **Test ve Doğrulama:** 46 birim ve entegrasyon testi eksiksiz geçti (`cargo test --workspace`).
+
+---
+
+## [2026-09-29] Refactor | Wiki Dizin Yeniden Adlandırma (victus-max-wiki)
+
+- **İşlem Türü:** Dokümantasyon ve Wiki Dizin Yeniden Yapılandırması
+- **Kapsam:** `docs/victus-max-wiki/`, `AGENTS.md`.
+- **Detaylar:**
+  - `docs/omen-space-wiki/` dizini `docs/victus-max-wiki/` olarak taşındı.
+  - `AGENTS.md` (LLM Wiki Sözleşmesi) kuralları, başlığı ve yol referansları güncellendi.
+  - Wiki MOC (`index.md`) ve işlem günlüğü (`log.md`) başlık ve yol komutları Victus Max kimliğiyle uyumlu hale getirildi.
+- **Sistem Durumu:** Kararlı, graf bağlantıları ve Obsidian wikilink'leri eksiksiz korunuyor.
+
 

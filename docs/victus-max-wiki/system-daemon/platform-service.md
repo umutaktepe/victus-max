@@ -1,7 +1,7 @@
 # Platform ve Genel Donanım Servisi (Platform Service)
 
 ## Genel Bakış
-`PlatformService` (`src/omen-space-daemon/src/platform.rs`), HP Omen ve Victus cihazlarda genel donanım bakımını, pil sağlığı korumasını ve sistem tanı paketlerini yürüten servistir.
+`PlatformService` (`src/victus-max-daemon/src/platform.rs`), HP Omen ve Victus cihazlarda genel donanım bakımını, pil sağlığı korumasını ve sistem tanı paketlerini yürüten servistir.
 
 Servis, D-Bus üzerinde `org.hp.omen.Platform` arayüzünü sunar.
 

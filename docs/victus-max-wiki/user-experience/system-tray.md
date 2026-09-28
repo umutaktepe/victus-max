@@ -1,7 +1,7 @@
 # Sistem Tepsisi Uygulaması (System Tray)
 
 ## Genel Bakış
-`omen-tray` (`src/omen-tray/`), masaüstü panelinde (GNOME Tray / AppIndicator, KDE StatusNotifierItem) sessizce çalışan ve kullanıcının ana grafik arayüzünü açmadan temel donanım profillerini değiştirmesini sağlayan hafif bir araçtır.
+`omen-tray` (`src/victus-max-tray/`), masaüstü panelinde (GNOME Tray / AppIndicator, KDE StatusNotifierItem) sessizce çalışan ve kullanıcının ana grafik arayüzünü açmadan temel donanım profillerini değiştirmesini sağlayan hafif bir araçtır.
 
 ## Özellikler ve Menü Yapısı
 

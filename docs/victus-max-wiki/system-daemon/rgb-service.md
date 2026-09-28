@@ -1,7 +1,7 @@
 # RGB Aydınlatma ve Efekt Servisi
 
 ## Genel Bakış
-`RgbService` (`src/omen-space-daemon/src/rgb/mod.rs`), HP Omen ve Victus serisi dizüstü ve masaüstü bilgisayarlarda yer alan klavye, logo ve kasa aydınlatma donanımlarını yöneten sistem servisidir.
+`RgbService` (`src/victus-max-daemon/src/rgb/mod.rs`), HP Omen ve Victus serisi dizüstü ve masaüstü bilgisayarlarda yer alan klavye, logo ve kasa aydınlatma donanımlarını yöneten sistem servisidir.
 
 Servis, D-Bus üzerinde `org.hp.omen.Rgb` arayüzünü ([[rgb-dbus-interface]]) sunar ve alt katmanda [[hp-omen-extra-dkms]] kernel sürücüsü veya USB HID aygıtları ile haberleşir.
 

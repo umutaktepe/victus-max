@@ -1,7 +1,7 @@
 # GPU MUX Switch ve Ekran Yönlendirme Servisi
 
 ## Genel Bakış
-`MuxService` (`src/omen-space-daemon/src/mux.rs`), HP Omen dizüstü bilgisayarlarda yer alan donanımsal multiplexer (MUX) yongasını yöneten servistir.
+`MuxService` (`src/victus-max-daemon/src/mux.rs`), HP Omen dizüstü bilgisayarlarda yer alan donanımsal multiplexer (MUX) yongasını yöneten servistir.
 
 MUX Switch, dahili laptop ekran panelinin doğrudan harici NVIDIA GPU'ya (Ayrık / Discrete mod) mı yoksa işlemciye entegre iGPU'ya (Hibrit / Optimus mod) mı bağlanacağını belirler. Servis, D-Bus üzerinde `org.hp.omen.Mux` arayüzünü ([[mux-dbus-interface]]) sunar.
 

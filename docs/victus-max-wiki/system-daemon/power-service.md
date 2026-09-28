@@ -1,7 +1,7 @@
 # Güç Yönetimi ve Performans Profili Servisi
 
 ## Genel Bakış
-`PowerService` (`src/omen-space-daemon/src/power.rs`), cihazın termal ve elektriksel güç sınırlarını yöneten çekirdek arka plan bileşenidir.
+`PowerService` (`src/victus-max-daemon/src/power.rs`), cihazın termal ve elektriksel güç sınırlarını yöneten çekirdek arka plan bileşenidir.
 
 Servis, ACPI termal profillerini, Intel RAPL (Running Average Power Limit) paket sınırlarını ve NVIDIA GPU TGP güç bütçelerini tek bir çatı altında koordine eder. D-Bus üzerinde `org.hp.omen.Power` arayüzünü ([[power-dbus-interface]]) dinler.
 

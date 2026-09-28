@@ -1,7 +1,7 @@
 # OMEN Space Grafik Kullanıcı Arayüzü (GTK4 + Libadwaita)
 
 ## Genel Bakış
-`omen-gui` (`src/omen-gui/`), modern GNOME tasarım ilkelerine uygun olarak GTK4 ve Libadwaita kütüphaneleriyle geliştirilmiş birincil masaüstü kontrol merkezidir.
+`omen-gui` (`src/victus-max-gui/`), modern GNOME tasarım ilkelerine uygun olarak GTK4 ve Libadwaita kütüphaneleriyle geliştirilmiş birincil masaüstü kontrol merkezidir.
 
 [[adr-001-rust-daemon-client-split]] mimari kararı uyarınca tamamen unprivileged standart kullanıcı oturumunda çalışır ve donanımla `daemon_client.rs` üzerinden D-Bus ile haberleşir.
 

@@ -1,7 +1,7 @@
 # Fan Kontrol Servisi ve Termal Koruma Motoru
 
 ## Genel Bakış
-`FanService` (`src/omen-space-daemon/src/fan/mod.rs`), sistem fanlarının hızlarını, BIOS müdahalelerini, özel eğri interpolasyonlarını ve acil durum termal korumasını yöneten en kritik arka plan motorudur.
+`FanService` (`src/victus-max-daemon/src/fan/mod.rs`), sistem fanlarının hızlarını, BIOS müdahalelerini, özel eğri interpolasyonlarını ve acil durum termal korumasını yöneten en kritik arka plan motorudur.
 
 Servis, `org.hp.omen.Fan` D-Bus arayüzü ([[fan-dbus-interface]]) üzerinden istemcilerden gelen istekleri alır ve donanım katmanında [[embedded-controller-ec]] veya [[hp-wmi-driver]] kanallarına iletir.
 

@@ -3,7 +3,7 @@
 ## Genel Bakış
 HP Omen, Victus ve Transcend serisi onlarca farklı anakart mimarisine sahiptir. Her anakartın fan denetleyicisi, RGB bölgeleri, MUX switch donanımı ve undervolt kilitleri farklılık gösterir.
 
-OMEN Space, bu çeşitliliği yönetmek için `boards.json` (`src/omen-space-daemon/src/boards.json`) veri tabanını ve `capabilities.rs` (`src/omen-space-daemon/src/capabilities.rs`) motorunu kullanır.
+OMEN Space, bu çeşitliliği yönetmek için `boards.json` (`src/victus-max-daemon/src/boards.json`) veri tabanını ve `capabilities.rs` (`src/victus-max-daemon/src/capabilities.rs`) motorunu kullanır.
 
 ## Kabiliyet Sınıfları (`LinuxCapabilityClass`)
 

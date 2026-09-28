@@ -1,7 +1,7 @@
 # AMD Ryzen Güç ve Voltaj Optimizasyon Servisi
 
 ## Genel Bakış
-`RyzenService` (`src/omen-space-daemon/src/ryzen.rs`), AMD Ryzen işlemcili HP Omen ve Victus modellerinde gelişmiş güç ve voltaj optimizasyonunu yürüten servistir.
+`RyzenService` (`src/victus-max-daemon/src/ryzen.rs`), AMD Ryzen işlemcili HP Omen ve Victus modellerinde gelişmiş güç ve voltaj optimizasyonunu yürüten servistir.
 
 Servis, D-Bus üzerinde `org.hp.omen.Ryzen` arayüzünü ([[ryzen-dbus-interface]]) sunar ve donanım katmanında [[amd-ryzen-smu]] modülü üzerinden doğrudan SMU posta kutusuyla haberleşir.
 

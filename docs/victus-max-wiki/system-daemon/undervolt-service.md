@@ -1,7 +1,7 @@
 # Intel Undervolt ve Termal Kısıtlama Servisi
 
 ## Genel Bakış
-`UndervoltService` (`src/omen-space-daemon/src/undervolt.rs`), Intel işlemcili HP Omen ve Victus modellerinde çekirdek voltajını düşürerek termal kısmayı (thermal throttling) önleyen ve enerji verimliliğini artıran sistem servisidir.
+`UndervoltService` (`src/victus-max-daemon/src/undervolt.rs`), Intel işlemcili HP Omen ve Victus modellerinde çekirdek voltajını düşürerek termal kısmayı (thermal throttling) önleyen ve enerji verimliliğini artıran sistem servisidir.
 
 Servis, D-Bus üzerinde `org.hp.omen.Undervolt` arayüzünü ([[undervolt-dbus-interface]]) sunar ve donanım yazmaçlarına doğrudan [[cpu-msr-undervolt]] modülü üzerinden erişir.
 
