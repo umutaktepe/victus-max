@@ -29,6 +29,10 @@ pub trait Fan {
     async fn get_fan_mode(&self) -> zbus::Result<String>;
     async fn get_fan_info(&self) -> zbus::Result<String>;
     async fn save_custom_curve(&self, curve_json: &str) -> zbus::Result<String>;
+    async fn get_min_fan_rpm(&self) -> zbus::Result<u32>;
+    async fn set_min_fan_rpm(&self, rpm: u32) -> zbus::Result<bool>;
+    async fn get_acoustic_ceiling(&self) -> zbus::Result<u32>;
+    async fn set_acoustic_ceiling(&self, level: u32) -> zbus::Result<bool>;
 }
 
 #[proxy(

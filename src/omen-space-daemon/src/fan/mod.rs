@@ -1206,13 +1206,19 @@ impl FanService {
         let mut config = config_manager.load().await;
         config.fan_mode = mode_to_save;
         config.custom_curve = custom_curve_json;
+        if config.min_fan_rpm < 2000 || config.min_fan_rpm > 3500 {
+            config.min_fan_rpm = crate::config::default_min_fan_rpm();
+        }
+        if config.acoustic_ceiling < 3 || config.acoustic_ceiling > 8 {
+            config.acoustic_ceiling = crate::config::default_acoustic_ceiling();
+        }
         config_manager.save(&config).await;
     }
 }
 
 #[interface(name = "org.hp.omen.Fan")]
 impl FanService {
-    async fn get_fan_info(&self) -> String {
+    pub async fn get_fan_info(&self) -> String {
         let state = self.state.lock().await;
         let mut fans_data = serde_json::Map::new();
         
@@ -1252,7 +1258,9 @@ impl FanService {
             "supports_custom": supports_custom,
             "custom_curve": state.custom_curve_json,
             "fans": fans_data,
-            "thermal_protection": thermal_protection
+            "thermal_protection": thermal_protection,
+            "min_fan_rpm": state.min_fan_rpm,
+            "acoustic_ceiling": state.acoustic_ceiling
         });
         
         serde_json::to_string(&info).unwrap_or_else(|_| "{}".to_string())
@@ -1354,6 +1362,50 @@ impl FanService {
             .checked_sub(std::time::Duration::from_secs(100))
             .unwrap_or_else(std::time::Instant::now);
         "OK".to_string()
+    }
+
+    pub async fn get_min_fan_rpm(&self) -> u32 {
+        let state = self.state.lock().await;
+        state.min_fan_rpm
+    }
+
+    pub async fn set_min_fan_rpm(&self, rpm: u32) -> bool {
+        let clamped = rpm.clamp(2000, 3500);
+        let now = std::time::Instant::now();
+        {
+            let mut state = self.state.lock().await;
+            state.min_fan_rpm = clamped;
+            state.better_auto_last_apply = now
+                .checked_sub(std::time::Duration::from_secs(100))
+                .unwrap_or(now);
+        }
+        let config_manager = crate::config::ConfigManager::new();
+        let mut config = config_manager.load().await;
+        config.min_fan_rpm = clamped;
+        config_manager.save(&config).await;
+        true
+    }
+
+    pub async fn get_acoustic_ceiling(&self) -> u32 {
+        let state = self.state.lock().await;
+        state.acoustic_ceiling as u32
+    }
+
+    pub async fn set_acoustic_ceiling(&self, level: u32) -> bool {
+        let clamped = level.clamp(3, 8);
+        let now = std::time::Instant::now();
+        {
+            let mut state = self.state.lock().await;
+            state.acoustic_ceiling = clamped as usize;
+            state.better_auto_last_apply = now
+                .checked_sub(std::time::Duration::from_secs(100))
+                .unwrap_or(now);
+        }
+        let config_manager = crate::config::ConfigManager::new();
+        let mut config = config_manager.load().await;
+        config.acoustic_ceiling = clamped as usize;
+        config_manager.save(&config).await;
+        true
     }
     
     #[zbus(signal)]

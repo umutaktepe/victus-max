@@ -361,3 +361,94 @@ async fn test_profile_change_resets_cooldown_and_applies_ceiling() {
     }
 }
 
+#[tokio::test]
+async fn test_fan_service_min_fan_rpm_dbus() {
+    let state = FanState::default();
+    let state_arc = Arc::new(Mutex::new(state));
+    let service = FanService::new_with_state(state_arc.clone());
+
+    // Initial default check
+    assert_eq!(service.get_min_fan_rpm().await, 2600);
+
+    // Normal valid set
+    let ok = service.set_min_fan_rpm(3000).await;
+    assert!(ok);
+    assert_eq!(service.get_min_fan_rpm().await, 3000);
+    {
+        let st = state_arc.lock().await;
+        assert_eq!(st.min_fan_rpm, 3000);
+        let now = Instant::now();
+        assert!(now.duration_since(st.better_auto_last_apply).as_secs() >= 90);
+    }
+
+    // Clamping below lower bound (2000)
+    let ok = service.set_min_fan_rpm(1500).await;
+    assert!(ok);
+    assert_eq!(service.get_min_fan_rpm().await, 2000);
+    assert_eq!(state_arc.lock().await.min_fan_rpm, 2000);
+
+    // Clamping above upper bound (3500)
+    let ok = service.set_min_fan_rpm(4200).await;
+    assert!(ok);
+    assert_eq!(service.get_min_fan_rpm().await, 3500);
+    assert_eq!(state_arc.lock().await.min_fan_rpm, 3500);
+}
+
+#[tokio::test]
+async fn test_fan_service_acoustic_ceiling_dbus() {
+    let state = FanState::default();
+    let state_arc = Arc::new(Mutex::new(state));
+    let service = FanService::new_with_state(state_arc.clone());
+
+    // Initial default check
+    assert_eq!(service.get_acoustic_ceiling().await, 5);
+
+    // Normal valid set
+    let ok = service.set_acoustic_ceiling(7).await;
+    assert!(ok);
+    assert_eq!(service.get_acoustic_ceiling().await, 7);
+    {
+        let st = state_arc.lock().await;
+        assert_eq!(st.acoustic_ceiling, 7);
+        let now = Instant::now();
+        assert!(now.duration_since(st.better_auto_last_apply).as_secs() >= 90);
+    }
+
+    // Clamping below lower bound (3)
+    let ok = service.set_acoustic_ceiling(1).await;
+    assert!(ok);
+    assert_eq!(service.get_acoustic_ceiling().await, 3);
+    assert_eq!(state_arc.lock().await.acoustic_ceiling, 3);
+
+    // Clamping above upper bound (8)
+    let ok = service.set_acoustic_ceiling(12).await;
+    assert!(ok);
+    assert_eq!(service.get_acoustic_ceiling().await, 8);
+    assert_eq!(state_arc.lock().await.acoustic_ceiling, 8);
+}
+
+#[tokio::test]
+async fn test_fan_service_info_payload_includes_min_rpm_and_ceiling() {
+    let mut state = FanState::default();
+    state.min_fan_rpm = 2800;
+    state.acoustic_ceiling = 6;
+    let state_arc = Arc::new(Mutex::new(state));
+    let service = FanService::new_with_state(state_arc.clone());
+
+    let info_str = service.get_fan_info().await;
+    let json: serde_json::Value = serde_json::from_str(&info_str).expect("Valid JSON");
+
+    assert_eq!(json["min_fan_rpm"], 2800);
+    assert_eq!(json["acoustic_ceiling"], 6);
+
+    // After updating via D-Bus methods, payload should reflect new values
+    service.set_min_fan_rpm(3200).await;
+    service.set_acoustic_ceiling(4).await;
+
+    let updated_info_str = service.get_fan_info().await;
+    let updated_json: serde_json::Value = serde_json::from_str(&updated_info_str).expect("Valid JSON");
+
+    assert_eq!(updated_json["min_fan_rpm"], 3200);
+    assert_eq!(updated_json["acoustic_ceiling"], 4);
+}
+
