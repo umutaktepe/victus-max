@@ -343,7 +343,7 @@ pub fn build_page(window: &adw::ApplicationWindow, on_lang_changed: Option<Rc<dy
     let u_ceil = updating_fan.clone();
     acoustic_ceiling_row.connect_selected_notify(move |row| {
         if !u_ceil.get() {
-            crate::daemon_client::set_acoustic_ceiling_sync((row.selected() + 3) as u32);
+            crate::daemon_client::set_acoustic_ceiling_sync(row.selected() + 3);
         }
     });
 
@@ -357,7 +357,7 @@ pub fn build_page(window: &adw::ApplicationWindow, on_lang_changed: Option<Rc<dy
             u_load.set(false);
         }
         if let Ok(ceiling) = crate::daemon_client::get_acoustic_ceiling_async().await {
-            if ceiling >= 3 && ceiling <= 8 {
+            if (3..=8).contains(&ceiling) {
                 u_load.set(true);
                 ceiling_clone.set_selected(ceiling - 3);
                 u_load.set(false);

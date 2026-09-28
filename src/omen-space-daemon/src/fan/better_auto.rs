@@ -112,6 +112,7 @@ pub fn compute_better_auto_level(
 /// Interpolates between `min_rpm` and each fan's `max_rpm` across 7 step intervals:
 /// - Level 1 = `min_rpm`
 /// - Level 8 = `max_rpm`
+///
 /// If `max_rpm <= min_rpm`, safely returns `max_rpm`.
 pub fn calculate_target_rpms(
     level: usize,
