@@ -1342,11 +1342,12 @@ impl FanService {
 
     pub async fn notify_power_profile(&self, profile: String) -> String {
         let mut state = self.state.lock().await;
+        let normalized = normalize_profile(&profile);
         info!(
-            "Notified of power profile change to '{}': resetting Better Auto hysteresis & cooldown",
-            profile
+            "Notified of power profile change to '{}' (normalized: '{}'): resetting Better Auto hysteresis & cooldown",
+            profile, normalized
         );
-        state.last_power_profile = profile;
+        state.last_power_profile = normalized;
         state.better_auto_cooldown_level = 0;
         state.better_auto_cooldown_until = std::time::Instant::now();
         state.better_auto_last_apply = std::time::Instant::now()
