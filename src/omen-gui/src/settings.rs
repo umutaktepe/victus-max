@@ -311,6 +311,63 @@ pub fn build_page(window: &adw::ApplicationWindow, on_lang_changed: Option<Rc<dy
         .title(i18n::t("fan_control_group"))
         .build();
 
+    let min_fan_rpm_row = adw::SpinRow::with_range(2000.0, 3500.0, 100.0);
+    min_fan_rpm_row.set_title(i18n::t("setting_min_fan_rpm"));
+    min_fan_rpm_row.set_subtitle(i18n::t("setting_min_fan_rpm_sub"));
+    min_fan_rpm_row.set_value(2600.0);
+
+    let acoustic_model = gtk::StringList::new(&[
+        "Seviye 3 (~3100 RPM - Süper Sessiz)",
+        "Seviye 4 (~3500 RPM - Çok Sessiz)",
+        "Seviye 5 (~3900 RPM - Dengeli / Varsayılan)",
+        "Seviye 6 (~4300 RPM - Güçlü Soğutma)",
+        "Seviye 7 (~4800 RPM - Yüksek Performans)",
+        "Seviye 8 (~5800 RPM - Tam Açık)",
+    ]);
+    let acoustic_ceiling_row = adw::ComboRow::builder()
+        .title(i18n::t("setting_acoustic_ceiling"))
+        .subtitle(i18n::t("setting_acoustic_ceiling_sub"))
+        .model(&acoustic_model)
+        .selected(2)
+        .build();
+
+    let updating_fan = Rc::new(std::cell::Cell::new(false));
+
+    let u_rpm = updating_fan.clone();
+    min_fan_rpm_row.connect_notify_local(Some("value"), move |row, _| {
+        if !u_rpm.get() {
+            crate::daemon_client::set_min_fan_rpm_sync(row.value() as u32);
+        }
+    });
+
+    let u_ceil = updating_fan.clone();
+    acoustic_ceiling_row.connect_selected_notify(move |row| {
+        if !u_ceil.get() {
+            crate::daemon_client::set_acoustic_ceiling_sync((row.selected() + 3) as u32);
+        }
+    });
+
+    let min_rpm_clone = min_fan_rpm_row.clone();
+    let ceiling_clone = acoustic_ceiling_row.clone();
+    let u_load = updating_fan.clone();
+    glib::spawn_future_local(async move {
+        if let Ok(rpm) = crate::daemon_client::get_min_fan_rpm_async().await {
+            u_load.set(true);
+            min_rpm_clone.set_value(rpm as f64);
+            u_load.set(false);
+        }
+        if let Ok(ceiling) = crate::daemon_client::get_acoustic_ceiling_async().await {
+            if ceiling >= 3 && ceiling <= 8 {
+                u_load.set(true);
+                ceiling_clone.set_selected(ceiling - 3);
+                u_load.set(false);
+            }
+        }
+    });
+
+    fan_control_group.add(&min_fan_rpm_row);
+    fan_control_group.add(&acoustic_ceiling_row);
+
     let fan_clean_row = adw::ActionRow::builder()
         .title(i18n::t("fan_cleaning_title"))
         .subtitle(i18n::t("fan_cleaning_sub"))

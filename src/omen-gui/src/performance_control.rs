@@ -162,9 +162,10 @@ pub fn build_page() -> gtk::Box {
         .column_spacing(12)
         .build();
 
-    let (auto_btn, auto_wrap)     = build_fan_chip_card(&crate::asset_resolver::get_asset_path("balanced.svg"),    i18n::t("fan_auto"),   i18n::t("fan_auto_sub"));
-    let (max_btn, max_wrap)       = build_fan_chip_card(&crate::asset_resolver::get_asset_path("performance.svg"), i18n::t("fan_max"),    i18n::t("fan_max_sub"));
-    let (custom_btn, custom_wrap) = build_fan_chip_card(&crate::asset_resolver::get_asset_path("custom.svg"),      i18n::t("fan_custom"), i18n::t("fan_custom_sub"));
+    let (auto_btn, auto_wrap)               = build_fan_chip_card(&crate::asset_resolver::get_asset_path("balanced.svg"),    i18n::t("fan_auto"),        i18n::t("fan_auto_sub"));
+    let (better_auto_btn, better_auto_wrap) = build_fan_chip_card(&crate::asset_resolver::get_asset_path("better_auto.svg"), i18n::t("fan_better_auto"), i18n::t("fan_better_auto_sub"));
+    let (max_btn, max_wrap)                 = build_fan_chip_card(&crate::asset_resolver::get_asset_path("performance.svg"), i18n::t("fan_max"),         i18n::t("fan_max_sub"));
+    let (custom_btn, custom_wrap)           = build_fan_chip_card(&crate::asset_resolver::get_asset_path("custom.svg"),      i18n::t("fan_custom"),      i18n::t("fan_custom_sub"));
 
     let current_fan = crate::daemon_client::get_fan_mode_sync();
     if current_fan == "max" {
@@ -173,15 +174,24 @@ pub fn build_page() -> gtk::Box {
         custom_btn.set_active(true);
     } else if current_fan == "ec" {
         ec_btn.set_active(true);
+    } else if current_fan == "better_auto" || current_fan == "better-auto" {
+        better_auto_btn.set_active(true);
     } else {
         auto_btn.set_active(true);
     }
+    better_auto_btn.set_group(Some(&auto_btn));
     max_btn.set_group(Some(&auto_btn));
     custom_btn.set_group(Some(&auto_btn));
     ec_btn.set_group(Some(&auto_btn));
 
     let u4 = updating_ext.clone();
     auto_btn.connect_toggled(move |btn| { if btn.is_active() && !u4.get() { daemon_client::set_fan_mode_sync("auto".to_string()); } });
+    let u_ba = updating_ext.clone();
+    better_auto_btn.connect_toggled(move |btn| {
+        if btn.is_active() && !u_ba.get() {
+            daemon_client::set_fan_mode_sync("better_auto".to_string());
+        }
+    });
     let u5 = updating_ext.clone();
     max_btn.connect_toggled(move |btn| { if btn.is_active() && !u5.get() { daemon_client::set_fan_mode_sync("max".to_string()); } });
     let u6 = updating_ext.clone();
@@ -193,6 +203,7 @@ pub fn build_page() -> gtk::Box {
         let bal_c = bal_btn.clone();
         let perf_c = perf_btn.clone();
         let auto_c = auto_btn.clone();
+        let better_auto_c = better_auto_btn.clone();
         let max_c = max_btn.clone();
         let custom_c = custom_btn.clone();
         let ec_c = ec_btn.clone();
@@ -208,6 +219,7 @@ pub fn build_page() -> gtk::Box {
             let bal_c2 = bal_c.clone();
             let perf_c2 = perf_c.clone();
             let auto_c2 = auto_c.clone();
+            let better_auto_c2 = better_auto_c.clone();
             let max_c2 = max_c.clone();
             let custom_c2 = custom_c.clone();
             let ec_c2 = ec_c.clone();
@@ -231,6 +243,8 @@ pub fn build_page() -> gtk::Box {
                     if !custom_c2.is_active() { custom_c2.set_active(true); }
                 } else if f_lower == "ec" {
                     if !ec_c2.is_active() { ec_c2.set_active(true); }
+                } else if f_lower == "better_auto" || f_lower == "better-auto" {
+                    if !better_auto_c2.is_active() { better_auto_c2.set_active(true); }
                 } else {
                     if !auto_c2.is_active() { auto_c2.set_active(true); }
                 }
@@ -250,6 +264,7 @@ pub fn build_page() -> gtk::Box {
     }
 
     fan_box.insert(&auto_wrap, -1);
+    fan_box.insert(&better_auto_wrap, -1);
     fan_box.insert(&max_wrap, -1);
     fan_box.insert(&custom_wrap, -1);
 

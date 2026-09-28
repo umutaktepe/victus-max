@@ -500,6 +500,40 @@ pub async fn get_fan_info_async() -> Result<String, Box<dyn std::error::Error>> 
     Ok(res)
 }
 
+pub fn set_min_fan_rpm_sync(rpm: u32) {
+    let rt = get_runtime();
+    rt.spawn(async move {
+        if let Ok(conn) = get_conn().await {
+            if let Ok(proxy) = FanProxy::new(&conn).await {
+                let _ = proxy.set_min_fan_rpm(rpm).await;
+            }
+        }
+    });
+}
+
+pub async fn get_min_fan_rpm_async() -> Result<u32, Box<dyn std::error::Error>> {
+    let conn = get_conn().await?;
+    let proxy = FanProxy::new(&conn).await?;
+    Ok(proxy.get_min_fan_rpm().await?)
+}
+
+pub fn set_acoustic_ceiling_sync(level: u32) {
+    let rt = get_runtime();
+    rt.spawn(async move {
+        if let Ok(conn) = get_conn().await {
+            if let Ok(proxy) = FanProxy::new(&conn).await {
+                let _ = proxy.set_acoustic_ceiling(level).await;
+            }
+        }
+    });
+}
+
+pub async fn get_acoustic_ceiling_async() -> Result<u32, Box<dyn std::error::Error>> {
+    let conn = get_conn().await?;
+    let proxy = FanProxy::new(&conn).await?;
+    Ok(proxy.get_acoustic_ceiling().await?)
+}
+
 // ── Mux wrappers ─────────────────────────────────────────────────────────────
 
 pub fn set_gpu_mode_sync(mode: String) {

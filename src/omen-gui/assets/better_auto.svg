@@ -1,0 +1,32 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <linearGradient id="betterAutoGrad" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#22D3EE"/>
+            <stop offset="0.5" stop-color="#38BDF8"/>
+            <stop offset="1" stop-color="#A855F7"/>
+        </linearGradient>
+        <linearGradient id="bladeGrad" x1="8" y1="8" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#06B6D4"/>
+            <stop offset="1" stop-color="#8B5CF6"/>
+        </linearGradient>
+        <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="4" result="blur"/>
+            <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+        </filter>
+    </defs>
+    <!-- Outer Smart Halo & Circuit Nodes -->
+    <circle cx="24" cy="24" r="20" stroke="url(#betterAutoGrad)" stroke-width="1.5" stroke-dasharray="4 8" opacity="0.6"/>
+    <!-- Dynamic Aerodynamic Fan Turbine -->
+    <path d="M24 24C24 13 30 7 38 7C34 16 30 21 24 24Z" fill="url(#bladeGrad)" filter="url(#glow)"/>
+    <path d="M24 24C35 24 41 30 41 38C32 34 27 30 24 24Z" fill="url(#bladeGrad)" filter="url(#glow)"/>
+    <path d="M24 24C24 35 18 41 10 41C14 32 18 27 24 24Z" fill="url(#bladeGrad)" filter="url(#glow)"/>
+    <path d="M24 24C13 24 7 18 7 10C16 14 21 18 24 24Z" fill="url(#bladeGrad)" filter="url(#glow)"/>
+    <!-- Blade Borders -->
+    <path d="M24 24C24 13 30 7 38 7C34 16 30 21 24 24Z" stroke="#E0E7FF" stroke-width="1" stroke-linejoin="round" opacity="0.9"/>
+    <path d="M24 24C35 24 41 30 41 38C32 34 27 30 24 24Z" stroke="#E0E7FF" stroke-width="1" stroke-linejoin="round" opacity="0.9"/>
+    <path d="M24 24C24 35 18 41 10 41C14 32 18 27 24 24Z" stroke="#E0E7FF" stroke-width="1" stroke-linejoin="round" opacity="0.9"/>
+    <path d="M24 24C13 24 7 18 7 10C16 14 21 18 24 24Z" stroke="#E0E7FF" stroke-width="1" stroke-linejoin="round" opacity="0.9"/>
+    <!-- Central AI Core / OMEN Diamond Motif -->
+    <path d="M24 18L29 24L24 30L19 24Z" fill="#C4B5FD" stroke="#FFFFFF" stroke-width="1.2"/>
+    <circle cx="24" cy="24" r="2" fill="#FFFFFF"/>
+</svg>
