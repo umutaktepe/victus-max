@@ -1,20 +1,23 @@
 [package]
-name = "omen-overlay"
+name = "victus-max-gui"
 version = "2.1.3"
 edition = "2021"
 
+default-run = "victus-max"
+
+[[bin]]
+name = "victus-max"
+path = "src/main.rs"
+
 [dependencies]
 gtk = { version = "0.7", package = "gtk4", features = ["v4_12"] }
-
 libadwaita = { version = "0.5", features = ["v1_4"] }
 glib = "0.18"
 tokio = { version = "1", features = ["full"] }
 zbus = "4.4"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-log = "0.4"
-env_logger = "0.10"
+glob = "0.3.4"
 libc = "0.2"
-clap = { version = "4.4", features = ["derive"] }
-futures = "0.3.34"
-omen-types = { version = "0.1.0", path = "../omen-types" }
+urlencoding = "2.1.3"
+omen-types = { version = "0.1.0", path = "../victus-max-types", package = "victus-max-types" }

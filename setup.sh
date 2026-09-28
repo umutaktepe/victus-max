@@ -280,41 +280,71 @@ do_install() {
         fi
     }
 
-    local daemon_bin=$(find_bin "omen-space-daemon")
-    local cli_bin=$(find_bin "omen-cli")
-    local tray_bin=$(find_bin "omen-tray")
-    local gui_bin=$(find_bin "omen-gui")
-    local overlay_bin=$(find_bin "omen-overlay")
+    local daemon_bin=$(find_bin "victus-max-daemon")
+    if [[ -z "$daemon_bin" ]]; then daemon_bin=$(find_bin "omen-space-daemon"); fi
+    local cli_bin=$(find_bin "victus-max-cli")
+    if [[ -z "$cli_bin" ]]; then cli_bin=$(find_bin "omen-cli"); fi
+    local tray_bin=$(find_bin "victus-max-tray")
+    if [[ -z "$tray_bin" ]]; then tray_bin=$(find_bin "omen-tray"); fi
+    local gui_bin=$(find_bin "victus-max")
+    if [[ -z "$gui_bin" ]]; then gui_bin=$(find_bin "victus-max-gui"); fi
+    if [[ -z "$gui_bin" ]]; then gui_bin=$(find_bin "omen-gui"); fi
+    local overlay_bin=$(find_bin "victus-max-overlay")
+    if [[ -z "$overlay_bin" ]]; then overlay_bin=$(find_bin "omen-overlay"); fi
 
-    rm -f /usr/libexec/omen-space/omen-space-daemon
-    cp "${daemon_bin:-target/release/omen-space-daemon}" /usr/libexec/omen-space/
-    rm -f /usr/bin/omen-cli
-    cp "${cli_bin:-target/release/omen-cli}" /usr/bin/
-    rm -f /usr/bin/omen-tray
-    cp "${tray_bin:-target/release/omen-tray}" /usr/bin/
-    rm -f /usr/bin/omen-gui
-    cp "${gui_bin:-target/release/omen-gui}" /usr/bin/
-    rm -f /usr/bin/omen-overlay
-    cp "${overlay_bin:-target/release/omen-overlay}" /usr/bin/
+    mkdir -p /usr/libexec/victus-max
+    mkdir -p /usr/libexec/omen-space
+    rm -f /usr/libexec/victus-max/victus-max-daemon /usr/libexec/omen-space/omen-space-daemon
+    cp "${daemon_bin:-target/release/victus-max-daemon}" /usr/libexec/victus-max/victus-max-daemon
+    ln -sf /usr/libexec/victus-max/victus-max-daemon /usr/libexec/omen-space/omen-space-daemon
+
+    rm -f /usr/bin/victus-max-cli /usr/bin/omen-cli
+    cp "${cli_bin:-target/release/victus-max-cli}" /usr/bin/victus-max-cli
+    ln -sf /usr/bin/victus-max-cli /usr/bin/omen-cli
+
+    rm -f /usr/bin/victus-max-tray /usr/bin/omen-tray
+    cp "${tray_bin:-target/release/victus-max-tray}" /usr/bin/victus-max-tray
+    ln -sf /usr/bin/victus-max-tray /usr/bin/omen-tray
+
+    rm -f /usr/bin/victus-max /usr/bin/victus-max-gui /usr/bin/omen-gui
+    cp "${gui_bin:-target/release/victus-max}" /usr/bin/victus-max
+    ln -sf /usr/bin/victus-max /usr/bin/victus-max-gui
+    ln -sf /usr/bin/victus-max /usr/bin/omen-gui
+
+    rm -f /usr/bin/victus-max-overlay /usr/bin/omen-overlay
+    cp "${overlay_bin:-target/release/victus-max-overlay}" /usr/bin/victus-max-overlay
+    ln -sf /usr/bin/victus-max-overlay /usr/bin/omen-overlay
 
     install -m 644 data/org.hp.omen.conf /etc/dbus-1/system.d/
+    install -m 644 data/victus-max-daemon.service /etc/systemd/system/
     install -m 644 data/omen-space-daemon.service /etc/systemd/system/
     install -m 644 data/sysusers.d/omen-space.conf /usr/lib/sysusers.d/
     install -m 644 data/99-omen-space.rules /usr/lib/udev/rules.d/
-    rm -f /usr/share/applications/omen-space.desktop /usr/share/applications/org.hp.OmenSpace.desktop
+    rm -f /usr/share/applications/omen-space.desktop /usr/share/applications/org.hp.OmenSpace.desktop /usr/share/applications/org.hp.VictusMax.desktop
+    cp data/org.hp.VictusMax.desktop /usr/share/applications/
     cp data/org.hp.OmenSpace.desktop /usr/share/applications/
     cp data/org.hp.OmenSpace.service /usr/share/dbus-1/services/
     mkdir -p /usr/share/icons/hicolor/512x512/apps
-    cp src/omen-gui/assets/omenspace.png /usr/share/icons/hicolor/512x512/apps/omenspace.png
-    cp src/omen-gui/assets/omenspace.png /usr/share/pixmaps/omenspace.png
+    mkdir -p /usr/share/victus-max/assets
+    mkdir -p /usr/share/omen-space/assets
+    if [[ -d "src/victus-max-gui/assets" ]]; then
+        cp src/victus-max-gui/assets/omenspace.png /usr/share/icons/hicolor/512x512/apps/omenspace.png
+        cp src/victus-max-gui/assets/omenspace.png /usr/share/pixmaps/omenspace.png
+        cp -r src/victus-max-gui/assets/* /usr/share/victus-max/assets/
+        cp -r src/victus-max-gui/assets/* /usr/share/omen-space/assets/
+    elif [[ -d "src/omen-gui/assets" ]]; then
+        cp src/omen-gui/assets/omenspace.png /usr/share/icons/hicolor/512x512/apps/omenspace.png
+        cp src/omen-gui/assets/omenspace.png /usr/share/pixmaps/omenspace.png
+        cp -r src/omen-gui/assets/* /usr/share/victus-max/assets/
+        cp -r src/omen-gui/assets/* /usr/share/omen-space/assets/
+    fi
     gtk-update-icon-cache -f -t /usr/share/icons/hicolor || true
-    cp -r src/omen-gui/assets/* /usr/share/omen-space/assets/
 
-    cat <<EOF > /etc/xdg/autostart/omenspace-tray.desktop
+    cat <<EOF > /etc/xdg/autostart/victus-max-tray.desktop
 [Desktop Entry]
-Name=OMEN SPACE Tray
-Comment=OMENSpace System Tray Icon
-Exec=/usr/bin/omen-tray
+Name=Victus Max Tray
+Comment=Victus Max System Tray Icon
+Exec=/usr/bin/victus-max-tray
 Icon=omenspace
 Terminal=false
 Type=Application

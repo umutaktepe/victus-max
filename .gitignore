@@ -49,3 +49,5 @@ dist/
 out/
 .next/
 src-tauri/target/
+.superpowers/
+references/

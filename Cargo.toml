@@ -1,10 +1,11 @@
 [workspace]
 members = [
-    "src/omen-space-daemon",
-    "src/omen-cli",
-    "src/omen-tray",
-    "src/omen-gui",
-    "src/omen-overlay", "src/omen-types",
+    "src/victus-max-daemon",
+    "src/victus-max-cli",
+    "src/victus-max-tray",
+    "src/victus-max-gui",
+    "src/victus-max-overlay",
+    "src/victus-max-types",
 ]
 resolver = "2"
 

@@ -1565,103 +1565,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "omen-cli"
-version = "2.1.3"
-dependencies = [
- "anyhow",
- "chrono",
- "clap 4.6.7",
- "comfy-table",
- "crossterm 0.27.0",
- "serde",
- "serde_json",
- "shlex 1.3.0",
- "tokio",
- "zbus",
-]
-
-[[package]]
-name = "omen-gui"
-version = "2.1.3"
-dependencies = [
- "glib",
- "glob",
- "gtk4",
- "libadwaita",
- "libc",
- "omen-types",
- "serde",
- "serde_json",
- "tokio",
- "urlencoding",
- "zbus",
-]
-
-[[package]]
-name = "omen-overlay"
-version = "2.1.3"
-dependencies = [
- "clap 4.6.7",
- "env_logger 0.10.2",
- "futures",
- "glib",
- "gtk4",
- "libadwaita",
- "libc",
- "log",
- "omen-types",
- "serde",
- "serde_json",
- "tokio",
- "zbus",
-]
-
-[[package]]
-name = "omen-space-daemon"
-version = "2.1.3"
-dependencies = [
- "env_logger 0.11.11",
- "evdev",
- "futures",
- "glob",
- "hidapi",
- "lazy_static",
- "libc",
- "log",
- "nvml-wrapper",
- "omen-types",
- "serde",
- "serde_json",
- "tokio",
- "zbus",
-]
-
-[[package]]
-name = "omen-tray"
-version = "2.1.3"
-dependencies = [
- "env_logger 0.10.2",
- "futures",
- "glib",
- "ksni",
- "libc",
- "log",
- "omen-types",
- "serde",
- "serde_json",
- "tokio",
- "zbus",
-]
-
-[[package]]
-name = "omen-types"
-version = "0.1.0"
-dependencies = [
- "serde",
- "zbus",
-]
-
-[[package]]
 name = "once_cell"
 version = "1.21.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2480,6 +2383,103 @@ name = "version_check"
 version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
+
+[[package]]
+name = "victus-max-cli"
+version = "2.1.3"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "clap 4.6.7",
+ "comfy-table",
+ "crossterm 0.27.0",
+ "serde",
+ "serde_json",
+ "shlex 1.3.0",
+ "tokio",
+ "zbus",
+]
+
+[[package]]
+name = "victus-max-daemon"
+version = "2.1.3"
+dependencies = [
+ "env_logger 0.11.11",
+ "evdev",
+ "futures",
+ "glob",
+ "hidapi",
+ "lazy_static",
+ "libc",
+ "log",
+ "nvml-wrapper",
+ "serde",
+ "serde_json",
+ "tokio",
+ "victus-max-types",
+ "zbus",
+]
+
+[[package]]
+name = "victus-max-gui"
+version = "2.1.3"
+dependencies = [
+ "glib",
+ "glob",
+ "gtk4",
+ "libadwaita",
+ "libc",
+ "serde",
+ "serde_json",
+ "tokio",
+ "urlencoding",
+ "victus-max-types",
+ "zbus",
+]
+
+[[package]]
+name = "victus-max-overlay"
+version = "2.1.3"
+dependencies = [
+ "clap 4.6.7",
+ "env_logger 0.10.2",
+ "futures",
+ "glib",
+ "gtk4",
+ "libadwaita",
+ "libc",
+ "log",
+ "serde",
+ "serde_json",
+ "tokio",
+ "victus-max-types",
+ "zbus",
+]
+
+[[package]]
+name = "victus-max-tray"
+version = "2.1.3"
+dependencies = [
+ "env_logger 0.10.2",
+ "futures",
+ "glib",
+ "ksni",
+ "libc",
+ "log",
+ "serde",
+ "serde_json",
+ "tokio",
+ "victus-max-types",
+ "zbus",
+]
+
+[[package]]
+name = "victus-max-types"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "zbus",
+]
 
 [[package]]
 name = "wasi"

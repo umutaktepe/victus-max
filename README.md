@@ -1,32 +1,36 @@
 <div align="center">
-  <img src="images/omenspace.png" alt="OMEN Space Logo" width="120" />
+  <img src="images/omenspace.png" alt="Victus Max Logo" width="120" />
 
-  # OMEN Space
+  # Victus Max
 
-  **The ultimate, lightweight Linux control center for HP Omen, Victus & Transcend.**  
-  *Written entirely in Rust for zero-overhead, native GTK4 performance.*
+  **The next-generation, lightweight Linux control center for HP Victus & OMEN laptops.**  
+  *Powered by proactive "Better Auto" cooling and written entirely in native Rust & GTK4.*
 
-  [![Version](https://img.shields.io/badge/Release-v2.1.2-red.svg?style=flat-square)](https://github.com/yunusemreyl/omen-space/releases)
+  [![Release](https://img.shields.io/badge/Release-v1.0.0--victus--max-blue.svg?style=flat-square)](https://github.com/umutaktepe/victus-max)
   [![License](https://img.shields.io/badge/License-GPL%203.0-green.svg?style=flat-square)](LICENSE)
   [![Platform](https://img.shields.io/badge/Platform-Linux-lightgrey.svg?style=flat-square)]()
   [![Built with Rust](https://img.shields.io/badge/Language-Rust-orange.svg?style=flat-square)]()
 </div>
 
-> **🎉 Special Thanks:** A huge shoutout to **[@aloshy0](https://github.com/aloshy0)** for the incredible "Quick HUD Overlay" PR! Your architectural design and contributions make OMEN Space the ultimate Linux gaming tool.
-
 ---
 
-## ✨ Features
+## ✨ Key Features
 
-OMEN Space provides everything you need to unlock the full potential of your laptop on Linux, without the bloat.
+Victus Max blends the best of `victus-control`'s proactive fan intelligence with `omen-space`'s native Rust performance and Libadwaita UI:
 
-- 🎛️ **Fan & Thermal Mastery:** Create custom Fan curve splines for near-silent operation without thermal throttling. Includes a dedicated **Fan Cleaning Mode**.
-- 🎮 **Quick HUD Overlay (Shift+F2):** Zero-latency in-game floating GTK4 HUD for instant fan and power mode switching, keeping you focused on the game.
-- ⚡ **Performance Profiles:** Seamlessly switch between `power-saver`, `balanced`, and `performance` ACPI/WMI modes.
-- 🚀 **Ryzen SMU & Undervolting:** Direct MSR-based undervolting, TCC offset control, GPU TGP limits, and AMD Ryzen SMU tuning.
-- 🎮 **MUX Switch:** Native Optimus / dGPU routing switching for maximum gaming performance.
-- 🌈 **RGB Studio:** Hardware-accelerated 4-Zone or Per-Key keyboard lighting with wave, breathing, cycle, and static effects.
-- 🔄 **Smart BIOS Checker:** Automatically checks HP servers for your specific motherboard's latest firmware.
+- 🧠 **Better Auto Proactive Cooling:**
+  - Workload-aware fan control that reacts to CPU/GPU load spikes *before* temperatures rise.
+  - 8-level dual-matrix calculation with upward/downward hysteresis to eliminate fan speed flutter and hunting.
+  - **Balanced Mode Fan Baseline:** Configurable minimum fan RPM defaulted to **2600 RPM** (2000–3500 RPM selectable in Settings).
+  - **Acoustic Ceiling:** User-adjustable maximum noise limit in Balanced mode (Levels 3–8 / ~3100–5800 RPM, default: Level 5 / ~3900 RPM).
+  - **Emergency Thermal Bypass:** Automatically jumps to 100% full speed at ≥88°C for guaranteed hardware protection.
+  - **Hardware EC Protection:** 10-second asynchronous stagger gap between Fan 1 and Fan 2 writes to prevent HP Embedded Controller bus collisions.
+- 🎛️ **Fan & Thermal Mastery:** Custom spline curves, fan speed overrides, and dedicated **Fan Cleaning Mode**.
+- 🎮 **Quick HUD Overlay (Shift+F2):** Zero-latency in-game floating GTK4 HUD for instant fan and power profile switching.
+- ⚡ **Performance Profiles:** Decoupled power and fan control (`power-saver`, `balanced`, and `performance` with GPU TGP limits).
+- 🚀 **Ryzen SMU & Undervolting:** Direct MSR undervolting, TCC offset control, GPU TGP limits, and AMD Ryzen SMU tuning.
+- 🌈 **RGB Studio:** Hardware-accelerated 4-Zone, 1-Zone, and Per-Key keyboard lighting.
+- 🖥️ **Rich CLI & D-Bus IPC:** Control everything via `victus-max-cli fan` and D-Bus interfaces.
 
 ---
 

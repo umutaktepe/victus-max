@@ -1,5 +1,5 @@
 [package]
-name = "omen-cli"
+name = "victus-max-cli"
 version = "2.1.3"
 edition = "2021"
 

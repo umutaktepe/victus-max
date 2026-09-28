@@ -1,7 +1,7 @@
 [Desktop Entry]
 Name=Victus Max
 Comment=Next-generation control center for HP Victus & OMEN laptops with Better Auto cooling
-Exec=omen-gui
+Exec=victus-max
 Icon=omenspace
 Terminal=false
 Type=Application
