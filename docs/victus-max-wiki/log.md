@@ -186,3 +186,12 @@ grep "^## \[" docs/victus-max-wiki/log.md | tail -5
   - `fan_curve_editor.rs` içerisinde pencere `adw::Window` + `adw::ToolbarView` + `adw::HeaderBar` yapısına dönüştürüldü; böylece pencere opak Adwaita zeminine (`@window_bg_color`), yerel Adwaita başlığına ve kapatma butonuna kavuştu.
   - Grafik çizim alanı `os-card` kart konteyneri içine alındı ve `cairo::Operator::Clear` kaldırılarak `Operator::Over` ile koyu kontrastlı şık bir grafik arka planı (`rgba(0,0,0,0.25)`) çizildi.
   - Aynı `Operator::Clear` temizliği `performance_control.rs` üzerindeki ana fan eğrisi çizicisine de uygulandı.
+
+---
+
+## [2026-09-29] Cleanup | images/omenspace.png Dosyasının Silinmesi
+
+- **İşlem Türü:** Görsel Varlık & Temizlik (Asset Cleanup)
+- **Kapsam:** `images/omenspace.png`.
+- **Detaylar:**
+  - `README.md` ve arayüz artık `images/victus-max.png` kullandığı için atıl ve mükerrer kalan eski logo dosyası `images/omenspace.png` depodan kaldırıldı.
