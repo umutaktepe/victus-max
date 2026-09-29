@@ -17,6 +17,8 @@ mod desktop_rgb_gui;
 mod updater;
 mod daemon_client;
 mod asset_resolver;
+#[cfg(test)]
+mod version_info_test;
 const APP_ID: &str = "org.hp.VictusMax";
 
 fn ensure_tray_running() {
