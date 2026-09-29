@@ -38,7 +38,8 @@ async fn sysfs_read_async(path: &str) -> Option<String> {
 
 // ── Config persistence ────────────────────────────────────────────────────────
 
-const CONFIG_PATH: &str = "/etc/omen-space/power.json";
+const CONFIG_PATH: &str = "/etc/victus-max/power.json";
+const LEGACY_CONFIG_PATH: &str = "/etc/omen-space/power.json";
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct PowerConfig {
@@ -72,6 +73,8 @@ impl Default for PowerConfig {
 impl PowerConfig {
     fn load() -> Self {
         if let Ok(data) = std::fs::read_to_string(CONFIG_PATH) {
+            serde_json::from_str(&data).unwrap_or_default()
+        } else if let Ok(data) = std::fs::read_to_string(LEGACY_CONFIG_PATH) {
             serde_json::from_str(&data).unwrap_or_default()
         } else {
             Self::default()

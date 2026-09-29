@@ -269,6 +269,9 @@ do_install() {
     echo "====================================="
     mkdir -p /usr/libexec/victus-max
     mkdir -p /etc/victus-max
+    mkdir -p /etc/victus-max/keymaps
+    mkdir -p /var/lib/victus-max-daemon
+    mkdir -p /var/lib/victus-max
     mkdir -p /etc/dbus-1/system.d
     mkdir -p /etc/systemd/system
     mkdir -p /usr/lib/sysusers.d

@@ -26,11 +26,13 @@ ProtectControlGroups=true
 RestrictNamespaces=true
 
 # Allow /sys writes for unprivileged fan/power control via udev rules
-# StateDirectory ensures /var/lib/victus-max-daemon/ is created by systemd so
-# fan_config.json can be written under ProtectSystem=strict
+# StateDirectory ensures /var/lib/victus-max-daemon/ and /var/lib/victus-max/ are created by systemd
+# ConfigurationDirectory ensures /etc/victus-max/ is created by systemd
 ProtectKernelTunables=no
-StateDirectory=victus-max-daemon
-ReadWritePaths=/sys /etc/victus-max /etc/omen-space /var/lib/victus-max-daemon
+StateDirectory=victus-max-daemon victus-max
+ConfigurationDirectory=victus-max
+ReadWritePaths=/sys -/etc/victus-max -/etc/omen-space -/var/lib/victus-max-daemon -/var/lib/victus-max -/var/lib/omen-space-daemon -/etc/udev/hwdb.d
 
 [Install]
 WantedBy=multi-user.target
+

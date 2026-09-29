@@ -23,7 +23,8 @@ use zbus::interface;
 use log::{info, warn};
 use glob::glob;
 
-const CONFIG_PATH: &str = "/etc/omen-space/platform.json";
+const CONFIG_PATH: &str = "/etc/victus-max/platform.json";
+const LEGACY_CONFIG_PATH: &str = "/etc/omen-space/platform.json";
 const HWDB_PATH: &str = "/etc/udev/hwdb.d/90-hp-keyboard-fixes.hwdb";
 
 // ── Config ─────────────────────────────────────────────────────────────────────
@@ -38,6 +39,8 @@ struct PlatformConfig {
 impl PlatformConfig {
     fn load() -> Self {
         if let Ok(data) = std::fs::read_to_string(CONFIG_PATH) {
+            serde_json::from_str(&data).unwrap_or_default()
+        } else if let Ok(data) = std::fs::read_to_string(LEGACY_CONFIG_PATH) {
             serde_json::from_str(&data).unwrap_or_default()
         } else {
             Self {

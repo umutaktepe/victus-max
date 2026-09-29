@@ -7,7 +7,8 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 use zbus::interface;
 
-const CONFIG_PATH: &str = "/etc/omen-space/ryzen.json";
+const CONFIG_PATH: &str = "/etc/victus-max/ryzen.json";
+const LEGACY_CONFIG_PATH: &str = "/etc/omen-space/ryzen.json";
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 struct RyzenConfig {
@@ -21,6 +22,8 @@ struct RyzenConfig {
 impl RyzenConfig {
     fn load() -> Self {
         if let Ok(data) = fs::read_to_string(CONFIG_PATH) {
+            serde_json::from_str(&data).unwrap_or_default()
+        } else if let Ok(data) = fs::read_to_string(LEGACY_CONFIG_PATH) {
             serde_json::from_str(&data).unwrap_or_default()
         } else {
             Self::default()

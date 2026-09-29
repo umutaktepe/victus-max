@@ -120,7 +120,7 @@ impl HidPerKeyWizard {
         let json_str = serde_json::to_string_pretty(&export_data).unwrap_or_default();
 
         // Write to system keymap dir & /tmp
-        let sys_keymap_path = format!("/etc/omen-space/keymaps/hid-perkey-map-{}.json", board_id);
+        let sys_keymap_path = format!("/etc/victus-max/keymaps/hid-perkey-map-{}.json", board_id);
         let tmp_keymap_path = "/tmp/hid-perkey-map.json".to_string();
 
         if let Some(parent) = Path::new(&sys_keymap_path).parent() {

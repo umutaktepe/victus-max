@@ -33,8 +33,11 @@ const VALID_MODES: &[&str] = &[
 const VALID_DIRECTIONS: &[&str] = &["ltr", "rtl"];
 
 // Config persistence
-const CONFIG_PATH: &str = "/etc/omen-space/rgb.json";
-const PER_KEY_MAP_PATH: &str = "/root/.config/omen-space/per_key_map.json";
+const CONFIG_PATH: &str = "/etc/victus-max/rgb.json";
+const LEGACY_CONFIG_PATH: &str = "/etc/omen-space/rgb.json";
+const PER_KEY_MAP_PATH: &str = "/etc/victus-max/per_key_map.json";
+const LEGACY_PER_KEY_MAP_PATH: &str = "/root/.config/omen-space/per_key_map.json";
+const LEGACY_PER_KEY_MAP_PATH_ETC: &str = "/etc/omen-space/per_key_map.json";
 
 // ── Hardware detection ─────────────────────────────────────────────────────────
 
@@ -407,7 +410,9 @@ impl Default for RgbConfig {
 
 impl RgbConfig {
     fn load() -> Self {
-        if let Ok(data) = std::fs::read_to_string(CONFIG_PATH) {
+        let raw = std::fs::read_to_string(CONFIG_PATH)
+            .or_else(|_| std::fs::read_to_string(LEGACY_CONFIG_PATH));
+        if let Ok(data) = raw {
             let mut cfg: Self = serde_json::from_str(&data).unwrap_or_default();
             // Validate mode
             if !VALID_MODES.contains(&cfg.mode.as_str()) {
@@ -511,7 +516,10 @@ impl RgbService {
     }
 
     fn load_per_key_map() -> HashMap<String, serde_json::Value> {
-        if let Ok(data) = std::fs::read_to_string(PER_KEY_MAP_PATH) {
+        let raw = std::fs::read_to_string(PER_KEY_MAP_PATH)
+            .or_else(|_| std::fs::read_to_string(LEGACY_PER_KEY_MAP_PATH))
+            .or_else(|_| std::fs::read_to_string(LEGACY_PER_KEY_MAP_PATH_ETC));
+        if let Ok(data) = raw {
             serde_json::from_str(&data).unwrap_or_default()
         } else {
             HashMap::new()

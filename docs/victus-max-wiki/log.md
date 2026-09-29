@@ -155,3 +155,19 @@ grep "^## \[" docs/victus-max-wiki/log.md | tail -5
   - `monitoring.rs` içerisindeki eski `omen-space-daemon` restart komutları `victus-max-daemon` olarak düzeltildi.
 
 
+
+---
+
+## [2026-09-29] Fix | Systemd Mount Namespacing Hatası (226/NAMESPACE) ve Konfigürasyon Yolları Geçişi
+
+- **İşlem Türü:** Sistem Servisi & Güvenlik Sandbox Düzeltmesi (Systematic Debugging)
+- **Kapsam:** `data/victus-max-daemon.service`, `setup.sh`, `src/victus-max-daemon/src/mux.rs`, `src/victus-max-daemon/src/platform.rs`, `src/victus-max-daemon/src/power.rs`, `src/victus-max-daemon/src/rgb/mod.rs`, `src/victus-max-daemon/src/ryzen.rs`, `src/victus-max-daemon/src/undervolt.rs`, `src/victus-max-daemon/src/hid_wizard.rs`.
+- **Kök Neden:**
+  - `data/victus-max-daemon.service` dosyasında `ReadWritePaths=` içinde `/etc/omen-space` yolu bulunuyordu ancak dosya sisteminde bu dizin bulunmadığı için systemd mount namespacing kurulumu `status=226/NAMESPACE` hatasıyla çöküyor ve servis başlatılamıyordu.
+- **Detaylar:**
+  - `data/victus-max-daemon.service` dosyasına `ConfigurationDirectory=victus-max` eklendi; `/etc/victus-max` dizini systemd tarafından otomatik oluşturulup yetkilendirildi.
+  - `ReadWritePaths=` altındaki tüm opsiyonel yollar (`-/etc/victus-max`, `-/etc/omen-space`, `-/var/lib/victus-max-daemon`, `-/var/lib/victus-max`, `-/var/lib/omen-space-daemon`, `-/etc/udev/hwdb.d`) systemd standardına uygun olarak `-` önekiyle tanımlandı (böylece mevcut olmayan yollar namespacing çökmesine yol açmayacak şekilde yoksayılıyor).
+  - Daemon altındaki tüm mikroservislerin (`mux`, `platform`, `power`, `rgb`, `ryzen`, `undervolt`, `hid_wizard`) birincil yapılandırma dosya yolları `/etc/victus-max/` altına taşındı; mevcut kullanıcı ayarları için eski yoldan okuma (fallback) korundu.
+  - `setup.sh` dosyasına `/etc/victus-max/keymaps` ve `/var/lib/victus-max-daemon` dizinlerinin kurulum anında oluşturulması eklendi.
+  - Workspace testleri (52/52) ve release derlemesi başarıyla tamamlandı.
+

@@ -23,7 +23,8 @@ use tokio::sync::Mutex;
 use zbus::interface;
 use log::{info, warn};
 
-const CONFIG_PATH: &str = "/etc/omen-space/undervolt.json";
+const CONFIG_PATH: &str = "/etc/victus-max/undervolt.json";
+const LEGACY_CONFIG_PATH: &str = "/etc/omen-space/undervolt.json";
 
 // Intel MSR addresses matching intel_undervolt.py ADDRESSES
 const MSR_VOLTAGE_OFFSETS: u64 = 0x150;
@@ -147,6 +148,8 @@ impl Default for UndervoltConfig {
 impl UndervoltConfig {
     fn load() -> Self {
         if let Ok(data) = std::fs::read_to_string(CONFIG_PATH) {
+            serde_json::from_str(&data).unwrap_or_default()
+        } else if let Ok(data) = std::fs::read_to_string(LEGACY_CONFIG_PATH) {
             serde_json::from_str(&data).unwrap_or_default()
         } else {
             Self::default()

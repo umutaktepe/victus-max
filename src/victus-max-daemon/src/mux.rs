@@ -19,7 +19,8 @@ use log::{info, warn};
 use glob::glob;
 
 const HP_WMI_GRAPHICS_MODE_PATH: &str = "/sys/devices/platform/hp-wmi/gpu_mux_mode";
-const CONFIG_PATH: &str = "/etc/omen-space/mux.json";
+const CONFIG_PATH: &str = "/etc/victus-max/mux.json";
+const LEGACY_CONFIG_PATH: &str = "/etc/omen-space/mux.json";
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct MuxConfig {
@@ -35,6 +36,8 @@ impl Default for MuxConfig {
 impl MuxConfig {
     fn load() -> Self {
         if let Ok(data) = std::fs::read_to_string(CONFIG_PATH) {
+            serde_json::from_str(&data).unwrap_or_default()
+        } else if let Ok(data) = std::fs::read_to_string(LEGACY_CONFIG_PATH) {
             serde_json::from_str(&data).unwrap_or_default()
         } else {
             Self::default()
