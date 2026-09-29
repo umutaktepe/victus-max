@@ -6,7 +6,7 @@ Requires=dbus.service systemd-logind.service
 [Service]
 Type=simple
 ExecStartPre=/bin/sleep 2
-ExecStart=/usr/libexec/omen-space/omen-space-daemon
+ExecStart=/usr/libexec/victus-max/victus-max-daemon
 Restart=on-failure
 RestartSec=3
 
@@ -26,11 +26,11 @@ ProtectControlGroups=true
 RestrictNamespaces=true
 
 # Allow /sys writes for unprivileged fan/power control via udev rules
-# StateDirectory ensures /var/lib/omen-space-daemon/ is created by systemd so
+# StateDirectory ensures /var/lib/victus-max-daemon/ is created by systemd so
 # fan_config.json can be written under ProtectSystem=strict (fixes #232)
 ProtectKernelTunables=no
-StateDirectory=omen-space-daemon
-ReadWritePaths=/sys /etc/omen-space /var/lib/omen-space-daemon
+StateDirectory=victus-max-daemon
+ReadWritePaths=/sys /etc/victus-max /etc/omen-space /var/lib/victus-max-daemon /var/lib/omen-space-daemon
 
 [Install]
 WantedBy=multi-user.target

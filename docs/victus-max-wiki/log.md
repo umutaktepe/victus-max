@@ -117,3 +117,15 @@ grep "^## \[" docs/victus-max-wiki/log.md | tail -5
   - Wiki dokümanlarındaki tüm eski "OMEN Space" ve "omenspace" adlandırmaları "Victus Max" olarak güncellendi; donanım uyumluluğu ve geriye dönük fallback dosya yolları (`/etc/omenspace/` ve `~/.config/omenspace/`) korundu.
   - D-Bus ve mimari belgelerinde `victus-max-types` ve `victus-max-daemon` isimleri tam olarak tutarlı hale getirildi.
 
+---
+
+## [2026-09-29] Fix | Systemd Servis Çakışması ve Kurulum Düzeltmesi
+
+- **İşlem Türü:** Hata Düzeltme & Dağıtım Standardizasyonu
+- **Kapsam:** `data/victus-max-daemon.service`, `setup.sh`, `PKGBUILD`.
+- **Detaylar:**
+  - `data/victus-max-daemon.service` birim dosyasındaki `ExecStart` yolu (`/usr/libexec/victus-max/victus-max-daemon`), `StateDirectory` ve `ReadWritePaths` dizinleri Victus Max'a uyarlandı.
+  - `setup.sh` ve `PKGBUILD` içerisinde `omen-space-daemon.service` dosyasının fiziksel bir kopya olarak yüklenmesi durduruldu; `Alias=omen-space-daemon.service` ile systemd sembolik bağına bırakıldı.
+  - Kurulum öncesinde var olan eski `omen-space-daemon.service` dosyasının temizlenmesi (`rm -f /etc/systemd/system/omen-space-daemon.service`) sağlanarak `Failed to enable unit: File already exists` hatası giderildi.
+  - `setup.sh` sonundaki servis başlatma ve doğrulama testleri `victus-max-daemon` ve `victus-max-cli` olarak güncellendi.
+

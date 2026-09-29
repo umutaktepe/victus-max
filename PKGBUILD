@@ -68,7 +68,7 @@ package() {
   # System configuration files
   cp data/org.hp.omen.conf "$pkgdir/etc/dbus-1/system.d/"
   cp data/victus-max-daemon.service "$pkgdir/usr/lib/systemd/system/"
-  cp data/omen-space-daemon.service "$pkgdir/usr/lib/systemd/system/"
+  ln -sf victus-max-daemon.service "$pkgdir/usr/lib/systemd/system/omen-space-daemon.service"
   cp data/sysusers.d/omen-space.conf "$pkgdir/usr/lib/sysusers.d/"
   cp data/99-omen-space.rules "$pkgdir/usr/lib/udev/rules.d/"
 

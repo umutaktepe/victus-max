@@ -249,9 +249,11 @@ do_install() {
     echo "====================================="
     echo " Stopping existing services"
     echo "====================================="
-    systemctl stop omen-space-daemon.service 2>/dev/null || true
-    killall omen-tray 2>/dev/null || true
-    killall omen-gui 2>/dev/null || true
+    systemctl stop victus-max-daemon.service omen-space-daemon.service 2>/dev/null || true
+    systemctl disable omen-space-daemon.service 2>/dev/null || true
+    killall victus-max-tray omen-tray 2>/dev/null || true
+    killall victus-max victus-max-gui omen-gui 2>/dev/null || true
+    killall victus-max-overlay omen-overlay 2>/dev/null || true
 
     echo "====================================="
     echo " Installing system files"
@@ -316,8 +318,8 @@ do_install() {
     ln -sf /usr/bin/victus-max-overlay /usr/bin/omen-overlay
 
     install -m 644 data/org.hp.omen.conf /etc/dbus-1/system.d/
+    rm -f /etc/systemd/system/omen-space-daemon.service
     install -m 644 data/victus-max-daemon.service /etc/systemd/system/
-    install -m 644 data/omen-space-daemon.service /etc/systemd/system/
     install -m 644 data/sysusers.d/omen-space.conf /usr/lib/sysusers.d/
     install -m 644 data/99-omen-space.rules /usr/lib/udev/rules.d/
     rm -f /usr/share/applications/omen-space.desktop /usr/share/applications/org.hp.OmenSpace.desktop /usr/share/applications/org.hp.VictusMax.desktop
@@ -378,30 +380,30 @@ EOF
     cd ..
 
     echo "====================================="
-    echo " Starting omen-space-daemon service"
+    echo " Starting victus-max-daemon service"
     echo "====================================="
     systemctl daemon-reload
     systemctl reload dbus || true
-    systemctl enable --now omen-space-daemon.service
+    systemctl enable --now victus-max-daemon.service
 
     echo "====================================="
     echo " Installation Complete!"
-    echo " Testing omen-cli connection to backend..."
+    echo " Testing victus-max-cli connection to backend..."
     echo "====================================="
     sleep 2 # Give daemon a moment to initialize on dbus
 
-    if /usr/bin/omen-cli system info; then
+    if /usr/bin/victus-max-cli system info 2>/dev/null || /usr/bin/omen-cli system info 2>/dev/null; then
         echo -e "\n✅ SUCCESS: CLI successfully communicated with the daemon!"
     else
-        echo -e "\n❌ ERROR: CLI failed to communicate with the daemon. Check 'systemctl status omen-space-daemon'."
+        echo -e "\n❌ ERROR: CLI failed to communicate with the daemon. Check 'systemctl status victus-max-daemon'."
     fi
 
-    if [ -n "$SUDO_USER" ] && [ -x /usr/bin/omen-tray ]; then
+    if [ -n "$SUDO_USER" ] && [ -x /usr/bin/victus-max-tray ]; then
         local user_id
         user_id=$(id -u "$SUDO_USER")
         if [ -d "/run/user/$user_id" ]; then
-            echo "Starting omen-tray for $SUDO_USER..."
-            su - "$SUDO_USER" -c "DISPLAY=${DISPLAY:-:0} WAYLAND_DISPLAY=${WAYLAND_DISPLAY:-wayland-0} XDG_RUNTIME_DIR=/run/user/$user_id /usr/bin/omen-tray >/dev/null 2>&1 &" || true
+            echo "Starting victus-max-tray for $SUDO_USER..."
+            su - "$SUDO_USER" -c "DISPLAY=${DISPLAY:-:0} WAYLAND_DISPLAY=${WAYLAND_DISPLAY:-wayland-0} XDG_RUNTIME_DIR=/run/user/$user_id /usr/bin/victus-max-tray >/dev/null 2>&1 &" || true
         fi
     fi
 
