@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="images/perf.png" alt="Victus Max Logo" width="120" style="border-radius: 20px;" />
+  <img src="images/victus-max.png" alt="Victus Max Logo" width="140" />
 
   # Victus Max
 

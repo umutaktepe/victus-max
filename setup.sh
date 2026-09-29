@@ -324,15 +324,19 @@ do_install() {
     cp data/org.hp.VictusMax.desktop /usr/share/applications/
     cp data/org.hp.OmenSpace.desktop /usr/share/applications/
     cp data/org.hp.OmenSpace.service /usr/share/dbus-1/services/
-    mkdir -p /usr/share/icons/hicolor/512x512/apps
-    mkdir -p /usr/share/victus-max/assets
-    mkdir -p /usr/share/omen-space/assets
+    mkdir -p /usr/share/pixmaps
+    if [[ -d "data/icons/hicolor" ]]; then
+        cp -r data/icons/hicolor/* /usr/share/icons/hicolor/
+    fi
     if [[ -d "src/victus-max-gui/assets" ]]; then
+        cp src/victus-max-gui/assets/victus-max.png /usr/share/icons/hicolor/512x512/apps/victus-max.png
+        cp src/victus-max-gui/assets/victus-max.png /usr/share/pixmaps/victus-max.png
         cp src/victus-max-gui/assets/omenspace.png /usr/share/icons/hicolor/512x512/apps/omenspace.png
         cp src/victus-max-gui/assets/omenspace.png /usr/share/pixmaps/omenspace.png
         cp -r src/victus-max-gui/assets/* /usr/share/victus-max/assets/
         cp -r src/victus-max-gui/assets/* /usr/share/omen-space/assets/
     elif [[ -d "src/omen-gui/assets" ]]; then
+        cp src/omen-gui/assets/victus-max.png /usr/share/icons/hicolor/512x512/apps/victus-max.png 2>/dev/null || true
         cp src/omen-gui/assets/omenspace.png /usr/share/icons/hicolor/512x512/apps/omenspace.png
         cp src/omen-gui/assets/omenspace.png /usr/share/pixmaps/omenspace.png
         cp -r src/omen-gui/assets/* /usr/share/victus-max/assets/
@@ -345,7 +349,7 @@ do_install() {
 Name=Victus Max Tray
 Comment=Victus Max System Tray Icon
 Exec=/usr/bin/victus-max-tray
-Icon=omenspace
+Icon=victus-max
 Terminal=false
 Type=Application
 Categories=Utility;
@@ -426,13 +430,19 @@ do_uninstall() {
     rm -f /usr/bin/omen-gui
     rm -f /usr/bin/omen-overlay
 
+    rm -rf /usr/share/victus-max
     rm -rf /usr/share/omen-space
+    rm -f /usr/share/applications/victus-max.desktop
+    rm -f /usr/share/applications/org.hp.VictusMax.desktop
     rm -f /usr/share/applications/omen-space.desktop
     rm -f /usr/share/applications/org.hp.OmenSpace.desktop
     rm -f /usr/share/dbus-1/services/org.hp.OmenSpace.service
+    rm -f /usr/share/pixmaps/victus-max.png
     rm -f /usr/share/pixmaps/omenspace.png
-    rm -f /usr/share/icons/hicolor/512x512/apps/omenspace.png
+    rm -f /usr/share/icons/hicolor/*/apps/victus-max.png
+    rm -f /usr/share/icons/hicolor/*/apps/omenspace.png
     gtk-update-icon-cache -f -t /usr/share/icons/hicolor || true
+    rm -f /etc/xdg/autostart/victus-max-tray.desktop
     rm -f /etc/xdg/autostart/omenspace-tray.desktop
 
     systemctl daemon-reload

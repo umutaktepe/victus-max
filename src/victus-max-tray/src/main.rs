@@ -47,7 +47,7 @@ fn acquire_single_instance_lock() -> Option<std::fs::File> {
 fn spawn_gui() {
     let spawned: Option<std::process::Child> = std::env::current_exe()
         .ok()
-        .and_then(|p| p.parent().map(|dir| dir.join("omen-gui")))
+        .and_then(|p| p.parent().map(|dir| dir.join("victus-max")))
         .and_then(|gui_path| {
             if gui_path.exists() {
                 Command::new(gui_path)
@@ -61,7 +61,24 @@ fn spawn_gui() {
             }
         })
         .or_else(|| {
-            Command::new("omen-gui")
+            std::env::current_exe()
+                .ok()
+                .and_then(|p| p.parent().map(|dir| dir.join("omen-gui")))
+                .and_then(|gui_path| {
+                    if gui_path.exists() {
+                        Command::new(gui_path)
+                            .stdin(std::process::Stdio::null())
+                            .stdout(std::process::Stdio::null())
+                            .stderr(std::process::Stdio::null())
+                            .spawn()
+                            .ok()
+                    } else {
+                        None
+                    }
+                })
+        })
+        .or_else(|| {
+            Command::new("victus-max")
                 .stdin(std::process::Stdio::null())
                 .stdout(std::process::Stdio::null())
                 .stderr(std::process::Stdio::null())
@@ -69,7 +86,15 @@ fn spawn_gui() {
                 .ok()
         })
         .or_else(|| {
-            Command::new("/usr/bin/omen-gui")
+            Command::new("/usr/bin/victus-max")
+                .stdin(std::process::Stdio::null())
+                .stdout(std::process::Stdio::null())
+                .stderr(std::process::Stdio::null())
+                .spawn()
+                .ok()
+        })
+        .or_else(|| {
+            Command::new("omen-gui")
                 .stdin(std::process::Stdio::null())
                 .stdout(std::process::Stdio::null())
                 .stderr(std::process::Stdio::null())
@@ -156,15 +181,15 @@ impl ksni::Tray for Tray {
     }
 
     fn icon_name(&self) -> String {
-        "omenspace".into()
+        "victus-max".into()
     }
 
     fn icon_theme_path(&self) -> String {
-        "/usr/share/omen-space/assets".into()
+        "/usr/share/victus-max/assets".into()
     }
 
     fn title(&self) -> String {
-        "OMEN SPACE".into()
+        "Victus Max".into()
     }
 
     fn tool_tip(&self) -> ksni::ToolTip {
@@ -184,9 +209,9 @@ impl ksni::Tray for Tray {
             _ => t("tt_gpu_hybrid"),
         };
         ksni::ToolTip {
-            title: "OMEN Space".into(),
+            title: "Victus Max".into(),
             description: format!("{}: {}\n{}: {}\n{}: {}", t("tt_power"), p_label, t("tt_fan"), f_label, t("tt_gpu"), g_label),
-            icon_name: "omenspace".into(),
+            icon_name: "victus-max".into(),
             ..Default::default()
         }
     }
@@ -203,7 +228,7 @@ impl ksni::Tray for Tray {
         vec![
             StandardItem {
                 label: t("tray_open").into(),
-                icon_name: "omenspace".into(),
+                icon_name: "victus-max".into(),
                 activate: Box::new(|_| {
                     spawn_gui();
                 }),

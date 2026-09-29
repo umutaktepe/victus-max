@@ -22,15 +22,21 @@ const APP_ID: &str = "org.hp.OmenSpace";
 fn ensure_tray_running() {
     let is_running = std::process::Command::new("pgrep")
         .arg("-x")
-        .arg("omen-tray")
+        .arg("victus-max-tray")
         .output()
         .map(|o| o.status.success() && !o.stdout.is_empty())
-        .unwrap_or(false);
+        .unwrap_or(false)
+        || std::process::Command::new("pgrep")
+            .arg("-x")
+            .arg("omen-tray")
+            .output()
+            .map(|o| o.status.success() && !o.stdout.is_empty())
+            .unwrap_or(false);
 
     if !is_running {
         let spawned = std::env::current_exe()
             .ok()
-            .and_then(|p| p.parent().map(|dir| dir.join("omen-tray")))
+            .and_then(|p| p.parent().map(|dir| dir.join("victus-max-tray")))
             .and_then(|tray_path| {
                 if tray_path.exists() {
                     std::process::Command::new(tray_path)
@@ -42,16 +48,40 @@ fn ensure_tray_running() {
                 } else {
                     None
                 }
+            })
+            .or_else(|| {
+                std::env::current_exe()
+                    .ok()
+                    .and_then(|p| p.parent().map(|dir| dir.join("omen-tray")))
+                    .and_then(|tray_path| {
+                        if tray_path.exists() {
+                            std::process::Command::new(tray_path)
+                                .stdin(std::process::Stdio::null())
+                                .stdout(std::process::Stdio::null())
+                                .stderr(std::process::Stdio::null())
+                                .spawn()
+                                .ok()
+                        } else {
+                            None
+                        }
+                    })
             });
 
         if spawned.is_none() {
-            let _ = std::process::Command::new("omen-tray")
+            let _ = std::process::Command::new("victus-max-tray")
                 .stdin(std::process::Stdio::null())
                 .stdout(std::process::Stdio::null())
                 .stderr(std::process::Stdio::null())
                 .spawn()
                 .or_else(|_| {
-                    std::process::Command::new("/usr/bin/omen-tray")
+                    std::process::Command::new("/usr/bin/victus-max-tray")
+                        .stdin(std::process::Stdio::null())
+                        .stdout(std::process::Stdio::null())
+                        .stderr(std::process::Stdio::null())
+                        .spawn()
+                })
+                .or_else(|_| {
+                    std::process::Command::new("omen-tray")
                         .stdin(std::process::Stdio::null())
                         .stdout(std::process::Stdio::null())
                         .stderr(std::process::Stdio::null())
@@ -64,15 +94,21 @@ fn ensure_tray_running() {
 fn ensure_overlay_running() {
     let is_running = std::process::Command::new("pgrep")
         .arg("-x")
-        .arg("omen-overlay")
+        .arg("victus-max-overlay")
         .output()
         .map(|o| o.status.success() && !o.stdout.is_empty())
-        .unwrap_or(false);
+        .unwrap_or(false)
+        || std::process::Command::new("pgrep")
+            .arg("-x")
+            .arg("omen-overlay")
+            .output()
+            .map(|o| o.status.success() && !o.stdout.is_empty())
+            .unwrap_or(false);
 
     if !is_running {
         let spawned = std::env::current_exe()
             .ok()
-            .and_then(|p| p.parent().map(|dir| dir.join("omen-overlay")))
+            .and_then(|p| p.parent().map(|dir| dir.join("victus-max-overlay")))
             .and_then(|overlay_path| {
                 if overlay_path.exists() {
                     std::process::Command::new(overlay_path)
@@ -85,17 +121,43 @@ fn ensure_overlay_running() {
                 } else {
                     None
                 }
+            })
+            .or_else(|| {
+                std::env::current_exe()
+                    .ok()
+                    .and_then(|p| p.parent().map(|dir| dir.join("omen-overlay")))
+                    .and_then(|overlay_path| {
+                        if overlay_path.exists() {
+                            std::process::Command::new(overlay_path)
+                                .arg("--daemon")
+                                .stdin(std::process::Stdio::null())
+                                .stdout(std::process::Stdio::null())
+                                .stderr(std::process::Stdio::null())
+                                .spawn()
+                                .ok()
+                        } else {
+                            None
+                        }
+                    })
             });
 
         if spawned.is_none() {
-            let _ = std::process::Command::new("omen-overlay")
+            let _ = std::process::Command::new("victus-max-overlay")
                 .arg("--daemon")
                 .stdin(std::process::Stdio::null())
                 .stdout(std::process::Stdio::null())
                 .stderr(std::process::Stdio::null())
                 .spawn()
                 .or_else(|_| {
-                    std::process::Command::new("/usr/bin/omen-overlay")
+                    std::process::Command::new("/usr/bin/victus-max-overlay")
+                        .arg("--daemon")
+                        .stdin(std::process::Stdio::null())
+                        .stdout(std::process::Stdio::null())
+                        .stderr(std::process::Stdio::null())
+                        .spawn()
+                })
+                .or_else(|_| {
+                    std::process::Command::new("omen-overlay")
                         .arg("--daemon")
                         .stdin(std::process::Stdio::null())
                         .stdout(std::process::Stdio::null())
@@ -120,6 +182,8 @@ fn main() {
         let display = gtk::gdk::Display::default().unwrap();
         let icon_theme = gtk::IconTheme::for_display(&display);
         icon_theme.add_search_path("assets");
+        icon_theme.add_search_path("src/victus-max-gui/assets");
+        icon_theme.add_search_path("/usr/share/victus-max/assets");
         icon_theme.add_search_path("/usr/share/omen-space/assets");
         
         let provider = gtk::CssProvider::new();
@@ -515,9 +579,9 @@ fn render_ui(window: &adw::ApplicationWindow, initial_page: &str) {
         .valign(gtk::Align::Center)
         .spacing(8)
         .build();
-    window.set_icon_name(Some("omenspace"));
-    header_logo_box.append(&gtk::Image::builder().icon_name("omenspace").pixel_size(24).build());
-    header_logo_box.append(&gtk::Label::builder().label("OMEN SPACE").css_classes(["title"]).build());
+    window.set_icon_name(Some("victus-max"));
+    header_logo_box.append(&gtk::Image::builder().icon_name("victus-max").pixel_size(24).build());
+    header_logo_box.append(&gtk::Label::builder().label("VICTUS MAX").css_classes(["title"]).build());
 
     let global_header = adw::HeaderBar::builder().title_widget(&header_logo_box).build();
     global_header.pack_start(&toggle_sidebar_btn);
