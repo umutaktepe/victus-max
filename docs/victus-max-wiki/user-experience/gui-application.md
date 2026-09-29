@@ -55,3 +55,4 @@ Ekran yönlendirmesini değiştirir ve yeniden başlatma onayı isteyen AdwDialo
 - D-Bus İstemcisi: [[dbus-ipc-protocol]]
 - Fan Editörü: [[fan-curve-editor-ui]]
 - Sistem Tepsisi: [[system-tray]]
+- Güncelleme Merkezi: [[updater-service]]

@@ -195,3 +195,19 @@ grep "^## \[" docs/victus-max-wiki/log.md | tail -5
 - **Kapsam:** `images/omenspace.png`.
 - **Detaylar:**
   - `README.md` ve arayüz artık `images/victus-max.png` kullandığı için atıl ve mükerrer kalan eski logo dosyası `images/omenspace.png` depodan kaldırıldı.
+
+---
+
+## [2026-09-29] Feature | GitHub Entegrasyonlu OTA Güncelleme ve Sürüm Mimarisi (ADR-006)
+
+- **İşlem Türü:** Özellik Ekleme, Güvenlik Politikası ve Mimari Dokümantasyon
+- **Kapsam:** `src/victus-max-gui/`, `scripts/`, `data/`, `.github/workflows/`, `setup.sh`, `docs/victus-max-wiki/`, `docs/gui.md`.
+- **Detaylar:**
+  - GUI Güncelleme Merkezinin GitHub REST API entegrasyonu tamamlandı; Canary (Git main) ve Stable (GitHub Releases) kanalları oluşturuldu.
+  - Kullanıcının kanal tercihi `~/.config/victus-max/settings.json` içerisine kalıcı konfigürasyon olarak bağlandı; tekrarlayan seçim zorunluluğu ortadan kaldırıldı.
+  - GitHub üzerinde henüz Release bulunmadığında 404 hatasını önleyen ve kullanıcıyı bilgilendirerek en son geliştirme commit'lerini gösteren sıfır-404 otomatik Canary fallback mekanizması eklendi.
+  - Root yetkisiyle çalışan bağımsız `/usr/libexec/victus-max/victus-max-updater` betiği ve `org.hp.victusmax.update` Polkit eylem politikası entegre edildi.
+  - GUI üzerinde gerçek zamanlı aşama takip çubuğu (`[STAGE:...]`) ve güncelleme sonrası tek tıkla yeniden başlatma butonu geliştirildi.
+  - GitHub Actions etiket tetiklemeli otomatik release iş akışı (`release.yml`) ve yerel sürüm yükseltme aracı (`scripts/release.sh`) hazırlandı; `setup.sh` önceden derlenmiş ikili paketleri algılayacak şekilde güncellendi.
+- **Mimari Karar:** [[adr-006-github-update-and-release-architecture]]
+

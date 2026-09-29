@@ -12,6 +12,7 @@ Sistem mimarisindeki temel teknik seçimler, gerekçeleri, değerlendirilen alte
 - [[adr-003-companion-dkms-driver-non-clashing]] — Stock `hp-wmi` çekirdek sürücüsüyle çakışmadan WMI GUID paylaşımı yapan yoldaş DKMS RGB modülü mimarisi.
 - [[adr-004-native-msr-and-smu-mailbox-tuning]] — Dış CLI araçlarına bağımlı kalmadan Intel MSR ve AMD SMU posta kutusu protokollerinin yerel Rust ile işletilmesi.
 - [[adr-005-better-auto-proactive-fan-and-victus-max]] — Proaktif Better Auto çift matrisli fan algoritması, 10s EC yazma aralığı, ayarlanabilir taban/tavan ve bağımsız Victus Max mimarisi.
+- [[adr-006-github-update-and-release-architecture]] — GitHub REST API entegrasyonu, kalıcı Canary/Stable kanal seçimi, sıfır-404 fallback ve Polkit ayrımıyla güvenli OTA güncelleme mimarisi.
 
 ---
 
@@ -70,6 +71,7 @@ Kullanıcı alanında (unprivileged) koşan grafik, komut satırı ve panel aray
 - [[system-tray]] — Masaüstü bildirim alanında çalışan hafif (<2MB) hızlı profil seçici ve gösterge simgesi.
 - [[command-line-interface]] — Terminal ve otomasyon betikleri için `victus-max-cli` (ve `omen-cli`) komut hiyerarşisi ve ASCII donanım bilgi çıktısı (`fetch`).
 - [[fan-curve-editor-ui]] — GTK4 DrawingArea üzerinde çalışan etkileşimli fan eğrisi ve spline çizim bileşeni.
+- [[updater-service]] — OTA güncelleme merkezi arayüzü, GitHub commit/release takibi, Polkit yetkilendirmeli güncelleme süreci ve aşamalı terminal görünümü.
 
 ---
 

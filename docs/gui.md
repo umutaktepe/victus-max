@@ -16,8 +16,12 @@ The graphical user interface for Victus Max is designed to be modern, responsive
 4. **Settings & Acoustic Controls:**
    - Provides intuitive spinners and combo boxes to fine-tune Better Auto's Minimum Fan RPM (2000–3500 RPM) and Acoustic Ceiling (Levels 3–8).
 5. **OTA Updates:**
-   - Connects to the GitHub API (`umutaktepe/victus-max`) to check for software releases.
-   - Triggers `fwupdmgr` to scan for HP BIOS and firmware updates natively.
+   - Features a dual-channel selector allowing users to switch between **Canary** (latest commits on the `main` branch) and **Stable** (official GitHub Releases).
+   - Channel preferences are persisted in `~/.config/victus-max/settings.json` across sessions.
+   - Built with a zero-404 fallback mechanism that gracefully falls back to the Canary branch if no official GitHub Releases are published yet, notifying the user with an in-app banner.
+   - Executes system-wide updates via an isolated Polkit action (`org.hp.victusmax.update`) and `/usr/libexec/victus-max/victus-max-updater`, keeping the GUI fully unprivileged.
+   - Provides live stage progress tracking (`[STAGE:...]`) with a percentage bar and collapsible terminal log viewer, plus a one-click restart button upon completion.
+   - Integrates `fwupdmgr` to scan for HP BIOS and firmware updates natively.
 
 ## Key Files
 
@@ -26,5 +30,6 @@ The graphical user interface for Victus Max is designed to be modern, responsive
 - `src/settings.rs`: Acoustic ceiling and minimum fan RPM controls.
 - `src/keyboardrgb/`: Color picker and lighting animation effect selector.
 - `src/monitoring.rs`: Real-time hardware telemetry gauges and CPU/GPU temperature meters.
-- `src/updater.rs`: Manages OTA release checks and HP BIOS scans.
+- `src/update_checker.rs`: Async GitHub REST API client, SemVer and commit comparison, zero-404 fallback handling, and persistent settings.json channel management.
+- `src/updater.rs`: Manages the OTA update center UI, Polkit pkexec updater invocation, live stage parsing, terminal stream display, and HP BIOS scans.
 - `src/i18n.rs`: Full bilingual localization (English and Turkish).
