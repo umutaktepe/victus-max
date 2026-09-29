@@ -30,7 +30,7 @@ RestrictNamespaces=true
 # fan_config.json can be written under ProtectSystem=strict
 ProtectKernelTunables=no
 StateDirectory=victus-max-daemon
-ReadWritePaths=/sys /etc/victus-max /var/lib/victus-max-daemon
+ReadWritePaths=/sys /etc/victus-max /etc/omen-space /var/lib/victus-max-daemon
 
 [Install]
 WantedBy=multi-user.target
