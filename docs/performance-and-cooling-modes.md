@@ -141,20 +141,20 @@ Better Auto maps temperatures and workload usages to an 8-level scale:
 | Level | Upward Temp (°C) | Downward Temp (°C) | Workload Usage (%) | Target Fan Speed | Approx RPM Range |
 |:-----:|:----------------:|:------------------:|:------------------:|:----------------:|:----------------:|
 | **1** | Baseline (<45°C) | Baseline (<42°C)   | Baseline (<25%)    | Minimum RPM      | 2000 – 2600 RPM  |
-| **2** | \(\ge 45^\circ\text{C}\) | \(\le 42.0^\circ\text{C}\) | \(\ge 25\%\) | Level 2 Step | ~2900 RPM |
-| **3** | \(\ge 54^\circ\text{C}\) | \(\le 51.0^\circ\text{C}\) | \(\ge 35\%\) | Level 3 Step | ~3300 RPM |
-| **4** | \(\ge 62^\circ\text{C}\) | \(\le 59.0^\circ\text{C}\) | \(\ge 48\%\) | Level 4 Step | ~3700 RPM |
-| **5** | \(\ge 68^\circ\text{C}\) | \(\le 65.0^\circ\text{C}\) | \(\ge 58\%\) | Level 5 Step | ~4100 RPM |
-| **6** | \(\ge 73^\circ\text{C}\) | \(\le 69.5^\circ\text{C}\) | \(\ge 66\%\) | Level 6 Step | ~4500 RPM |
-| **7** | \(\ge 78^\circ\text{C}\) | \(\le 74.5^\circ\text{C}\) | \(\ge 74\%\) | Level 7 Step | ~4900 RPM |
-| **8** | \(\ge 83^\circ\text{C}\) | \(\le 79.0^\circ\text{C}\) | \(\ge 82\%\) | Max Turbo (100%) | 5200 – 5800+ RPM |
+| **2** | ≥ 45°C           | ≤ 42.0°C           | ≥ 25%              | Level 2 Step     | ~2900 RPM        |
+| **3** | ≥ 54°C           | ≤ 51.0°C           | ≥ 35%              | Level 3 Step     | ~3300 RPM        |
+| **4** | ≥ 62°C           | ≤ 59.0°C           | ≥ 48%              | Level 4 Step     | ~3700 RPM        |
+| **5** | ≥ 68°C           | ≤ 65.0°C           | ≥ 58%              | Level 5 Step     | ~4100 RPM        |
+| **6** | ≥ 73°C           | ≤ 69.5°C           | ≥ 66%              | Level 6 Step     | ~4500 RPM        |
+| **7** | ≥ 78°C           | ≤ 74.5°C           | ≥ 74%              | Level 7 Step     | ~4900 RPM        |
+| **8** | ≥ 83°C           | ≤ 79.0°C           | ≥ 82%              | Max Turbo (100%) | 5200 – 5800+ RPM |
 
 #### Key Technical Capabilities of Better Auto
 * **Preemptive Jump:** If the CPU temperature is only 52°C, but you launch a compilation that spikes CPU usage to 75%, Better Auto does not wait for 75°C temperatures. It proactively elevates fans to **Level 6**, keeping the heatsink cool before thermal saturation occurs.
 * **Asymmetrical Hysteresis:** Fan ramp-up is instant. Fan ramp-down requires temperatures to drop 3°C to 4°C below the trigger threshold (`DOWN_THRESHOLDS`), preventing repetitive fan oscillation.
 * **Single-Step Ramp-Down Limiter:** Even when load drops to zero, fans are never dropped by more than 1 level per cycle. This eliminates jarring acoustic drops.
 * **Configurable Acoustic Ceiling:** In Balanced mode, users can set a cap (Levels 3 through 8, default Level 5). Better Auto will not exceed this noise level during normal tasks.
-* **Emergency Thermal Bypass (\(\ge 88^\circ\text{C}\)):** If unexpected thermal load pushes temperature to 88°C or above, the acoustic ceiling is **instantly bypassed** and fans jump to Level 8 (100% Turbo) to protect hardware integrity.
+* **Emergency Thermal Bypass (≥ 88°C):** If unexpected thermal load pushes temperature to 88°C or above, the acoustic ceiling is **instantly bypassed** and fans jump to Level 8 (100% Turbo) to protect hardware integrity.
 * **Custom Minimum RPM (Default 2600 RPM):** Keeps airflow moving at an inaudible speed, avoiding high-pitched start-stop fan motor wear. Configurable between 2000 RPM and 3500 RPM in GUI Settings.
 * **10-Second EC Stagger Protection:** HP Victus Embedded Controllers (EC) can freeze if both Fan 1 (CPU) and Fan 2 (GPU) registers are written simultaneously. Victus Max writes Fan 1, waits asynchronously for 10 seconds, then writes Fan 2.
 * **90-Second Watchdog:** HP BIOS attempts to regain fan control every 60–90 seconds. Victus Max automatically re-asserts mode control every 80–90 seconds in the background.
@@ -182,7 +182,7 @@ Better Auto maps temperatures and workload usages to an 8-level scale:
 ### 4. Custom Curve (`custom`)
 * **Engine:** Victus Max Spline & Multi-point Interpolator.
 * **Mechanism:** Reads custom temperature-to-speed percentage points defined by the user in `~/.config/victus-max/fan_presets.json`.
-* **Behavior:** Linearly interpolates fan RPM between your custom control points (e.g., 40°C \(\to\) 25%, 60°C \(\to\) 45%, 75°C \(\to\) 70%, 85°C \(\to\) 100%).
+* **Behavior:** Linearly interpolates fan RPM between your custom control points (e.g., 40°C → 25%, 60°C → 45%, 75°C → 70%, 85°C → 100%).
 * **Pros:** Full creative freedom for advanced enthusiasts who prefer tailor-made curves.
 * **Cons:** Requires manual tuning to avoid thermal throttling.
 
@@ -315,8 +315,8 @@ Press `Shift + F2` anywhere to toggle the floating glassmorphism HUD:
 
 ### 2. System Tray Icon
 Right-click the Victus Max tray icon in your system panel:
-- Select **Fan Modes** \(\to\) check **Better Auto**, **Auto**, **Max**, or **EC**.
-- Select **Power Profiles** \(\to\) choose **Performance**, **Balanced**, or **Quiet**.
+- Select **Fan Modes** → check **Better Auto**, **Auto**, **Max**, or **EC**.
+- Select **Power Profiles** → choose **Performance**, **Balanced**, or **Quiet**.
 
 ### 3. Command Line Interface (`victus-max-cli`)
 ```bash
