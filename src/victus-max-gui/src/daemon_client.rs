@@ -500,6 +500,24 @@ pub async fn get_fan_info_async() -> Result<String, Box<dyn std::error::Error>> 
     Ok(res)
 }
 
+pub fn get_daemon_custom_curve_sync() -> Option<Vec<(f64, f64)>> {
+    let rt = get_runtime();
+    rt.block_on(async {
+        if let Ok(info_str) = get_fan_info_async().await {
+            if let Ok(val) = serde_json::from_str::<serde_json::Value>(&info_str) {
+                if let Some(curve_str) = val.get("custom_curve").and_then(|v| v.as_str()) {
+                    if let Ok(pts) = serde_json::from_str::<Vec<(f64, f64)>>(curve_str) {
+                        if !pts.is_empty() {
+                            return Some(pts);
+                        }
+                    }
+                }
+            }
+        }
+        None
+    })
+}
+
 pub fn set_min_fan_rpm_sync(rpm: u32) {
     let rt = get_runtime();
     rt.spawn(async move {

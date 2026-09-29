@@ -141,4 +141,17 @@ grep "^## \[" docs/victus-max-wiki/log.md | tail -5
   - `99-omen-space.rules` -> `99-victus-max.rules` ve `sysusers.d/omen-space.conf` -> `sysusers.d/victus-max.conf` olarak yeniden adlandırıldı.
   - `setup.sh` ve `PKGBUILD` içerisinden tüm `omen-cli`, `omen-gui`, `omen-tray`, `omen-overlay`, `omen-space-daemon` sembolik bağları kaldırıldı; kurulum ve kaldırma adımları sistemi eski kırıntılardan tamamen arındıracak şekilde güncellendi.
 
+---
+
+## [2026-09-29] Fix | Fan Presets (Quiet) Custom Moduna Atlama Hatası ve State Senkronizasyonu
+
+- **İşlem Türü:** Hata Düzeltme & UI/Daemon Durum Yönetimi
+- **Kapsam:** `src/victus-max-gui/src/performance_control.rs`, `src/victus-max-gui/src/fan_presets.rs`, `src/victus-max-gui/src/daemon_client.rs`, `src/victus-max-daemon/src/config.rs`, `src/victus-max-gui/src/monitoring.rs`, `src/victus-max-daemon/src/main.rs`.
+- **Detaylar:**
+  - Kullanıcı "Quiet" veya başka bir fan profili seçtiğinde, daemon fan modu `custom` olduğu için 1.5 saniyede bir çalışan arka plan live sync döngüsünün `custom_btn.set_active(true)` çağırarak aktif preset kartını zorla devre dışı bırakması ve curve drawer'ı otomatik açması engellendi.
+  - GUI tarafında `preset_buttons` havuzu ve `matches_curve` tolerans karşılaştırıcısı geliştirildi; sistem başlatıldığında veya `custom` moduna geçildiğinde daemon'daki mevcut eğri preset'lerle eşleştirilerek doğru kartın seçili kalması sağlandı.
+  - Preset seçildiğinde `cpu_pts` anında güncellenerek eğri çizicinin (`da`) mevcut preset değerleriyle senkron kalması sağlandı.
+  - `ConfigManager` varsayılan yolu `/var/lib/victus-max-daemon/fan_config.json` olarak güncellendi ve geriye dönük fallback korundu.
+  - `monitoring.rs` içerisindeki eski `omen-space-daemon` restart komutları `victus-max-daemon` olarak düzeltildi.
+
 

@@ -516,7 +516,7 @@ pub fn build_page(is_general: bool) -> gtk::Box {
                 dialog.connect_response(None, |d, response| {
                     if response == "restart" {
                         let spawned = std::process::Command::new("pkexec")
-                            .args(["systemctl", "restart", "omen-space-daemon"])
+                            .args(["systemctl", "restart", "victus-max-daemon"])
                             .spawn();
                         match spawned {
                             Ok(mut child) => {
@@ -524,7 +524,7 @@ pub fn build_page(is_general: bool) -> gtk::Box {
                             }
                             Err(_) => {
                                 if let Ok(mut child) = std::process::Command::new("systemctl")
-                                    .args(["restart", "omen-space-daemon"])
+                                    .args(["restart", "victus-max-daemon"])
                                     .spawn() {
                                     std::thread::spawn(move || { let _ = child.wait(); });
                                 }

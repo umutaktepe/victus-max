@@ -167,22 +167,12 @@ pub fn build_page() -> gtk::Box {
     let (max_btn, max_wrap)                 = build_fan_chip_card(&crate::asset_resolver::get_asset_path("performance.svg"), i18n::t("fan_max"),         i18n::t("fan_max_sub"));
     let (custom_btn, custom_wrap)           = build_fan_chip_card(&crate::asset_resolver::get_asset_path("custom.svg"),      i18n::t("fan_custom"),      i18n::t("fan_custom_sub"));
 
-    let current_fan = crate::daemon_client::get_fan_mode_sync();
-    if current_fan == "max" {
-        max_btn.set_active(true);
-    } else if current_fan == "custom" || current_fan == "manual" {
-        custom_btn.set_active(true);
-    } else if current_fan == "ec" {
-        ec_btn.set_active(true);
-    } else if current_fan == "better_auto" || current_fan == "better-auto" {
-        better_auto_btn.set_active(true);
-    } else {
-        auto_btn.set_active(true);
-    }
     better_auto_btn.set_group(Some(&auto_btn));
     max_btn.set_group(Some(&auto_btn));
     custom_btn.set_group(Some(&auto_btn));
     ec_btn.set_group(Some(&auto_btn));
+
+    let preset_buttons: Rc<RefCell<Vec<(crate::fan_presets::FanPreset, gtk::ToggleButton)>>> = Rc::new(RefCell::new(Vec::new()));
 
     let u4 = updating_ext.clone();
     auto_btn.connect_toggled(move |btn| { if btn.is_active() && !u4.get() { daemon_client::set_fan_mode_sync("auto".to_string()); } });
@@ -208,6 +198,7 @@ pub fn build_page() -> gtk::Box {
         let custom_c = custom_btn.clone();
         let ec_c = ec_btn.clone();
         let u_sync = updating_ext.clone();
+        let preset_btns_sync = preset_buttons.clone();
 
         glib::timeout_add_local(std::time::Duration::from_millis(1500), move || {
             if !eco_c.is_mapped() {
@@ -224,6 +215,7 @@ pub fn build_page() -> gtk::Box {
             let custom_c2 = custom_c.clone();
             let ec_c2 = ec_c.clone();
             let u_s2 = u_sync.clone();
+            let preset_btns_c = preset_btns_sync.clone();
 
             rx.attach(None, move |(p, f)| {
                 u_s2.set(true);
@@ -240,7 +232,10 @@ pub fn build_page() -> gtk::Box {
                 if f_lower == "max" {
                     if !max_c2.is_active() { max_c2.set_active(true); }
                 } else if f_lower == "custom" || f_lower == "manual" {
-                    if !custom_c2.is_active() { custom_c2.set_active(true); }
+                    let any_preset_active = preset_btns_c.borrow().iter().any(|(_, btn)| btn.is_active());
+                    if !custom_c2.is_active() && !any_preset_active {
+                        custom_c2.set_active(true);
+                    }
                 } else if f_lower == "ec" {
                     if !ec_c2.is_active() { ec_c2.set_active(true); }
                 } else if f_lower == "better_auto" || f_lower == "better-auto" {
@@ -267,12 +262,6 @@ pub fn build_page() -> gtk::Box {
     fan_box.insert(&better_auto_wrap, -1);
     fan_box.insert(&max_wrap, -1);
     fan_box.insert(&custom_wrap, -1);
-
-    // Load custom presets
-    let presets = crate::fan_presets::load_presets();
-    for preset in presets {
-        add_preset_to_box(preset, &auto_btn, &fan_box, &page);
-    }
 
     page.append(&fan_box);
 
@@ -329,9 +318,11 @@ pub fn build_page() -> gtk::Box {
         .build());
 
     // Control points for CPU and GPU (temp 40..100, speed 0..100)
-    let cpu_pts: Rc<RefCell<Vec<(f64, f64)>>> = Rc::new(RefCell::new(vec![
+    let initial_daemon_curve = crate::daemon_client::get_daemon_custom_curve_sync();
+    let initial_cpu_pts = initial_daemon_curve.clone().unwrap_or_else(|| vec![
         (40.0, 20.0), (55.0, 35.0), (70.0, 60.0), (85.0, 82.0), (100.0, 100.0),
-    ]));
+    ]);
+    let cpu_pts: Rc<RefCell<Vec<(f64, f64)>>> = Rc::new(RefCell::new(initial_cpu_pts));
     let gpu_pts: Rc<RefCell<Vec<(f64, f64)>>> = Rc::new(RefCell::new(vec![
         (40.0, 15.0), (55.0, 30.0), (70.0, 55.0), (85.0, 78.0), (100.0, 100.0),
     ]));
@@ -586,11 +577,55 @@ pub fn build_page() -> gtk::Box {
         rev2.set_reveal_child(false);
     });
 
+    // Load custom presets
+    let presets = crate::fan_presets::load_presets();
+    for preset in presets {
+        add_preset_to_box(
+            preset,
+            &auto_btn,
+            &fan_box,
+            &page,
+            &updating_ext,
+            &preset_buttons,
+            &cpu_pts,
+            &da,
+        );
+    }
+
+    // Set initial active fan button (checking daemon curve against presets if in custom mode)
+    let current_fan = crate::daemon_client::get_fan_mode_sync();
+    if current_fan == "max" {
+        max_btn.set_active(true);
+    } else if current_fan == "custom" || current_fan == "manual" {
+        let mut matched = false;
+        if let Some(ref curve) = initial_daemon_curve {
+            for (p, b) in preset_buttons.borrow().iter() {
+                if crate::fan_presets::matches_curve(&p.points, curve) {
+                    b.set_active(true);
+                    matched = true;
+                    break;
+                }
+            }
+        }
+        if !matched {
+            custom_btn.set_active(true);
+        }
+    } else if current_fan == "ec" {
+        ec_btn.set_active(true);
+    } else if current_fan == "better_auto" || current_fan == "better-auto" {
+        better_auto_btn.set_active(true);
+    } else {
+        auto_btn.set_active(true);
+    }
+
     let cpu_pts_save = cpu_pts.clone();
     let fan_box_clone = fan_box.clone();
     let auto_btn_clone = auto_btn.clone();
     let preset_name_save = preset_name_entry.clone();
     let page_save = page.clone();
+    let u_save = updating_ext.clone();
+    let preset_btns_save = preset_buttons.clone();
+    let da_save = da.clone();
     save_preset_btn.connect_clicked(move |_| {
         let name = preset_name_save.text().to_string();
         if name.trim().is_empty() { return; }
@@ -609,17 +644,32 @@ pub fn build_page() -> gtk::Box {
 
         if !exists {
             // Dynamically add to fan box using helper
-            add_preset_to_box(preset.clone(), &auto_btn_clone, &fan_box_clone, &page_save);
+            add_preset_to_box(
+                preset.clone(),
+                &auto_btn_clone,
+                &fan_box_clone,
+                &page_save,
+                &u_save,
+                &preset_btns_save,
+                &cpu_pts_save,
+                &da_save,
+            );
+        } else {
+            if let Some(entry) = preset_btns_save.borrow_mut().iter_mut().find(|(x, _)| x.name == name) {
+                entry.0.points = pts;
+            }
         }
         preset_name_save.set_text("");
     });
 
     let fan_box_del = fan_box.clone();
     let entry_del = preset_name_entry.clone();
+    let preset_btns_del = preset_buttons.clone();
     delete_btn.connect_clicked(move |_| {
         let name = entry_del.text().to_string();
         if name.trim().is_empty() { return; }
         crate::fan_presets::delete_preset(&name);
+        preset_btns_del.borrow_mut().retain(|(x, _)| x.name != name);
         
         // Remove from UI dynamically
         let mut child = fan_box_del.first_child();
@@ -709,13 +759,26 @@ fn add_preset_to_box(
     auto_btn: &gtk::ToggleButton,
     fan_box: &gtk::FlowBox,
     page: &gtk::Box,
+    updating_ext: &Rc<std::cell::Cell<bool>>,
+    preset_buttons: &Rc<RefCell<Vec<(crate::fan_presets::FanPreset, gtk::ToggleButton)>>>,
+    cpu_pts: &Rc<RefCell<Vec<(f64, f64)>>>,
+    da: &gtk::DrawingArea,
 ) {
-    let preset_clone = preset.clone();
     let (p_btn, p_wrap) = build_fan_chip_card(&crate::asset_resolver::get_asset_path("custom.svg"), &preset.name, i18n::t("preset_sub"));
     p_wrap.set_widget_name(&preset.name);
     p_btn.set_group(Some(auto_btn));
+
+    // Register into preset buttons list
+    preset_buttons.borrow_mut().push((preset.clone(), p_btn.clone()));
+
+    let preset_clone = preset.clone();
+    let u_preset = updating_ext.clone();
+    let cpu_pts_c = cpu_pts.clone();
+    let da_c = da.clone();
     p_btn.connect_toggled(move |btn| {
-        if btn.is_active() {
+        if btn.is_active() && !u_preset.get() {
+            *cpu_pts_c.borrow_mut() = preset_clone.points.clone();
+            da_c.queue_draw();
             if let Ok(json) = serde_json::to_string(&preset_clone.points) {
                 crate::daemon_client::save_custom_curve_sync(json);
             }
@@ -763,12 +826,20 @@ fn add_preset_to_box(
     let p_points = preset.points.clone();
     let fan_box_c = fan_box.clone();
     let overlay_c = overlay.clone();
+    let preset_btns_edit = preset_buttons.clone();
+    let cpu_pts_edit = cpu_pts.clone();
+    let da_edit = da.clone();
+
     edit_btn.connect_clicked(move |_| {
         let p_n = p_name.clone();
         let p_n1 = p_n.clone();
         let p_n2 = p_n.clone();
         let f_box = fan_box_c.clone();
         let o_lay = overlay_c.clone();
+        let p_btns_e = preset_btns_edit.clone();
+        let p_btns_del_closure = preset_btns_edit.clone();
+        let cpu_e = cpu_pts_edit.clone();
+        let da_e = da_edit.clone();
         if let Some(w) = win.root().and_downcast::<gtk::ApplicationWindow>() {
             crate::fan_curve_editor::show_fan_curve_editor(
                 &w,
@@ -777,14 +848,20 @@ fn add_preset_to_box(
                 move |new_pts| {
                     let mut p = crate::fan_presets::load_presets();
                     if let Some(x) = p.iter_mut().find(|x| x.name == p_n1) {
-                        x.points = new_pts;
+                        x.points = new_pts.clone();
                         crate::fan_presets::save_presets(&p);
                     }
+                    if let Some(entry) = p_btns_e.borrow_mut().iter_mut().find(|(x, _)| x.name == p_n1) {
+                        entry.0.points = new_pts.clone();
+                    }
+                    *cpu_e.borrow_mut() = new_pts.clone();
+                    da_e.queue_draw();
                 },
                 move || {
                     let p = crate::fan_presets::load_presets();
                     let p: Vec<_> = p.into_iter().filter(|x| x.name != p_n2).collect();
                     crate::fan_presets::save_presets(&p);
+                    p_btns_del_closure.borrow_mut().retain(|(x, _)| x.name != p_n2);
                     f_box.remove(&o_lay);
                 }
             );
@@ -794,10 +871,12 @@ fn add_preset_to_box(
     let p_name2 = preset.name.clone();
     let fan_box_c2 = fan_box.clone();
     let overlay_c2 = overlay.clone();
+    let preset_btns_del = preset_buttons.clone();
     del_btn.connect_clicked(move |_| {
         let p = crate::fan_presets::load_presets();
         let p: Vec<_> = p.into_iter().filter(|x| x.name != p_name2).collect();
         crate::fan_presets::save_presets(&p);
+        preset_btns_del.borrow_mut().retain(|(x, _)| x.name != p_name2);
         fan_box_c2.remove(&overlay_c2);
     });
 

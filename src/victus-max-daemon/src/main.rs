@@ -30,7 +30,7 @@ use zbus::connection::Builder;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
-    info!("Starting omen-space-daemon v{}", env!("CARGO_PKG_VERSION"));
+    info!("Starting victus-max-daemon v{}", env!("CARGO_PKG_VERSION"));
     
 
 
@@ -104,7 +104,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // Start zero-overhead hotkey monitor
     hotkey_monitor::HotkeyMonitor::start(_conn.clone());
 
-    info!("omen-space-daemon successfully registered all microservices & WMI diagnostic engines on D-Bus.");
+    info!("victus-max-daemon successfully registered all microservices & WMI diagnostic engines on D-Bus.");
 
     let iface_ref = _conn.object_server().interface::<_, sysmon::SysMonInterface>("/org/hp/omen/SysMon").await?;
     let signal_ctx = iface_ref.signal_context().clone();

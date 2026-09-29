@@ -40,42 +40,66 @@ pub struct ConfigManager {
 
 impl ConfigManager {
     pub fn new() -> Self {
-        let path = PathBuf::from("/var/lib/omen-space-daemon/fan_config.json");
+        let p_victus = PathBuf::from("/var/lib/victus-max-daemon/fan_config.json");
+        let p_omen = PathBuf::from("/var/lib/omen-space-daemon/fan_config.json");
+        let path = if p_victus.exists() || !p_omen.exists() {
+            p_victus
+        } else {
+            p_omen
+        };
         Self { path }
     }
 
     pub async fn load(&self) -> FanConfig {
-        match fs::read_to_string(&self.path).await {
+        let p_victus = PathBuf::from("/var/lib/victus-max-daemon/fan_config.json");
+        let p_omen = PathBuf::from("/var/lib/omen-space-daemon/fan_config.json");
+        let load_path = if self.path.exists() {
+            &self.path
+        } else if p_victus.exists() {
+            &p_victus
+        } else if p_omen.exists() {
+            &p_omen
+        } else {
+            &self.path
+        };
+
+        match fs::read_to_string(load_path).await {
             Ok(content) => {
                 match serde_json::from_str(&content) {
                     Ok(config) => {
-                        info!("Loaded fan config from {:?}", self.path);
+                        info!("Loaded fan config from {:?}", load_path);
                         config
                     }
                     Err(e) => {
-                        warn!("Failed to parse config file {:?}: {}. Using defaults.", self.path, e);
+                        warn!("Failed to parse config file {:?}: {}. Using defaults.", load_path, e);
                         FanConfig::default()
                     }
                 }
             }
             Err(_) => {
-                info!("No existing config found at {:?}. Using defaults.", self.path);
+                info!("No existing config found at {:?}. Using defaults.", load_path);
                 FanConfig::default()
             }
         }
     }
 
     pub async fn save(&self, config: &FanConfig) {
-        if let Some(parent) = self.path.parent() {
+        let target_path = if self.path == PathBuf::from("/var/lib/omen-space-daemon/fan_config.json") {
+            PathBuf::from("/var/lib/victus-max-daemon/fan_config.json")
+        } else {
+            self.path.clone()
+        };
+
+        if let Some(parent) = target_path.parent() {
             let _ = fs::create_dir_all(parent).await;
         }
 
         match serde_json::to_string_pretty(config) {
             Ok(json) => {
-                if let Err(e) = fs::write(&self.path, json).await {
-                    warn!("Failed to save fan config to {:?}: {}", self.path, e);
+                if let Err(e) = fs::write(&target_path, json).await {
+                    warn!("Failed to save fan config to {:?}: {}", target_path, e);
                 } else {
-                    info!("Saved fan config to {:?}", self.path);
+                    info!("Saved fan config to {:?}", target_path);
                 }
             }
             Err(e) => {
