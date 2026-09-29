@@ -47,7 +47,7 @@ impl HidPerKeyWizard {
         let _ = crate::rgb::test_single_key_static(0, 255, 255, 255).await;
 
         DesktopNotifier::send_notification(
-            "OMENSpace RGB Wizard Started",
+            "Victus Max RGB Wizard Started",
             "HID Per-Key RGB Calibration Wizard started. Key Index 0 is illuminated in White.",
             0,
         ).await;
@@ -150,7 +150,7 @@ impl HidPerKeyWizard {
         let _ = tokio::fs::write("/tmp/hid-perkey-map.md", &md_report).await;
 
         DesktopNotifier::send_notification(
-            "OMENSpace Keymap Calibration Exported",
+            "Victus Max Keymap Calibration Exported",
             &format!("Saved {} mapped keys to /tmp/hid-perkey-map.json", map.len()),
             0,
         ).await;

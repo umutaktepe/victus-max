@@ -26,11 +26,15 @@ fn default_language() -> String {
 
 fn get_config_path() -> Option<PathBuf> {
     if let Some(home) = std::env::var_os("HOME") {
-        let mut p = PathBuf::from(home);
-        p.push(".config");
-        p.push("omenspace");
-        p.push("gui_config.json");
-        Some(p)
+        let p_victus = PathBuf::from(&home).join(".config/victus-max/gui_config.json");
+        if p_victus.exists() {
+            return Some(p_victus);
+        }
+        let p_omen = PathBuf::from(home).join(".config/omenspace/gui_config.json");
+        if p_omen.exists() {
+            return Some(p_omen);
+        }
+        Some(p_victus)
     } else {
         None
     }
@@ -94,13 +98,14 @@ pub fn t(key: &'static str) -> &'static str {
 
 fn translate_tr(key: &'static str) -> &'static str {
     match key {
-        "tray_open" => "OMENSpace'i Aç",
+        "tray_open" => "Victus Max'ı Aç",
         "tray_overlay" => "Hızlı Katman (Shift+F2)",
         "power_profile" => "Güç Profili",
         "perf" => "Performans",
         "balanced" => "Dengeli",
         "eco" => "Eko",
         "fan_mode" => "Fan Modu",
+        "better_auto" => "Better Auto",
         "auto" => "Otomatik",
         "max" => "Maksimum",
         "ec" => "EC (Donanım)",
@@ -123,13 +128,14 @@ fn translate_tr(key: &'static str) -> &'static str {
 
 fn translate_en(key: &'static str) -> &'static str {
     match key {
-        "tray_open" => "Open OMENSpace",
+        "tray_open" => "Open Victus Max",
         "tray_overlay" => "Quick Overlay (Shift+F2)",
         "power_profile" => "Power Profile",
         "perf" => "Performance",
         "balanced" => "Balanced",
         "eco" => "Eco",
         "fan_mode" => "Fan Mode",
+        "better_auto" => "Better Auto",
         "auto" => "Auto",
         "max" => "Max",
         "ec" => "EC (Hardware)",

@@ -18,7 +18,7 @@ impl FanCleaningService {
     pub async fn run_cleaning_routine() -> String {
         info!("Starting Fan Dust Cleaning routine...");
         DesktopNotifier::send_notification(
-            "OMEN Space Fan Maintenance",
+            "Victus Max Fan Maintenance",
             "Fan Dust Cleaning routine started. Operating fans at high airflow bursts...",
             1,
         ).await;
@@ -43,11 +43,11 @@ impl FanCleaningService {
         let _ = proxy.set_fan_mode("max").await;
         sleep(Duration::from_secs(10)).await;
 
-        // Step 2: Return to auto
-        let _ = proxy.set_fan_mode("auto").await;
+        // Step 2: Return to better_auto
+        let _ = proxy.set_fan_mode("better_auto").await;
 
         DesktopNotifier::send_notification(
-            "OMEN Space Fan Maintenance",
+            "Victus Max Fan Maintenance",
             "Fan Dust Cleaning completed successfully. Returned to automatic fan mode.",
             0,
         ).await;

@@ -22,7 +22,7 @@ impl BiosUpdateChecker {
         let product_name = read_dmi_value("product_name");
         let installed_bios = read_dmi_value("bios_version");
 
-        info!("Omen Space: Checking BIOS updates for board '{}' (Installed: '{}')...", board_id, installed_bios);
+        info!("Victus Max: Checking BIOS updates for board '{}' (Installed: '{}')...", board_id, installed_bios);
 
         // Fetch known board BIOS versions or query HP release catalog
         let (latest_bios, download_url) = fetch_hp_bios_catalog(&board_id, &installed_bios);
@@ -35,12 +35,12 @@ impl BiosUpdateChecker {
             format!("BIOS is up to date ('{}')", installed_bios)
         };
 
-        info!("Omen Space BIOS Check Result: {}", check_status);
+        info!("Victus Max BIOS Check Result: {}", check_status);
 
         if update_available {
             DesktopNotifier::send_notification(
-                "Omen Space BIOS Update Available",
-                &format!("New BIOS update '{}' is available for your HP OMEN ({})! Current: '{}'", latest_bios, board_id, installed_bios),
+                "Victus Max BIOS Update Available",
+                &format!("New BIOS update '{}' is available for your HP device ({})! Current: '{}'", latest_bios, board_id, installed_bios),
                 1,
             ).await;
         }

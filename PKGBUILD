@@ -1,18 +1,18 @@
-# Maintainer: Yunus Emre YILMAZ <yunusemreyl>
+# Maintainer: Umut Aktepe <umutaktepe>
 
-pkgname=omen-space-git
-_pkgname=Omen-Space
+pkgname=victus-max-git
+_pkgname=victus-max
 pkgver=2.1.2
 pkgrel=1
-pkgdesc="Advanced HP Omen/Victus laptop manager for Linux with RGB, Fan, and MUX control"
+pkgdesc="Advanced HP Victus and OMEN laptop manager for Linux with Better Auto cooling, Fan, RGB, and MUX control"
 arch=('x86_64')
-url="https://github.com/yunusemreyl/omen-space"
+url="https://github.com/umutaktepe/victus-max"
 license=('GPL')
 depends=('dkms' 'polkit' 'gtk4' 'libadwaita' 'gtk4-layer-shell')
 makedepends=('git' 'gcc' 'make' 'pkg-config' 'rust')
-provides=('omen-space')
-conflicts=('omen-space' 'hp-laptop-manager' 'omenctl')
-source=('git+https://github.com/yunusemreyl/omen-space.git')
+provides=('victus-max' 'omen-space')
+conflicts=('victus-max' 'omen-space' 'hp-laptop-manager' 'omenctl')
+source=('git+https://github.com/umutaktepe/victus-max.git')
 sha256sums=('SKIP')
 
 pkgver() {
@@ -29,7 +29,9 @@ package() {
   cd "$srcdir/${pkgname%-git}"
 
   # Install directories
+  mkdir -p "$pkgdir/usr/libexec/victus-max"
   mkdir -p "$pkgdir/usr/libexec/omen-space"
+  mkdir -p "$pkgdir/etc/victus-max"
   mkdir -p "$pkgdir/etc/omen-space"
   mkdir -p "$pkgdir/etc/dbus-1/system.d"
   mkdir -p "$pkgdir/usr/lib/systemd/system"
@@ -40,35 +42,55 @@ package() {
   mkdir -p "$pkgdir/usr/share/dbus-1/services"
   mkdir -p "$pkgdir/usr/share/pixmaps"
   mkdir -p "$pkgdir/usr/share/icons/hicolor/512x512/apps"
+  mkdir -p "$pkgdir/usr/share/victus-max/assets"
   mkdir -p "$pkgdir/usr/share/omen-space/assets"
   mkdir -p "$pkgdir/etc/xdg/autostart"
 
   # Binaries
-  cp target/release/omen-space-daemon "$pkgdir/usr/libexec/omen-space/"
-  cp target/release/omen-cli "$pkgdir/usr/bin/"
-  cp target/release/omen-tray "$pkgdir/usr/bin/"
-  cp target/release/omen-gui "$pkgdir/usr/bin/"
+  cp target/release/victus-max-daemon "$pkgdir/usr/libexec/victus-max/"
+  ln -sf /usr/libexec/victus-max/victus-max-daemon "$pkgdir/usr/libexec/omen-space/omen-space-daemon"
+
+  cp target/release/victus-max-cli "$pkgdir/usr/bin/"
+  ln -sf /usr/bin/victus-max-cli "$pkgdir/usr/bin/omen-cli"
+
+  cp target/release/victus-max-tray "$pkgdir/usr/bin/"
+  ln -sf /usr/bin/victus-max-tray "$pkgdir/usr/bin/omen-tray"
+
+  cp target/release/victus-max "$pkgdir/usr/bin/"
+  ln -sf /usr/bin/victus-max "$pkgdir/usr/bin/victus-max-gui"
+  ln -sf /usr/bin/victus-max "$pkgdir/usr/bin/omen-gui"
+
+  if [ -f target/release/victus-max-overlay ]; then
+    cp target/release/victus-max-overlay "$pkgdir/usr/bin/"
+    ln -sf /usr/bin/victus-max-overlay "$pkgdir/usr/bin/omen-overlay"
+  fi
 
   # System configuration files
   cp data/org.hp.omen.conf "$pkgdir/etc/dbus-1/system.d/"
+  cp data/victus-max-daemon.service "$pkgdir/usr/lib/systemd/system/"
   cp data/omen-space-daemon.service "$pkgdir/usr/lib/systemd/system/"
   cp data/sysusers.d/omen-space.conf "$pkgdir/usr/lib/sysusers.d/"
   cp data/99-omen-space.rules "$pkgdir/usr/lib/udev/rules.d/"
 
   # Desktop integration and assets
+  cp data/org.hp.VictusMax.desktop "$pkgdir/usr/share/applications/"
   cp data/org.hp.OmenSpace.desktop "$pkgdir/usr/share/applications/"
+  cp data/org.hp.VictusMax.service "$pkgdir/usr/share/dbus-1/services/"
   cp data/org.hp.OmenSpace.service "$pkgdir/usr/share/dbus-1/services/"
-  cp src/omen-gui/assets/omenspace.png "$pkgdir/usr/share/pixmaps/omenspace.png"
-  cp src/omen-gui/assets/omenspace.png "$pkgdir/usr/share/icons/hicolor/512x512/apps/omenspace.png"
-  cp -r src/omen-gui/assets/* "$pkgdir/usr/share/omen-space/assets/"
+  cp src/victus-max-gui/assets/victus-max.png "$pkgdir/usr/share/pixmaps/victus-max.png"
+  cp src/victus-max-gui/assets/victus-max.png "$pkgdir/usr/share/icons/hicolor/512x512/apps/victus-max.png"
+  cp src/victus-max-gui/assets/omenspace.png "$pkgdir/usr/share/pixmaps/omenspace.png"
+  cp src/victus-max-gui/assets/omenspace.png "$pkgdir/usr/share/icons/hicolor/512x512/apps/omenspace.png"
+  cp -r src/victus-max-gui/assets/* "$pkgdir/usr/share/victus-max/assets/"
+  cp -r src/victus-max-gui/assets/* "$pkgdir/usr/share/omen-space/assets/"
 
   # Autostart tray
-  cat <<EOF > "$pkgdir/etc/xdg/autostart/omenspace-tray.desktop"
+  cat <<EOF > "$pkgdir/etc/xdg/autostart/victus-max-tray.desktop"
 [Desktop Entry]
-Name=OMENSpace Tray
-Comment=OMENSpace System Tray Icon
-Exec=/usr/bin/omen-tray
-Icon=omenspace
+Name=Victus Max Tray
+Comment=Victus Max System Tray Icon
+Exec=/usr/bin/victus-max-tray
+Icon=victus-max
 Terminal=false
 Type=Application
 Categories=Utility;

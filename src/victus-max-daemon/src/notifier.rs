@@ -18,9 +18,9 @@ impl DesktopNotifier {
                 Some("org.freedesktop.Notifications"),
                 "Notify",
                 &(
-                    "OMENSpace",
+                    "Victus Max",
                     0u32,
-                    "preferences-desktop-display",
+                    "victus-max",
                     title,
                     body,
                     Vec::<&str>::new(),
@@ -36,7 +36,7 @@ impl DesktopNotifier {
     /// Send an error notification (urgency=critical, icon=dialog-error, 10s timeout).
     /// Use for hardware command failures, permission errors, D-Bus method errors.
     pub async fn notify_error(context: &str, err_msg: &str) {
-        let title = "OMEN Space — Hata";
+        let title = "Victus Max — Hata";
         let body = format!("{}\n\nHata kodu: {}", context, err_msg);
         warn!("notify_error: {} | {}", context, err_msg);
 
@@ -50,7 +50,7 @@ impl DesktopNotifier {
                 Some("org.freedesktop.Notifications"),
                 "Notify",
                 &(
-                    "OMEN Space",
+                    "Victus Max",
                     0u32,
                     "dialog-error",
                     title,
@@ -115,7 +115,7 @@ impl DesktopNotifier {
 
     /// Open browser directly to GitHub Issue creation page with pre-filled title and body
     pub fn open_github_issue(title: &str, body: &str) {
-        let repo_url = "https://github.com/yunusemreyl/omen-space/issues/new";
+        let repo_url = "https://github.com/umutaktepe/victus-max/issues/new";
         let encoded_title = url_encode(title);
         let encoded_body = url_encode(body);
         let full_url = format!("{}?title={}&body={}", repo_url, encoded_title, encoded_body);

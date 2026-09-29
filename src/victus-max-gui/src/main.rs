@@ -17,7 +17,7 @@ mod desktop_rgb_gui;
 mod updater;
 mod daemon_client;
 mod asset_resolver;
-const APP_ID: &str = "org.hp.OmenSpace";
+const APP_ID: &str = "org.hp.VictusMax";
 
 fn ensure_tray_running() {
     let is_running = std::process::Command::new("pgrep")
@@ -209,8 +209,10 @@ fn main() {
 
 fn apply_startup_profile() {
     if let Ok(home) = std::env::var("HOME") {
-        let path = format!("{}/.config/omenspace/settings.json", home);
-        if let Ok(json_str) = std::fs::read_to_string(&path) {
+        let path = format!("{}/.config/victus-max/settings.json", home);
+        let path_fallback = format!("{}/.config/omenspace/settings.json", home);
+        let content = std::fs::read_to_string(&path).or_else(|_| std::fs::read_to_string(&path_fallback));
+        if let Ok(json_str) = content {
             if let Ok(json) = serde_json::from_str::<serde_json::Value>(&json_str) {
                 if let Some(sp) = json.get("startup_profile").and_then(|v| v.as_u64()) {
                     let profile_name = match sp {
@@ -228,8 +230,10 @@ fn apply_startup_profile() {
 
 fn apply_appearance_mode() {
     if let Ok(home) = std::env::var("HOME") {
-        let path = format!("{}/.config/omenspace/settings.json", home);
-        if let Ok(json_str) = std::fs::read_to_string(&path) {
+        let path = format!("{}/.config/victus-max/settings.json", home);
+        let path_fallback = format!("{}/.config/omenspace/settings.json", home);
+        let content = std::fs::read_to_string(&path).or_else(|_| std::fs::read_to_string(&path_fallback));
+        if let Ok(json_str) = content {
             if let Ok(json) = serde_json::from_str::<serde_json::Value>(&json_str) {
                 if let Some(am) = json.get("appearance_mode").and_then(|v| v.as_u64()) {
                     let scheme = match am {
@@ -281,24 +285,22 @@ fn build_ui(app: &adw::Application) {
         let board_id = board_id.trim().to_uppercase();
 
         // Persist the "user dismissed" state in a flag file.
-        let dismissed_flag = format!(
-            "{}/.cache/omenspace/board_verified_dismissed_{}",
-            std::env::var("HOME").unwrap_or_default(),
-            board_id
-        );
+        let home = std::env::var("HOME").unwrap_or_default();
+        let dismissed_flag = format!("{}/.cache/victus-max/board_verified_dismissed_{}", home, board_id);
+        let dismissed_flag_legacy = format!("{}/.cache/omenspace/board_verified_dismissed_{}", home, board_id);
 
         let is_verified = crate::daemon_client::is_board_verified_sync(&board_id);
-        let already_dismissed = std::path::Path::new(&dismissed_flag).exists();
+        let already_dismissed = std::path::Path::new(&dismissed_flag).exists() || std::path::Path::new(&dismissed_flag_legacy).exists();
 
         if !is_verified && !already_dismissed && !board_id.is_empty() {
             let issue_url = format!(
-                "https://github.com/yunusemreyl/omen-space/issues/new?template=verify-laptop.yml&title=Verify+my+laptop+%28Board+{}%29",
+                "https://github.com/umutaktepe/victus-max/issues/new?template=verify-laptop.yml&title=Verify+my+laptop+%28Board+{}%29",
                 board_id
             );
 
             let banner = adw::Banner::builder()
                 .title(format!(
-                    "⚠️  Board {} için OMEN Space desteği henüz doğrulanmamış.",
+                    "⚠️  Board {} için Victus Max desteği henüz doğrulanmamış.",
                     board_id
                 ))
                 .button_label("GitHub'da Issue Oluştur")

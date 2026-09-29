@@ -77,5 +77,17 @@ grep "^## \[" docs/victus-max-wiki/log.md | tail -5
   - Klavye kısayolları ve alt bilgi etiketleri Q/W/E/R ile uyumlu hale getirildi.
 - **Test ve Doğrulama:** `cargo check --workspace` ve `cargo test --workspace` (46 test) hatasız tamamlandı.
 
+---
 
+## [2026-09-29] Branding & Polish | Kapsamlı Victus Max İsim Arındırması ve Tray Entegrasyonu
 
+- **İşlem Türü:** Marka Arındırma, Sistem Tepsisi Genişletmesi ve Yapılandırma Yolu Göçü
+- **Kapsam:** `src/victus-max-tray/`, `src/victus-max-gui/`, `src/victus-max-daemon/`, `src/victus-max-cli/`, `setup.sh`, `install.sh`, `PKGBUILD`.
+- **Detaylar:**
+  - Sistem tepsisi (`victus-max-tray`) sağ tık menüsündeki `"OMENSpace'i Aç"` ibaresi `"Victus Max'ı Aç"` (ve İngilizce `"Open Victus Max"`) olarak değiştirildi.
+  - Tepsi fan modları menüsüne `Better Auto` seçeneği eklendi; tooltip metnine `Better Auto` entegre edildi.
+  - Daemon masaüstü bildirimleri (`notifier.rs`, `fan_cleaning.rs`, `game_automation.rs`, `hid_wizard.rs`, `platform.rs`, `auto_updater.rs`, `bios_checker.rs`) ve donanım raporları Victus Max kimliğine kavuşturuldu; GitHub issue bağlantıları `umutaktepe/victus-max` reposuna yönlendirildi.
+  - Yapılandırma yolları öncelikli olarak `~/.config/victus-max/` ve `/etc/victus-max/` adreslerini kullanacak şekilde güncellendi; mevcut kullanıcılar için `~/.config/omenspace/` ve `/etc/omenspace/` yollarına tam geriye dönük uyumluluk (fallback) korundu.
+  - GUI uygulama kimliği (`APP_ID`) `org.hp.VictusMax` olarak ayarlandı, `org.hp.VictusMax.service` D-Bus aktivasyon birimi oluşturuldu ve `setup.sh` ile kurulum adımlarına eklendi.
+  - Kurulum (`setup.sh`, `install.sh`) ve paketleme (`PKGBUILD`) betikleri Victus Max ikili dosyalarını önceliklendirecek ve eski `omen-*` isimlerine sembolik bağlar sunacak şekilde güncellendi.
+- **Test ve Doğrulama:** `cargo check --workspace` ve `cargo test --workspace` (46 test) hatasız tamamlandı.

@@ -1035,8 +1035,8 @@ impl FanService {
             let _ = Box::pin(Self::set_mode_internal(state, "ec")).await;
             // (b) User-visible notification
             crate::notifier::DesktopNotifier::send_notification(
-                "Omen Space",
-                "Auto/Custom/Performance fan modes are not supported on your OMEN BIOS. Fan control switched to Hardware (EC) mode.",
+                "Victus Max",
+                "Auto/Custom/Performance fan modes are not supported on your HP BIOS. Fan control switched to Hardware (EC) mode.",
                 0,
             ).await;
             return true;
@@ -1044,7 +1044,7 @@ impl FanService {
 
         if mode == "ec" {
             tokio::spawn(async move {
-                DesktopNotifier::send_notification("Omen Space", "Donanım (EC) kontrolü devredildi. Watchdog mekanizması nedeniyle fanların BIOS'a teslim edilmesi 120 saniye kadar sürebilir.", 0).await;
+                DesktopNotifier::send_notification("Victus Max", "Donanım (EC) kontrolü devredildi. Watchdog mekanizması nedeniyle fanların BIOS'a teslim edilmesi 120 saniye kadar sürebilir.", 0).await;
             });
         }
 

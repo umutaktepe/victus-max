@@ -3,7 +3,7 @@ use log::{info, warn};
 use crate::notifier::DesktopNotifier;
 
 pub const CURRENT_VERSION: &str = env!("CARGO_PKG_VERSION");
-pub const REPO_OWNER_NAME: &str = "yunusemreyl/omen-space";
+pub const REPO_OWNER_NAME: &str = "umutaktepe/victus-max";
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct AppUpdateInfo {
@@ -20,24 +20,24 @@ pub struct AutoUpdateService;
 
 impl AutoUpdateService {
     pub async fn check_for_updates() -> AppUpdateInfo {
-        info!("Omen Space: Checking GitHub Releases for application updates (Current: v{})...", CURRENT_VERSION);
+        info!("Victus Max: Checking GitHub Releases for application updates (Current: v{})...", CURRENT_VERSION);
 
         let (latest_tag, notes, release_url, download_url) = fetch_latest_github_release().await;
 
         let update_available = is_newer_semver(CURRENT_VERSION, &latest_tag);
 
         let status_message = if update_available {
-            format!("New Omen Space release '{}' available! (Current: v{})", latest_tag, CURRENT_VERSION)
+            format!("New Victus Max release '{}' available! (Current: v{})", latest_tag, CURRENT_VERSION)
         } else {
-            format!("Omen Space is up to date (v{})", CURRENT_VERSION)
+            format!("Victus Max is up to date (v{})", CURRENT_VERSION)
         };
 
-        info!("Omen Space Update Check: {}", status_message);
+        info!("Victus Max Update Check: {}", status_message);
 
         if update_available {
             DesktopNotifier::send_notification(
-                "Omen Space Update Available",
-                &format!("A new release '{}' is available for Omen Space! Current version: v{}.", latest_tag, CURRENT_VERSION),
+                "Victus Max Update Available",
+                &format!("A new release '{}' is available for Victus Max! Current version: v{}.", latest_tag, CURRENT_VERSION),
                 0,
             ).await;
         }
@@ -54,7 +54,7 @@ impl AutoUpdateService {
     }
 
     pub async fn apply_update() -> String {
-        info!("Starting Omen Space application auto-update...");
+        info!("Starting Victus Max application auto-update...");
         let info = Self::check_for_updates().await;
 
         if !info.update_available {
@@ -65,12 +65,12 @@ impl AutoUpdateService {
         }
 
         DesktopNotifier::send_notification(
-            "Omen Space Updating",
-            &format!("Downloading and installing Omen Space {}...", info.latest_version),
+            "Victus Max Updating",
+            &format!("Downloading and installing Victus Max {}...", info.latest_version),
             0,
         ).await;
 
-        let update_dir = "/var/lib/omen-space/updates";
+        let update_dir = "/var/lib/victus-max/updates";
         let _ = tokio::fs::create_dir_all(update_dir).await;
         #[cfg(unix)]
         {
@@ -78,11 +78,11 @@ impl AutoUpdateService {
             let _ = tokio::fs::set_permissions(update_dir, std::fs::Permissions::from_mode(0o700)).await;
         }
 
-        let download_target = format!("{}/omen-space-update.tar.gz", update_dir);
+        let download_target = format!("{}/victus-max-update.tar.gz", update_dir);
         let extract_dir = format!("{}/extracted", update_dir);
 
         // Security Check: Validate download URL scheme & host
-        if !info.download_url.starts_with("https://github.com/yunusemreyl/omen-space/") {
+        if !info.download_url.starts_with("https://github.com/umutaktepe/victus-max/") {
             warn!("Blocked unsafe download URL: {}", info.download_url);
             let _ = tokio::fs::remove_dir_all(update_dir).await;
             return serde_json::json!({
@@ -128,13 +128,17 @@ impl AutoUpdateService {
         }
 
         // Check for extracted binary & verify ELF magic bytes
-        let new_binary = format!("{}/omen-space-daemon", extract_dir);
-        let installed_path = "/usr/libexec/omen-space/omen-space-daemon";
+        let mut new_binary = format!("{}/victus-max-daemon", extract_dir);
+        if !tokio::fs::try_exists(&new_binary).await.unwrap_or(false) {
+            new_binary = format!("{}/omen-space-daemon", extract_dir);
+        }
+        let installed_path = "/usr/libexec/victus-max/victus-max-daemon";
 
         if tokio::fs::try_exists(&new_binary).await.unwrap_or(false) {
             // Verify ELF magic bytes [0x7F, b'E', b'L', b'F']
             if let Ok(bytes) = tokio::fs::read(&new_binary).await {
                 if bytes.len() > 4 && &bytes[0..4] == b"\x7FELF" {
+                    let _ = tokio::fs::create_dir_all("/usr/libexec/victus-max").await;
                     let copy_cmd = tokio::process::Command::new("cp")
                         .args(["-f", &new_binary, installed_path])
                         .output()
@@ -143,10 +147,17 @@ impl AutoUpdateService {
                     if let Ok(out) = copy_cmd {
                         if out.status.success() {
                             let _ = tokio::process::Command::new("chmod").args(["+x", installed_path]).output().await;
-                            info!("Successfully updated Omen Space binary to {}", info.latest_version);
+                            // Also update omen-space legacy path if directory exists
+                            if tokio::fs::try_exists("/usr/libexec/omen-space").await.unwrap_or(false) {
+                                let _ = tokio::process::Command::new("ln")
+                                    .args(["-sf", installed_path, "/usr/libexec/omen-space/omen-space-daemon"])
+                                    .output()
+                                    .await;
+                            }
+                            info!("Successfully updated Victus Max binary to {}", info.latest_version);
                             DesktopNotifier::send_notification(
-                                "Omen Space Updated!",
-                                &format!("Omen Space has been successfully updated to {}!", info.latest_version),
+                                "Victus Max Updated!",
+                                &format!("Victus Max has been successfully updated to {}!", info.latest_version),
                                 0,
                             ).await;
 
@@ -170,7 +181,8 @@ impl AutoUpdateService {
         if let Ok(mut entries) = tokio::fs::read_dir(&extract_dir).await {
             while let Ok(Some(entry)) = entries.next_entry().await {
                 if entry.file_type().await.map(|f| f.is_dir()).unwrap_or(false)
-                    && entry.file_name().to_string_lossy().starts_with("omen-space") {
+                    && (entry.file_name().to_string_lossy().starts_with("victus-max")
+                        || entry.file_name().to_string_lossy().starts_with("omen-space")) {
                         target_dir = entry.path().to_string_lossy().to_string();
                         break;
                     }
@@ -193,7 +205,7 @@ impl AutoUpdateService {
 async fn fetch_latest_github_release() -> (String, String, String, String) {
     let api_url = format!("https://api.github.com/repos/{}/releases/latest", REPO_OWNER_NAME);
     let output = tokio::process::Command::new("curl")
-        .args(["--proto", "=https", "--tlsv1.2", "-s", "-H", "User-Agent: OmenSpace-Daemon", &api_url])
+        .args(["--proto", "=https", "--tlsv1.2", "-s", "-H", "User-Agent: VictusMax-Daemon", &api_url])
         .output()
         .await;
 
@@ -203,7 +215,7 @@ async fn fetch_latest_github_release() -> (String, String, String, String) {
             let fallback_ver = format!("v{}", env!("CARGO_PKG_VERSION"));
             let tag_name = v["tag_name"].as_str().unwrap_or(&fallback_ver).to_string();
             let body = v["body"].as_str().unwrap_or("Release notes unavailable").to_string();
-            let html_url = v["html_url"].as_str().unwrap_or("https://github.com/yunusemreyl/omen-space/releases").to_string();
+            let html_url = v["html_url"].as_str().unwrap_or(&format!("https://github.com/{}/releases", REPO_OWNER_NAME)).to_string();
 
             let download_url = format!("https://github.com/{}/archive/refs/tags/{}.tar.gz", REPO_OWNER_NAME, tag_name);
             return (tag_name, body, html_url, download_url);
@@ -213,7 +225,7 @@ async fn fetch_latest_github_release() -> (String, String, String, String) {
     (
         format!("v{}", CURRENT_VERSION),
         "No update release metadata found".to_string(),
-        "https://github.com/yunusemreyl/omen-space/releases".to_string(),
+        format!("https://github.com/{}/releases", REPO_OWNER_NAME),
         format!("https://github.com/{}/releases", REPO_OWNER_NAME),
     )
 }

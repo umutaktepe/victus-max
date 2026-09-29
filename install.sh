@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# OMENSpace Web Installer
-# Automated installer for OMENSpace (Daemon, GUI, CLI, Tray, Kernel Driver)
-# Repository: https://github.com/yunusemreyl/omen-space
+# Victus Max Web Installer
+# Automated installer for Victus Max (Daemon, GUI, CLI, Tray, Overlay, Kernel Driver)
+# Repository: https://github.com/umutaktepe/victus-max
 # ==============================================================================
 
 set -euo pipefail
@@ -20,8 +20,8 @@ info() { echo -e "${CYAN}[i]${NC} $1"; }
 warn() { echo -e "${YELLOW}[!]${NC} $1"; }
 err() { echo -e "${RED}[✗]${NC} $1"; exit 1; }
 
-REPO="yunusemreyl/omen-space"
-TMP_DIR="/tmp/omen-space-install"
+REPO="umutaktepe/victus-max"
+TMP_DIR="/tmp/victus-max-install"
 
 if [ "$EUID" -ne 0 ]; then
     err "This installer must be run as root. Please run:\n       curl -sSL https://raw.githubusercontent.com/$REPO/main/install.sh | sudo bash"
@@ -29,15 +29,15 @@ fi
 
 echo -e "${CYAN}"
 cat << "BANNER"
-  ____  __  ________  _   __   _____ ____  ___   ____________
- / __ \/  |/  / ____// | / /  / ___// __ \/   | / ____/ ____/
-/ / / / /|_/ / __/  /  |/ /   \__ \/ /_/ / /| |/ /   / __/   
-/ /_/ / /  / / /___ / /|  /   ___/ / ____/ ___ / /___/ /___   
-\____/_/  /_/_____//_/ |_/   /____/_/   /_/  |_\____/_____/   
+ _    ___      __               __  __           
+| |  / (_)____/ /___  _______  /  |/  /___ __  __
+| | / / / ___/ __/ / / / ___/ / /|_/ / __ `/ |/_/
+| |/ / / /__/ /_/ /_/ (__  ) / /  / / /_/ />  <  
+|___/_/\___/\__/\__,_/____/ /_/  /_/\__,_/_/|_|  
 BANNER
 echo -e "${NC}"
 echo -e "${BOLD}====================================================${NC}"
-echo -e "${BOLD}       🚀 OMENSpace Automated Installer             ${NC}"
+echo -e "${BOLD}       🚀 Victus Max Automated Installer             ${NC}"
 echo -e "${BOLD}====================================================${NC}"
 
 # ------------------------------------------------------------------------------
@@ -136,7 +136,7 @@ rm -rf "$TMP_DIR"
 mkdir -p "$TMP_DIR"
 
 if command -v git &> /dev/null; then
-    info "Fetching OMENSpace source ($TARGET_REF)..."
+    info "Fetching Victus Max source ($TARGET_REF)..."
     git clone --depth 1 -b "$TARGET_REF" "https://github.com/$REPO.git" "$TMP_DIR"
     cd "$TMP_DIR"
 else
@@ -149,15 +149,15 @@ else
     fi
 
     if command -v curl &> /dev/null; then
-        curl -fsSL "$TARBALL_URL" -o omen-space.tar.gz
+        curl -fsSL "$TARBALL_URL" -o victus-max.tar.gz
     elif command -v wget &> /dev/null; then
-        wget -qO omen-space.tar.gz "$TARBALL_URL"
+        wget -qO victus-max.tar.gz "$TARBALL_URL"
     else
         err "Neither git, curl, nor wget found. Please install one of them."
     fi
 
-    tar -xzf omen-space.tar.gz --strip-components=1
-    rm -f omen-space.tar.gz
+    tar -xzf victus-max.tar.gz --strip-components=1
+    rm -f victus-max.tar.gz
 fi
 
 if [ ! -f "setup.sh" ]; then
@@ -178,9 +178,9 @@ rm -rf "$TMP_DIR"
 
 echo -e ""
 echo -e "${GREEN}====================================================${NC}"
-echo -e "${GREEN}  🎉 OMENSpace ($TARGET_REF) installed successfully!${NC}"
+echo -e "${GREEN}  🎉 Victus Max ($TARGET_REF) installed successfully!${NC}"
 echo -e "${GREEN}  Launch GUI via app menu or terminal:              ${NC}"
-echo -e "${BOLD}       omen-gui                                     ${NC}"
+echo -e "${BOLD}       victus-max                                   ${NC}"
 echo -e "${GREEN}  CLI control:                                      ${NC}"
-echo -e "${BOLD}       omen-cli --help                              ${NC}"
+echo -e "${BOLD}       victus-max-cli --help                        ${NC}"
 echo -e "${GREEN}====================================================${NC}"

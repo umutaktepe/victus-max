@@ -10,7 +10,15 @@ pub struct FanPreset {
 
 fn get_presets_path() -> PathBuf {
     if let Ok(home) = std::env::var("HOME") {
-        PathBuf::from(home).join(".config/omenspace/fan_presets.json")
+        let p_victus = PathBuf::from(&home).join(".config/victus-max/fan_presets.json");
+        if p_victus.exists() {
+            return p_victus;
+        }
+        let p_omen = PathBuf::from(&home).join(".config/omenspace/fan_presets.json");
+        if p_omen.exists() {
+            return p_omen;
+        }
+        p_victus
     } else {
         PathBuf::from("/tmp/fan_presets.json")
     }

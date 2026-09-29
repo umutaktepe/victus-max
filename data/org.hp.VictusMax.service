@@ -1,0 +1,3 @@
+[D-BUS Service]
+Name=org.hp.VictusMax
+Exec=/usr/bin/victus-max --gapplication-service

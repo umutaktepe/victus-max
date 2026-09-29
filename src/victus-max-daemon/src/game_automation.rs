@@ -32,8 +32,10 @@ impl GameAutomationService {
     }
 
     fn load_profiles() -> HashMap<String, AppProfile> {
-        let path = Path::new("/etc/omenspace/app_profiles.json");
-        if let Ok(content) = fs::read_to_string(path) {
+        let path = Path::new("/etc/victus-max/app_profiles.json");
+        let path_fallback = Path::new("/etc/omenspace/app_profiles.json");
+        let content = fs::read_to_string(path).or_else(|_| fs::read_to_string(path_fallback));
+        if let Ok(content) = content {
             if let Ok(profiles) = serde_json::from_str::<Vec<AppProfile>>(&content) {
                 let mut map = HashMap::new();
                 for p in profiles {
@@ -46,14 +48,21 @@ impl GameAutomationService {
     }
 
     fn save_profiles(map: &HashMap<String, AppProfile>) {
-        let path = Path::new("/etc/omenspace/app_profiles.json");
+        let path = Path::new("/etc/victus-max/app_profiles.json");
         if let Some(parent) = path.parent() {
             let _ = fs::create_dir_all(parent);
         }
         let profiles: Vec<AppProfile> = map.values().cloned().collect();
         if let Ok(json) = serde_json::to_string_pretty(&profiles) {
-            if let Err(e) = fs::write(path, json) {
+            if let Err(e) = fs::write(path, &json) {
                 error!("Failed to save app profiles: {}", e);
+            }
+            // Keep legacy path in sync if parent exists
+            let path_legacy = Path::new("/etc/omenspace/app_profiles.json");
+            if let Some(parent) = path_legacy.parent() {
+                if parent.exists() {
+                    let _ = fs::write(path_legacy, &json);
+                }
             }
         }
     }
@@ -83,7 +92,7 @@ impl GameAutomationService {
                         info!("Detected game start: {}. Switching to '{}' profile...", profile.process_name, profile.power_profile);
                         *active_lock = Some(profile.process_name.clone());
                         DesktopNotifier::send_notification(
-                            "OMENSpace App Profile Activated",
+                            "Victus Max App Profile Activated",
                             &format!("App '{}' launched. Switched performance profile to '{}'.", profile.process_name, profile.power_profile),
                             1,
                         ).await;
@@ -94,7 +103,7 @@ impl GameAutomationService {
                         info!("Game '{}' closed. Restoring default profile...", current);
                         *active_lock = None;
                         DesktopNotifier::send_notification(
-                            "OMENSpace Game Profile Deactivated",
+                            "Victus Max Game Profile Deactivated",
                             &format!("Game '{}' closed. Restored default performance profile.", current),
                             0,
                         ).await;

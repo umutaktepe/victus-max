@@ -4,7 +4,7 @@ use adw::prelude::*;
 use crate::i18n;
 
 /* ─────────────────────────────────────────────────────────────
-   updater.rs — OmenSpace & firmware update checker
+   updater.rs — Victus Max & firmware update checker
    ───────────────────────────────────────────────────────────── */
 
 pub fn build_page(window: &adw::ApplicationWindow) -> gtk::Box {
@@ -30,9 +30,9 @@ pub fn build_page(window: &adw::ApplicationWindow) -> gtk::Box {
         .build();
     page.append(&content_box);
 
-    // ── OmenSpace update card ────────────────────────────────
+    // ── Victus Max update card ────────────────────────────────
     let app_group = adw::PreferencesGroup::builder()
-        .title("OmenSpace")
+        .title("Victus Max")
         .build();
 
     let ver_row = adw::ActionRow::builder()
@@ -233,7 +233,7 @@ fn show_app_update_modal(window: &adw::ApplicationWindow) {
         let (tx, rx) = tokio::sync::oneshot::channel();
         crate::daemon_client::get_runtime().spawn(async move {
             let output = tokio::process::Command::new("curl")
-                .args(["-s", "https://api.github.com/repos/yunusemreyl/omen-space/releases/latest"])
+                .args(["-s", "https://api.github.com/repos/umutaktepe/victus-max/releases/latest"])
                 .output()
                 .await;
             let _ = tx.send(output);
@@ -398,13 +398,22 @@ fn start_update_process(vbox: gtk::Box, dialog: gtk::Window) {
             glib::ControlFlow::Continue
         });
 
-        let setup_path = if std::path::Path::new("/usr/share/omen-space/setup.sh").exists() {
+        let setup_path = if std::path::Path::new("/usr/share/victus-max/setup.sh").exists() {
+            "/usr/share/victus-max/setup.sh".to_string()
+        } else if std::path::Path::new("/usr/share/omen-space/setup.sh").exists() {
             "/usr/share/omen-space/setup.sh".to_string()
+        } else if std::path::Path::new("/opt/victus-max/setup.sh").exists() {
+            "/opt/victus-max/setup.sh".to_string()
         } else if std::path::Path::new("/opt/omen-space/setup.sh").exists() {
             "/opt/omen-space/setup.sh".to_string()
         } else {
             let home_dir = std::env::var("HOME").unwrap_or_else(|_| "/root".to_string());
-            format!("{}/omen-space/setup.sh", home_dir)
+            let v_path = format!("{}/victus-max/setup.sh", home_dir);
+            if std::path::Path::new(&v_path).exists() {
+                v_path
+            } else {
+                format!("{}/omen-space/setup.sh", home_dir)
+            }
         };
         
         let mut cmd = match tokio::process::Command::new("pkexec")

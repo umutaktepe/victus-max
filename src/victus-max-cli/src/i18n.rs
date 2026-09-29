@@ -18,12 +18,11 @@ struct GuiConfig {
 pub fn get_language() -> Language {
     let mut selected = Language::Auto;
     if let Some(home) = std::env::var_os("HOME") {
-        let mut p = PathBuf::from(home);
-        p.push(".config");
-        p.push("omenspace");
-        p.push("gui_config.json");
+        let p_victus = PathBuf::from(&home).join(".config/victus-max/gui_config.json");
+        let p_omen = PathBuf::from(home).join(".config/omenspace/gui_config.json");
+        let content = fs::read_to_string(&p_victus).or_else(|_| fs::read_to_string(&p_omen));
         
-        if let Ok(content) = fs::read_to_string(&p) {
+        if let Ok(content) = content {
             if let Ok(cfg) = serde_json::from_str::<GuiConfig>(&content) {
                 selected = match cfg.language.as_str() {
                     "tr" => Language::Tr,

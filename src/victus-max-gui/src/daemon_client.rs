@@ -38,9 +38,9 @@ async fn get_conn() -> Result<zbus::Connection, zbus::Error> {
 /// Send a desktop notification via org.freedesktop.Notifications.
 /// urgency: 0 = low, 1 = normal, 2 = critical
 async fn notify_dbus_error(context: &str, err: &zbus::Error) {
-    let title = "OMEN Space — D-Bus Hatası";
+    let title = "Victus Max — D-Bus Hatası";
     let body = format!("{}: {}", context, err);
-    eprintln!("[omen-gui] {}", body);
+    eprintln!("[victus-max] {}", body);
 
     // Try session bus for desktop notification
     if let Ok(conn) = zbus::Connection::session().await {
@@ -53,7 +53,7 @@ async fn notify_dbus_error(context: &str, err: &zbus::Error) {
             Some("org.freedesktop.Notifications"),
             "Notify",
             &(
-                "OMEN Space",
+                "Victus Max",
                 0u32,
                 "dialog-error",
                 title,
@@ -70,9 +70,9 @@ async fn notify_dbus_error(context: &str, err: &zbus::Error) {
 fn notify_dbus_error_bg(context: &'static str, err_str: String) {
     let rt = get_runtime();
     rt.spawn(async move {
-        let title = "OMEN Space — D-Bus Hatası";
+        let title = "Victus Max — D-Bus Hatası";
         let body = format!("{}: {}", context, err_str);
-        eprintln!("[omen-gui] {}", body);
+        eprintln!("[victus-max] {}", body);
 
         if let Ok(conn) = zbus::Connection::session().await {
             let mut hints = std::collections::HashMap::<&str, zbus::zvariant::Value>::new();
@@ -84,7 +84,7 @@ fn notify_dbus_error_bg(context: &'static str, err_str: String) {
                 Some("org.freedesktop.Notifications"),
                 "Notify",
                 &(
-                    "OMEN Space",
+                    "Victus Max",
                     0u32,
                     "dialog-error",
                     title,

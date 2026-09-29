@@ -68,7 +68,7 @@ impl PowerAutomationService {
                         if current_ac {
                             info!("AC Power connected. Applying AC Performance Profile...");
                             DesktopNotifier::send_notification(
-                                "OMENSpace Power Automation",
+                                "Victus Max Power Automation",
                                 "AC Power connected. Switched to Performance mode.",
                                 0,
                             ).await;
@@ -76,7 +76,7 @@ impl PowerAutomationService {
                         } else {
                             info!("Battery Power connected. Applying Battery Saver Profile...");
                             DesktopNotifier::send_notification(
-                                "OMENSpace Power Automation",
+                                "Victus Max Power Automation",
                                 "Running on Battery. Switched to Quiet/Saver mode.",
                                 1,
                             ).await;

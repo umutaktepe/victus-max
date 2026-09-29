@@ -7,8 +7,8 @@ mod fetch;
 mod i18n;
 
 #[derive(Parser)]
-#[command(name = "omen-cli")]
-#[command(about = "Fastfetch-style CLI for Omen Space Daemon", long_about = None)]
+#[command(name = "victus-max-cli")]
+#[command(about = "Fastfetch-style CLI for Victus Max Daemon", long_about = None)]
 struct Cli {
     #[command(subcommand)]
     command: Option<Commands>,
@@ -16,7 +16,7 @@ struct Cli {
 
 #[derive(Subcommand, Debug, Clone)]
 pub enum Commands {
-    /// Show fastfetch / neofetch style OMEN system summary
+    /// Show fastfetch / neofetch style HP Victus & OMEN system summary
     Fetch,
     /// RGB keyboard lighting controls
     Rgb {

@@ -25,8 +25,10 @@ pub fn build_page() -> (adw::PreferencesPage, Option<adw::PreferencesGroup>, Opt
 
     let mut zone_override = 0;
     if let Ok(home) = std::env::var("HOME") {
-        let path = format!("{}/.config/omenspace/settings.json", home);
-        if let Ok(json_str) = std::fs::read_to_string(&path) {
+        let path = format!("{}/.config/victus-max/settings.json", home);
+        let path_fallback = format!("{}/.config/omenspace/settings.json", home);
+        let content = std::fs::read_to_string(&path).or_else(|_| std::fs::read_to_string(&path_fallback));
+        if let Ok(json_str) = content {
             if let Ok(json) = serde_json::from_str::<serde_json::Value>(&json_str) {
                 if let Some(zo) = json.get("zone_override").and_then(|v| v.as_u64()) {
                     zone_override = zo;
@@ -210,8 +212,10 @@ pub fn build_page() -> (adw::PreferencesPage, Option<adw::PreferencesGroup>, Opt
         let has_lightbar_hardware = detected_mode == KeyboardMode::DesktopRgb || lb_prod_lower.contains("desktop") || lb_prod_lower.contains("transcend") || lb_prod_lower.contains("max");
         let mut show_lightbar = true;
         if let Ok(home) = std::env::var("HOME") {
-            let path = format!("{}/.config/omenspace/settings.json", home);
-            if let Ok(json_str) = std::fs::read_to_string(&path) {
+            let path = format!("{}/.config/victus-max/settings.json", home);
+            let path_fallback = format!("{}/.config/omenspace/settings.json", home);
+            let content = std::fs::read_to_string(&path).or_else(|_| std::fs::read_to_string(&path_fallback));
+            if let Ok(json_str) = content {
                 if let Ok(json) = serde_json::from_str::<serde_json::Value>(&json_str) {
                     if let Some(lb) = json.get("lightbar_enabled").and_then(|v| v.as_bool()) {
                         show_lightbar = lb;

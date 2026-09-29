@@ -42,8 +42,10 @@ pub fn build_page(window: &adw::ApplicationWindow) -> gtk::Box {
     // ── Enable switch ─────────────────────────────────────────
     let mut init_enabled = true;
     if let Ok(home) = std::env::var("HOME") {
-        let path = format!("{}/.config/omenspace/settings.json", home);
-        if let Ok(js) = std::fs::read_to_string(&path) {
+        let path = format!("{}/.config/victus-max/settings.json", home);
+        let path_fallback = format!("{}/.config/omenspace/settings.json", home);
+        let content = std::fs::read_to_string(&path).or_else(|_| std::fs::read_to_string(&path_fallback));
+        if let Ok(js) = content {
             if let Ok(j) = serde_json::from_str::<serde_json::Value>(&js) {
                 if let Some(en) = j.get("app_profiles_enabled").and_then(|v| v.as_bool()) {
                     init_enabled = en;
@@ -62,9 +64,13 @@ pub fn build_page(window: &adw::ApplicationWindow) -> gtk::Box {
     enable_row.connect_active_notify(|row| {
         let is_active = row.is_active();
         if let Ok(home) = std::env::var("HOME") {
-            let path = format!("{}/.config/omenspace/settings.json", home);
+            let dir = format!("{}/.config/victus-max", home);
+            let _ = std::fs::create_dir_all(&dir);
+            let path = format!("{}/settings.json", dir);
+            let path_fallback = format!("{}/.config/omenspace/settings.json", home);
             let mut json = serde_json::json!({});
-            if let Ok(js) = std::fs::read_to_string(&path) {
+            let content = std::fs::read_to_string(&path).or_else(|_| std::fs::read_to_string(&path_fallback));
+            if let Ok(js) = content {
                 if let Ok(j) = serde_json::from_str::<serde_json::Value>(&js) { json = j; }
             }
             json["app_profiles_enabled"] = serde_json::json!(is_active);

@@ -34,7 +34,7 @@ impl SysMonInterface {
             .unwrap_or_else(|_| "Unknown".to_string()).trim().to_string();
 
         let mut report = String::new();
-        report.push_str("# OMENSpace Diagnostic Report\n\n");
+        report.push_str("# Victus Max Diagnostic Report\n\n");
         let date = std::process::Command::new("date")
             .arg("+%Y-%m-%d %H:%M:%S")
             .output()
@@ -44,7 +44,7 @@ impl SysMonInterface {
 
         // ── Environment ──────────────────────────────────────────
         report.push_str("## Environment\n\n| Field | Value |\n|-------|-------|\n");
-        report.push_str(&format!("| OMENSpace version | `{}` |\n", env!("CARGO_PKG_VERSION")));
+        report.push_str(&format!("| Victus Max version | `{}` |\n", env!("CARGO_PKG_VERSION")));
         report.push_str(&format!("| OS                | `{}` |\n", specs.os_spec));
         report.push_str(&format!("| Kernel            | `{}` |\n", specs.kernel_version));
 
@@ -150,8 +150,8 @@ impl SysMonInterface {
                 > sudo mount -t debugfs none /sys/kernel/debug   # if not already mounted\n\
                 > ls /sys/kernel/debug/ec/ec0/io                 # should exist now\n\
                 > ```\n\
-                > Then regenerate this report from the OMENSpace Debug panel.\n",
-                if std::env::var("USER").unwrap_or_default() == "root" || nix_is_root() { "✅ Yes" } else { "❌ No — reopen OMENSpace as root or via pkexec" },
+                > Then regenerate this report from the Victus Max Debug panel.\n",
+                if std::env::var("USER").unwrap_or_default() == "root" || nix_is_root() { "✅ Yes" } else { "❌ No — reopen Victus Max as root or via pkexec" },
                 if debugfs_mounted { "✅ Mounted" } else { "❌ Not mounted" },
                 if ec_path_exists { "✅ Present" } else { "❌ Missing (ec_sys not loaded or read_support=0)" },
             ));
@@ -203,7 +203,7 @@ impl SysMonInterface {
         }
         issue.push_str("```\n\n");
         
-        issue.push_str("**Description:**\nMy keyboard backlight is not detected or cannot be controlled by OMENSpace. Here are the diagnostics.\n");
+        issue.push_str("**Description:**\nMy keyboard backlight is not detected or cannot be controlled by Victus Max. Here are the diagnostics.\n");
         
         issue
     }

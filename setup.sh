@@ -189,7 +189,7 @@ remove_legacy_omenctl() {
 
 do_build() {
     echo "====================================="
-    echo " Building OMENSpace (Daemon, CLI, GUI, Tray)"
+    echo " Building Victus Max (Daemon, CLI, GUI, Tray, Overlay)"
     echo "====================================="
     export CARGO_HOME=/root/.cargo
     export RUSTUP_HOME=/root/.rustup
@@ -323,6 +323,7 @@ do_install() {
     rm -f /usr/share/applications/omen-space.desktop /usr/share/applications/org.hp.OmenSpace.desktop /usr/share/applications/org.hp.VictusMax.desktop
     cp data/org.hp.VictusMax.desktop /usr/share/applications/
     cp data/org.hp.OmenSpace.desktop /usr/share/applications/
+    cp data/org.hp.VictusMax.service /usr/share/dbus-1/services/
     cp data/org.hp.OmenSpace.service /usr/share/dbus-1/services/
     mkdir -p /usr/share/pixmaps
     mkdir -p /usr/share/icons/hicolor/512x512/apps
@@ -412,26 +413,26 @@ EOF
 
 do_uninstall() {
     echo "====================================="
-    echo " Uninstalling OMENSpace..."
+    echo " Uninstalling Victus Max..."
     echo "====================================="
-    systemctl stop omen-space-daemon.service 2>/dev/null || true
-    killall omen-tray 2>/dev/null || true
-    killall omen-gui 2>/dev/null || true
-    killall omen-overlay 2>/dev/null || true
-    systemctl disable omen-space-daemon.service 2>/dev/null || true
+    systemctl stop victus-max-daemon.service omen-space-daemon.service 2>/dev/null || true
+    killall victus-max-tray omen-tray 2>/dev/null || true
+    killall victus-max victus-max-gui omen-gui 2>/dev/null || true
+    killall victus-max-overlay omen-overlay 2>/dev/null || true
+    systemctl disable victus-max-daemon.service omen-space-daemon.service 2>/dev/null || true
 
-    rm -rf /usr/libexec/omen-space
-    rm -rf /etc/omen-space
-    rm -rf /var/lib/omen-space /var/lib/omen-space-daemon
+    rm -rf /usr/libexec/victus-max /usr/libexec/omen-space
+    rm -rf /etc/victus-max /etc/omen-space
+    rm -rf /var/lib/victus-max /var/lib/omen-space /var/lib/omen-space-daemon
     rm -f /etc/dbus-1/system.d/org.hp.omen.conf
-    rm -f /etc/systemd/system/omen-space-daemon.service
+    rm -f /etc/systemd/system/victus-max-daemon.service /etc/systemd/system/omen-space-daemon.service
     rm -f /usr/lib/sysusers.d/omen-space.conf
     rm -f /usr/lib/udev/rules.d/99-omen-space.rules
 
-    rm -f /usr/bin/omen-cli
-    rm -f /usr/bin/omen-tray
-    rm -f /usr/bin/omen-gui
-    rm -f /usr/bin/omen-overlay
+    rm -f /usr/bin/victus-max-cli /usr/bin/omen-cli
+    rm -f /usr/bin/victus-max-tray /usr/bin/omen-tray
+    rm -f /usr/bin/victus-max /usr/bin/victus-max-gui /usr/bin/omen-gui
+    rm -f /usr/bin/victus-max-overlay /usr/bin/omen-overlay
 
     rm -rf /usr/share/victus-max
     rm -rf /usr/share/omen-space
@@ -439,6 +440,7 @@ do_uninstall() {
     rm -f /usr/share/applications/org.hp.VictusMax.desktop
     rm -f /usr/share/applications/omen-space.desktop
     rm -f /usr/share/applications/org.hp.OmenSpace.desktop
+    rm -f /usr/share/dbus-1/services/org.hp.VictusMax.service
     rm -f /usr/share/dbus-1/services/org.hp.OmenSpace.service
     rm -f /usr/share/pixmaps/victus-max.png
     rm -f /usr/share/pixmaps/omenspace.png
@@ -465,7 +467,7 @@ do_uninstall() {
 
 do_update() {
     echo "====================================="
-    echo " Updating OMENSpace..."
+    echo " Updating Victus Max..."
     echo "====================================="
     if [ -d ".git" ]; then
         git pull || echo "Warning: Failed to pull latest changes. Building current version..."
@@ -516,9 +518,9 @@ case "$COMMAND" in
         ;;
     *)
         echo "Usage: sudo ./setup.sh [install|update|uninstall]"
-        echo "  install   : Builds and installs OMENSpace (cleans legacy omenctl)"
+        echo "  install   : Builds and installs Victus Max (cleans legacy omenctl)"
         echo "  update    : Pulls latest git changes, builds, and reinstalls"
-        echo "  uninstall : Completely removes OMENSpace from the system"
+        echo "  uninstall : Completely removes Victus Max from the system"
         exit 1
         ;;
 esac

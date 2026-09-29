@@ -246,7 +246,7 @@ impl AcpiDiagnosticRunner {
 
         // 5. Generate GitHub Issue Markdown Template
         let issue_template = format!(
-            "# OMENSpace Triage Report - {} ({})\n\n\
+            "# Victus Max Triage Report - {} ({})\n\n\
             ## System Details\n\
             - **Product Name:** {}\n\
             - **Board ID:** {}\n\
@@ -260,7 +260,7 @@ impl AcpiDiagnosticRunner {
             ```markdown\n\
             {}\n\
             ```\n\n\
-            *Generated automatically by OMENSpace Daemon on {}*",
+            *Generated automatically by Victus Max Daemon on {}*",
             product_name, board_id, product_name, board_id, bios_ver,
             read_file_line("/proc/sys/kernel/osrelease"),
             wmi_report.status_summary,

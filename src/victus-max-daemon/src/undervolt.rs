@@ -399,7 +399,7 @@ impl UndervoltService {
         let external = self.detect_external_controller();
         let mut warning = None;
         if let Some(ref ext) = external {
-            warning = Some(format!("External controller detected: {}. This may conflict with Omen Space.", ext));
+            warning = Some(format!("External controller detected: {}. This may conflict with Victus Max.", ext));
         }
         if self.is_amd && !self.available {
             warning = Some("RyzenAdj is not installed. Please install ryzenadj to use AMD Undervolting & Power Limits.".to_string());

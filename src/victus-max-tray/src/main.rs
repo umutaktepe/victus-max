@@ -24,7 +24,7 @@ where
 fn acquire_single_instance_lock() -> Option<std::fs::File> {
     let runtime_dir = std::env::var("XDG_RUNTIME_DIR")
         .unwrap_or_else(|_| format!("/tmp/user-{}", unsafe { libc::getuid() }));
-    let lock_path = format!("{}/omen-tray.lock", runtime_dir);
+    let lock_path = format!("{}/victus-max-tray.lock", runtime_dir);
 
     let file = std::fs::OpenOptions::new()
         .read(true)
@@ -59,6 +59,23 @@ fn spawn_gui() {
             } else {
                 None
             }
+        })
+        .or_else(|| {
+            std::env::current_exe()
+                .ok()
+                .and_then(|p| p.parent().map(|dir| dir.join("victus-max-gui")))
+                .and_then(|gui_path| {
+                    if gui_path.exists() {
+                        Command::new(gui_path)
+                            .stdin(std::process::Stdio::null())
+                            .stdout(std::process::Stdio::null())
+                            .stderr(std::process::Stdio::null())
+                            .spawn()
+                            .ok()
+                    } else {
+                        None
+                    }
+                })
         })
         .or_else(|| {
             std::env::current_exe()
@@ -103,8 +120,6 @@ fn spawn_gui() {
         });
 
     // Reap the child once it exits so it never lingers as a zombie.
-    // (Zombies previously accumulated and broke the OMEN-key toggle, which
-    // relies on pgrep -x omen-gui.)
     if let Some(mut child) = spawned {
         std::thread::spawn(move || {
             let _ = child.wait();
@@ -115,19 +130,26 @@ fn spawn_gui() {
 fn spawn_overlay() {
     let is_running = std::process::Command::new("pgrep")
         .arg("-x")
-        .arg("omen-overlay")
+        .arg("victus-max-overlay")
         .output()
         .map(|o| o.status.success() && !o.stdout.is_empty())
-        .unwrap_or(false);
+        .unwrap_or(false)
+        || std::process::Command::new("pgrep")
+            .arg("-x")
+            .arg("omen-overlay")
+            .output()
+            .map(|o| o.status.success() && !o.stdout.is_empty())
+            .unwrap_or(false);
 
     if is_running {
+        let _ = std::process::Command::new("pkill").arg("-TERM").arg("-x").arg("victus-max-overlay").output();
         let _ = std::process::Command::new("pkill").arg("-TERM").arg("-x").arg("omen-overlay").output();
         return;
     }
 
     let spawned: Option<std::process::Child> = std::env::current_exe()
         .ok()
-        .and_then(|p| p.parent().map(|dir| dir.join("omen-overlay")))
+        .and_then(|p| p.parent().map(|dir| dir.join("victus-max-overlay")))
         .and_then(|overlay_path| {
             if overlay_path.exists() {
                 std::process::Command::new(overlay_path)
@@ -139,6 +161,31 @@ fn spawn_overlay() {
             } else {
                 None
             }
+        })
+        .or_else(|| {
+            std::env::current_exe()
+                .ok()
+                .and_then(|p| p.parent().map(|dir| dir.join("omen-overlay")))
+                .and_then(|overlay_path| {
+                    if overlay_path.exists() {
+                        std::process::Command::new(overlay_path)
+                            .stdin(std::process::Stdio::null())
+                            .stdout(std::process::Stdio::null())
+                            .stderr(std::process::Stdio::null())
+                            .spawn()
+                            .ok()
+                    } else {
+                        None
+                    }
+                })
+        })
+        .or_else(|| {
+            std::process::Command::new("victus-max-overlay")
+                .stdin(std::process::Stdio::null())
+                .stdout(std::process::Stdio::null())
+                .stderr(std::process::Stdio::null())
+                .spawn()
+                .ok()
         })
         .or_else(|| {
             std::process::Command::new("omen-overlay")
@@ -169,7 +216,7 @@ struct Tray {
 
 impl ksni::Tray for Tray {
     fn id(&self) -> String {
-        "omenspace_tray".into()
+        "victus_max_tray".into()
     }
 
     fn category(&self) -> ksni::Category {
@@ -199,6 +246,7 @@ impl ksni::Tray for Tray {
             _ => t("balanced"),
         };
         let f_label = match self.fan_mode.as_str() {
+            "better_auto" | "better-auto" | "smart" => t("better_auto"),
             "max" => t("max"),
             "ec" => t("ec"),
             "custom" => t("custom"),
@@ -294,6 +342,18 @@ impl ksni::Tray for Tray {
                 label: t("fan_mode").into(),
                 submenu: vec![
                     CheckmarkItem {
+                        label: t("better_auto").into(),
+                        checked: cur_fan == "better_auto" || cur_fan == "better-auto" || cur_fan == "smart",
+                        activate: Box::new(|tray: &mut Self| {
+                            tray.fan_mode = "better_auto".into();
+                            spawn_task(async {
+                                set_fan_mode("better_auto").await;
+                            });
+                        }),
+                        ..Default::default()
+                    }
+                    .into(),
+                    CheckmarkItem {
                         label: t("auto").into(),
                         checked: cur_fan == "auto",
                         activate: Box::new(|tray: &mut Self| {
@@ -369,6 +429,8 @@ impl ksni::Tray for Tray {
                 label: t("exit").into(),
                 icon_name: "application-exit".into(),
                 activate: Box::new(|_| {
+                    let _ = Command::new("pkill").arg("-TERM").arg("-x").arg("victus-max").output();
+                    let _ = Command::new("pkill").arg("-TERM").arg("-x").arg("victus-max-gui").output();
                     let _ = Command::new("pkill").arg("-TERM").arg("-x").arg("omen-gui").output();
                     let _ = Command::new("pkill").arg("-TERM").arg("-x").arg("omenctl").output();
                     std::process::exit(0);
@@ -465,7 +527,7 @@ async fn set_gpu_mode(mode: &str) {
                     info!("GPU modu ayarlandı ({}) -> {}", mode, resp);
                     if resp.contains("REBOOT") {
                         if let Ok(mut child) = Command::new("notify-send")
-                            .arg("OMEN Space")
+                            .arg("Victus Max")
                             .arg("GPU modunun etkin olması için sistemi yeniden başlatmanız gerekiyor.")
                             .arg("-i")
                             .arg("dialog-warning")
@@ -485,13 +547,13 @@ async fn main() {
     let _lock_file = match acquire_single_instance_lock() {
         Some(file) => file,
         None => {
-            eprintln!("omen-tray zaten çalışıyor, ikinci örnek sonlandırılıyor.");
+            eprintln!("victus-max-tray zaten çalışıyor, ikinci örnek sonlandırılıyor.");
             return;
         }
     };
 
     env_logger::init();
-    info!("omen-tray başlatılıyor...");
+    info!("victus-max-tray başlatılıyor...");
 
     i18n::init();
 

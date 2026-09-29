@@ -28,9 +28,9 @@ pub enum SystemCommand {
     CheckConflicts,
     /// Check for BIOS updates
     CheckBios,
-    /// Check for Omen Space updates
+    /// Check for Victus Max updates
     CheckUpdate,
-    /// Apply Omen Space update
+    /// Apply Victus Max update
     ApplyUpdate,
     /// Clear page cache memory
     CleanMemory,
@@ -77,12 +77,12 @@ pub async fn handle(cmd: &SystemCommand, conn: &Connection) -> Result<()> {
             println!("BIOS Update Info:\n{}", res);
         }
         SystemCommand::CheckUpdate => {
-            println!("Checking GitHub for Omen Space updates...");
+            println!("Checking GitHub for Victus Max updates...");
             let res = proxy.check_app_update().await?;
             println!("Update Info:\n{}", res);
         }
         SystemCommand::ApplyUpdate => {
-            println!("Applying Omen Space update...");
+            println!("Applying Victus Max update...");
             let res = proxy.apply_app_update().await?;
             println!("Response:\n{}", res);
         }

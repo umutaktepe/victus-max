@@ -22,8 +22,10 @@ pub fn build_page(window: &adw::ApplicationWindow, on_lang_changed: Option<Rc<dy
     let mut init_lightbar = true; // Always show by default so users see "Unsupported" explicitly
 
     if let Ok(home) = std::env::var("HOME") {
-        let path = format!("{}/.config/omenspace/settings.json", home);
-        if let Ok(json_str) = std::fs::read_to_string(&path) {
+        let path = format!("{}/.config/victus-max/settings.json", home);
+        let path_fallback = format!("{}/.config/omenspace/settings.json", home);
+        let content = std::fs::read_to_string(&path).or_else(|_| std::fs::read_to_string(&path_fallback));
+        if let Ok(json_str) = content {
             if let Ok(json) = serde_json::from_str::<serde_json::Value>(&json_str) {
                 if let Some(hb) = json.get("heartbeat_interval").and_then(|v| v.as_f64()) { init_hb = hb; }
                 if let Some(auto) = json.get("autostart").and_then(|v| v.as_bool()) { init_auto = auto; }
@@ -116,9 +118,13 @@ pub fn build_page(window: &adw::ApplicationWindow, on_lang_changed: Option<Rc<dy
         adw::StyleManager::default().set_color_scheme(scheme);
 
         if let Ok(home) = std::env::var("HOME") {
-            let path = format!("{}/.config/omenspace/settings.json", home);
+            let dir = format!("{}/.config/victus-max", home);
+            let _ = std::fs::create_dir_all(&dir);
+            let path = format!("{}/settings.json", dir);
+            let path_fallback = format!("{}/.config/omenspace/settings.json", home);
             let mut json = serde_json::json!({});
-            if let Ok(js) = std::fs::read_to_string(&path) {
+            let content = std::fs::read_to_string(&path).or_else(|_| std::fs::read_to_string(&path_fallback));
+            if let Ok(js) = content {
                 if let Ok(j) = serde_json::from_str::<serde_json::Value>(&js) { json = j; }
             }
             json["appearance_mode"] = serde_json::json!(idx);
@@ -248,18 +254,23 @@ pub fn build_page(window: &adw::ApplicationWindow, on_lang_changed: Option<Rc<dy
         let zo = zone_row_clone.selected();
         let lb = lb_row_clone.is_active();
         if let Ok(home) = std::env::var("HOME") {
-            let dir = format!("{}/.config/omenspace", home);
+            let dir = format!("{}/.config/victus-max", home);
             let _ = std::fs::create_dir_all(&dir);
             let path = format!("{}/settings.json", dir);
-            let json = serde_json::json!({
-                "heartbeat_interval": hb,
-                "autostart": auto,
-                "startup_profile": sp,
-                "battery_care": bc,
-                "thermal_alerts": ta,
-                "zone_override": zo,
-                "lightbar_enabled": lb
-            });
+            let path_fallback = format!("{}/.config/omenspace/settings.json", home);
+            let mut json = serde_json::json!({});
+            let content = std::fs::read_to_string(&path).or_else(|_| std::fs::read_to_string(&path_fallback));
+            if let Ok(js) = content {
+                if let Ok(j) = serde_json::from_str::<serde_json::Value>(&js) { json = j; }
+            }
+            json["heartbeat_interval"] = serde_json::json!(hb);
+            json["autostart"] = serde_json::json!(auto);
+            json["startup_profile"] = serde_json::json!(sp);
+            json["battery_care"] = serde_json::json!(bc);
+            json["thermal_alerts"] = serde_json::json!(ta);
+            json["zone_override"] = serde_json::json!(zo);
+            json["lightbar_enabled"] = serde_json::json!(lb);
+
             let _ = std::fs::write(path, serde_json::to_string_pretty(&json).unwrap_or_default());
         }
     };

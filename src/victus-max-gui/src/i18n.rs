@@ -59,11 +59,15 @@ fn default_language() -> String {
 
 fn get_config_path() -> Option<PathBuf> {
     if let Some(home) = std::env::var_os("HOME") {
-        let mut p = PathBuf::from(home);
-        p.push(".config");
-        p.push("omenspace");
-        p.push("gui_config.json");
-        Some(p)
+        let p_victus = PathBuf::from(&home).join(".config/victus-max/gui_config.json");
+        if p_victus.exists() {
+            return Some(p_victus);
+        }
+        let p_omen = PathBuf::from(home).join(".config/omenspace/gui_config.json");
+        if p_omen.exists() {
+            return Some(p_omen);
+        }
+        Some(p_victus)
     } else {
         None
     }
@@ -161,7 +165,7 @@ pub fn t(key: &'static str) -> &'static str {
 fn translate_tr(key: &'static str) -> &'static str {
     match key {
         // App / Navigation
-        "app_title" => "OmenSpace",
+        "app_title" => "Victus Max",
         "menu" => "Menü",
         "nav_performance" => "Performans",
         "nav_undervolt" => "Gelişmiş Güç",
@@ -194,7 +198,7 @@ fn translate_tr(key: &'static str) -> &'static str {
         "overlay_launch_now_sub" => "Ekran üstü hızlı kontrol panelini açar",
         "overlay_launch_btn" => "Hızlı Menüyü Aç/Kapat",
         "overlay_shortcuts_title" => "Kısayollar ve Kontroller",
-        "overlay_shortcuts_sub" => "Global kısayol: Aç/Kapat • 1-3: Güç Profili • Q/W/E: Fan Modu • ESC: Kapat",
+        "overlay_shortcuts_sub" => "Global kısayol: Aç/Kapat • 1-3: Güç Profili • Q/W/E/R: Fan Modu • ESC: Kapat",
         "overlay_status_title" => "Hızlı Menü Arka Plan Durumu",
         "overlay_status_active" => "Çalışıyor",
         "overlay_status_inactive" => "Durduruldu",
@@ -392,7 +396,7 @@ fn translate_tr(key: &'static str) -> &'static str {
         "search_apps" => "Uygulamalarda ara...",
 
         // Updater Page
-        "updater_desc" => "OmenSpace ve cihaz firmware güncellemelerini yönet",
+        "updater_desc" => "Victus Max ve cihaz firmware güncellemelerini yönet",
         "current_version" => "Mevcut Versiyon",
         "last_checked" => "Son kontrol: Bugün",
         "update_status" => "Güncelleme Durumu",
@@ -430,7 +434,7 @@ fn translate_tr(key: &'static str) -> &'static str {
         "ok_btn" => "Tamam",
 
         // Settings Page
-        "settings_desc" => "OmenSpace daemon & uygulama yapılandırması",
+        "settings_desc" => "Victus Max daemon & uygulama yapılandırması",
         "hw_config_group" => "Donanım Yapılandırması",
         "appearance_and_lang" => "Görünüm &amp; Dil",
         "appearance_mode" => "Tema Görünümü",
@@ -439,7 +443,7 @@ fn translate_tr(key: &'static str) -> &'static str {
         "language_row_sub" => "Arayüz dilini anında değiştirin",
         "daemon_group" => "Daemon",
         "daemon_status" => "Daemon Durumu",
-        "daemon_status_sub" => "OmenSpace arka plan servisine bağlantı",
+        "daemon_status_sub" => "Victus Max arka plan servisine bağlantı",
         "connected" => "Bağlı",
         "ready" => "Hazır",
         "disconnected" => "Bağlantı Yok",
@@ -473,7 +477,7 @@ fn translate_tr(key: &'static str) -> &'static str {
         "auto_detect_recommended" => "Otomatik Algıla (Önerilen)",
         "active_hw_interface" => "Aktif Donanım Arayüzü",
         "active_hw_interface_sub" => "Sistemde tespit edilen kontrol mekanizması",
-        "about_group" => "OmenSpace Hakkında",
+        "about_group" => "Victus Max Hakkında",
         "version" => "Versiyon",
         "device" => "Cihaz",
         "kernel" => "Kernel",
@@ -550,7 +554,7 @@ fn translate_tr(key: &'static str) -> &'static str {
 fn translate_en(key: &'static str) -> &'static str {
     match key {
         // App / Navigation
-        "app_title" => "OmenSpace",
+        "app_title" => "Victus Max",
         "menu" => "Menu",
         "nav_performance" => "Performance",
         "nav_undervolt" => "Advanced Power",
@@ -583,7 +587,7 @@ fn translate_en(key: &'static str) -> &'static str {
         "overlay_launch_now_sub" => "Open on-screen floating HUD overlay",
         "overlay_launch_btn" => "Toggle Overlay",
         "overlay_shortcuts_title" => "Shortcuts & Keybindings",
-        "overlay_shortcuts_sub" => "Global hotkey: Toggle • 1-3: Power Profiles • Q/W/E: Fan Modes • ESC: Close",
+        "overlay_shortcuts_sub" => "Global hotkey: Toggle • 1-3: Power Profiles • Q/W/E/R: Fan Modes • ESC: Close",
         "overlay_status_title" => "Overlay Background Daemon Status",
         "overlay_status_active" => "Active",
         "overlay_status_inactive" => "Inactive",
@@ -787,7 +791,7 @@ fn translate_en(key: &'static str) -> &'static str {
         "search_apps" => "Search apps...",
 
         // Updater Page
-        "updater_desc" => "Manage OmenSpace and device firmware updates",
+        "updater_desc" => "Manage Victus Max and device firmware updates",
         "current_version" => "Current Version",
         "last_checked" => "Last checked: Today",
         "update_status" => "Update Status",
@@ -825,7 +829,7 @@ fn translate_en(key: &'static str) -> &'static str {
         "ok_btn" => "OK",
 
         // Settings Page
-        "settings_desc" => "OmenSpace daemon & application configuration",
+        "settings_desc" => "Victus Max daemon & application configuration",
         "hw_config_group" => "Hardware Configuration",
         "appearance_and_lang" => "Appearance & Language",
         "appearance_mode" => "Theme Appearance",
@@ -834,7 +838,7 @@ fn translate_en(key: &'static str) -> &'static str {
         "language_row_sub" => "Select interface language instantly",
         "daemon_group" => "Daemon",
         "daemon_status" => "Daemon Status",
-        "daemon_status_sub" => "Connection to OmenSpace background service",
+        "daemon_status_sub" => "Connection to Victus Max background service",
         "connected" => "Connected",
         "ready" => "Ready",
         "disconnected" => "Disconnected",
@@ -868,7 +872,7 @@ fn translate_en(key: &'static str) -> &'static str {
         "auto_detect_recommended" => "Auto Detect (Recommended)",
         "active_hw_interface" => "Active Hardware Interface",
         "active_hw_interface_sub" => "Detected hardware control mechanism on this system",
-        "about_group" => "About OmenSpace",
+        "about_group" => "About Victus Max",
         "version" => "Version",
         "device" => "Device",
         "kernel" => "Kernel",
