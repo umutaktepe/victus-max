@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1.0/policyconfig.dtd">
+<policyconfig>
+  <vendor>Victus Max Project</vendor>
+  <vendor_url>https://github.com/umutaktepe/victus-max</vendor_url>
+  <icon_name>system-software-update</icon_name>
+
+  <action id="org.hp.victusmax.update">
+    <description>Update Victus Max system components and kernel drivers</description>
+    <description xml:lang="tr">Victus Max sistem bileşenlerini ve çekirdek sürücülerini güncelle</description>
+    <message>Authentication is required to update Victus Max</message>
+    <message xml:lang="tr">Victus Max'i güncellemek için kimlik doğrulaması gerekiyor</message>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/libexec/victus-max/victus-max-updater</annotate>
+    <annotate key="org.freedesktop.policykit.exec.allow_gui">true</annotate>
+  </action>
+</policyconfig>

@@ -302,6 +302,7 @@ do_install() {
 
     rm -f /usr/libexec/victus-max/victus-max-daemon
     cp "${daemon_bin:-target/release/victus-max-daemon}" /usr/libexec/victus-max/victus-max-daemon
+    install -m 755 scripts/victus-max-updater.sh /usr/libexec/victus-max/victus-max-updater
 
     rm -f /usr/bin/victus-max-cli
     cp "${cli_bin:-target/release/victus-max-cli}" /usr/bin/victus-max-cli
@@ -319,6 +320,10 @@ do_install() {
     install -m 644 data/victus-max-daemon.service /etc/systemd/system/
     install -m 644 data/sysusers.d/victus-max.conf /usr/lib/sysusers.d/
     install -m 644 data/99-victus-max.rules /usr/lib/udev/rules.d/
+    mkdir -p /usr/share/polkit-1/actions
+    install -m 644 data/org.hp.victusmax.update.policy /usr/share/polkit-1/actions/
+    mkdir -p /usr/share/victus-max
+    cp setup.sh /usr/share/victus-max/setup.sh 2>/dev/null || true
     rm -f /usr/share/applications/org.hp.VictusMax.desktop
     cp data/org.hp.VictusMax.desktop /usr/share/applications/
     cp data/org.hp.VictusMax.service /usr/share/dbus-1/services/
@@ -408,6 +413,7 @@ do_uninstall() {
     killall victus-max-overlay omen-overlay 2>/dev/null || true
     systemctl disable victus-max-daemon.service omen-space-daemon.service 2>/dev/null || true
 
+    rm -f /usr/libexec/victus-max/victus-max-updater
     rm -rf /usr/libexec/victus-max /usr/libexec/omen-space
     rm -rf /etc/victus-max /etc/omen-space
     rm -rf /var/lib/victus-max /var/lib/omen-space /var/lib/omen-space-daemon
@@ -429,6 +435,7 @@ do_uninstall() {
     rm -f /usr/share/applications/org.hp.OmenSpace.desktop
     rm -f /usr/share/dbus-1/services/org.hp.VictusMax.service
     rm -f /usr/share/dbus-1/services/org.hp.OmenSpace.service
+    rm -f /usr/share/polkit-1/actions/org.hp.victusmax.update.policy
     rm -f /usr/share/pixmaps/victus-max.png
     rm -f /usr/share/pixmaps/omenspace.png
     rm -f /usr/share/icons/hicolor/*/apps/victus-max.png
