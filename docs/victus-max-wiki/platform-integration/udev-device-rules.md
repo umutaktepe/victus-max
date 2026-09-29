@@ -3,7 +3,7 @@
 ## Genel Bakış
 Linux çekirdeği varsayılan olarak donanım MSR yazmaçlarını (`/dev/cpu/*/msr`) ve doğrudan girdi akışlarını (`/dev/input/event*`) yalnızca root erişimine açık tutar veya belirli gruplara kısıtlar.
 
-`data/99-omen-space.rules` dosyası, OMEN Space servislerinin ve `omen-hw` grubunun ihtiyaç duyduğu donanım aygıt izinlerini kalıcı hale getirir.
+`data/99-omen-space.rules` dosyası, Victus Max servislerinin ve `omen-hw` grubunun ihtiyaç duyduğu donanım aygıt izinlerini kalıcı hale getirir.
 
 ## Udev Kural Dosyası (`data/99-omen-space.rules`)
 
@@ -19,7 +19,7 @@ SUBSYSTEM=="platform", DRIVERS=="hp-omen-extra", GROUP="omen-hw", MODE="0664"
 ```
 
 ## Güvenlik ve Donanım Yalıtımı
-- MSR aygıtlarına yazma izni Linux çekirdeğinde varsayılan olarak güvenlik amacıyla kısıtlanmıştır. Bu kural sayesinde `omen-space-daemon` güvenli biçimde [[cpu-msr-undervolt]] ve [[amd-ryzen-smu]] modüllerini işletebilir.
+- MSR aygıtlarına yazma izni Linux çekirdeğinde varsayılan olarak güvenlik amacıyla kısıtlanmıştır. Bu kural sayesinde `victus-max-daemon` güvenli biçimde [[cpu-msr-undervolt]] ve [[amd-ryzen-smu]] modüllerini işletebilir.
 - [[hotkey-monitor]] girdi olaylarını dinlerken aygıt kilitlenmesi yaşamadan çalışabilir.
 
 ## İlgili Bağlantılar

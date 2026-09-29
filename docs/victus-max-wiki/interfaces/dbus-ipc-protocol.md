@@ -1,9 +1,9 @@
 # D-Bus Süreçler Arası İletişim Protokolü (IPC)
 
 ## Genel Bakış
-OMEN Space, Linux sistem mimarisinde ayrıcalık izolasyonunu sağlamak amacıyla D-Bus (Desktop Bus) IPC protokolünü kullanır.
+Victus Max, Linux sistem mimarisinde ayrıcalık izolasyonunu sağlamak amacıyla D-Bus (Desktop Bus) IPC protokolünü kullanır.
 
-Tüm D-Bus arayüz tanımları, tipleri ve proxy makroları `omen-types` kütüphanesinde (`src/victus-max-types/src/lib.rs`) toplanmıştır. Bu sayede hem sunucu tarafı (`omen-space-daemon`) hem de istemciler (`omen-gui`, `omen-cli`, `omen-overlay`, `omen-tray`) aynı tip tanımlarını ve arayüz sözleşmelerini derleme anında doğrular.
+Tüm D-Bus arayüz tanımları, tipleri ve proxy makroları `victus-max-types` kütüphanesinde (`src/victus-max-types/src/lib.rs`) toplanmıştır. Bu sayede hem sunucu tarafı (`victus-max-daemon`) hem de istemciler (`victus-max`, `victus-max-cli`, `victus-max-overlay`, `victus-max-tray`) aynı tip tanımlarını ve arayüz sözleşmelerini derleme anında doğrular.
 
 ## D-Bus Ad Alanı ve Nesne Yolu Hiyerarşisi
 
@@ -27,7 +27,7 @@ Tüm D-Bus arayüz tanımları, tipleri ve proxy makroları `omen-types` kütüp
 ```
 
 ## Proxy Makroları (`zbus::proxy`)
-İstemciler doğrudan düşük seviyeli D-Bus baytlarıyla uğraşmak yerine `omen-types` tarafından sağlanan Rust trait proxy'lerini çağırır:
+İstemciler doğrudan düşük seviyeli D-Bus baytlarıyla uğraşmak yerine `victus-max-types` tarafından sağlanan Rust trait proxy'lerini çağırır:
 
 ```rust
 #[proxy(

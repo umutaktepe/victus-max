@@ -15,7 +15,7 @@ Telemetri motoru bağımsız sorumluluklara ayrılmış 5 alt modülden oluşur:
 - **`interface.rs`:** Toplanan verileri D-Bus üzerinden istemcilere sunan ve teşhis raporları üreten arayüz katmanı.
 
 ## Canlı Telemetri Yayını (`telemetry_updated`)
-`omen-space-daemon` ana döngüsü, her 3 saniyede bir `fetch_system_stats` fonksiyonunu asenkron olarak çağırır:
+`victus-max-daemon` ana döngüsü, her 3 saniyede bir `fetch_system_stats` fonksiyonunu asenkron olarak çağırır:
 - Toplanan veriler [[system-telemetry-spec]] (`SystemStats`) formatında JSON'a serileştirilir.
 - D-Bus `telemetry_updated(json_stats)` sinyali ile tüm abonelere yayılır.
 - Bu sinyal sayesinde [[quick-hud-overlay]] ve [[gui-application]] sıfır yoklama (zero-polling) ile anında güncellenir.

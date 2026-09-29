@@ -3,7 +3,7 @@
 ## Genel Bakış
 AMD Ryzen mobil ve masaüstü işlemcilerde güç limitleri, sıcaklık hedefleri ve çekirdek voltaj eğrileri (Curve Optimizer); yonga üzerindeki bağımsız bir yardımcı işlemci olan **Sistem Yönetim Birimi (System Management Unit - SMU)** tarafından kontrol edilir.
 
-OMEN Space (`src/victus-max-daemon/src/ryzen.rs`), harici bir C ikili dosyası olan `ryzenadj` aracına bağımlı kalmadan, SMU posta kutusu (Mailbox) protokolünü doğrudan Rust içinde yerel olarak uygular.
+Victus Max (`src/victus-max-daemon/src/ryzen.rs`), harici bir C ikili dosyası olan `ryzenadj` aracına bağımlı kalmadan, SMU posta kutusu (Mailbox) protokolünü doğrudan Rust içinde yerel olarak uygular.
 
 ## Desteklenen AMD Aileleri ve Otomatik Algılama
 

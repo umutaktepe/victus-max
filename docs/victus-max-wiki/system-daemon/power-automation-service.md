@@ -1,7 +1,7 @@
 # Güç Otomasyonu ve AC/Pil Durum İzleyici
 
 ## Genel Bakış
-`PowerAutomationService` (`src/victus-max-daemon/src/power_automation.rs`), cihazın güç kaynağı (AC Adaptör vs. Batarya) değişimlerini ve masaüstü ortamının (GNOME / KDE) güç tercihlerini izleyerek OMEN Space donanım ayarlarını otomatik senkronize eden servistir.
+`PowerAutomationService` (`src/victus-max-daemon/src/power_automation.rs`), cihazın güç kaynağı (AC Adaptör vs. Batarya) değişimlerini ve masaüstü ortamının (GNOME / KDE) güç tercihlerini izleyerek Victus Max donanım ayarlarını otomatik senkronize eden servistir.
 
 ## Entegrasyon Kanalları
 

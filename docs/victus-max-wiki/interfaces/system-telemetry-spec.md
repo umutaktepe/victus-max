@@ -1,7 +1,7 @@
 # Sistem Telemetrisi ve Donanım Şartnamesi (Telemetry Spec)
 
 ## Genel Bakış
-OMEN Space istemcileri ile çekirdek daemon arasındaki veri akışı, `omen-types` kütüphanesinde tanımlanan strongly-typed Rust struct yapılarıyla yürütülür.
+Victus Max istemcileri ile çekirdek daemon arasındaki veri akışı, `victus-max-types` kütüphanesinde tanımlanan strongly-typed Rust struct yapılarıyla yürütülür.
 
 Bu yapılar, D-Bus sinyali (`telemetry_updated`) ve `get_hardware_specs()` metotlarında JSON formatında taşınır.
 

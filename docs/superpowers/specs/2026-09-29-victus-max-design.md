@@ -102,7 +102,7 @@ Sistem 4 ana katmandan oluşur:
    - **Performance Modu:** Tüm tavanlar kalkar, fanlar Seviye 8'e kadar hızlanarak maksimum soğutma sağlar.
 
 ### 3.3. Dinamik ve Kullanıcı Ayarlı Asgari Devir (Min RPM) ve Akustik Tavan
-- Yapılandırma dosyası (`/etc/victus-max/fan.json` veya `/etc/omen-space/fan.json`) içinde saklanır:
+- Yapılandırma dosyası (`/etc/victus-max/fan.json`, eski `/etc/omen-space/fan.json` geriye dönük fallback desteğiyle) içinde saklanır:
   ```json
   {
       "min_fan_rpm": 2600,

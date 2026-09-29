@@ -3,7 +3,7 @@
 ## Genel Bakış
 Gömülü Denetleyici (EC), modern dizüstü bilgisayarlarda anakart üzerinde bağımsız çalışan, güç dağıtımı, şarj yönetimi, klavye matrisi ve doğrudan fan hız kontrolünden sorumlu mikroişlemcidir.
 
-OMEN Space içerisinde `LinuxEcController` (`src/victus-max-daemon/src/ec.rs`), Linux çekirdeğinin `ec_sys` sürücüsü aracılığıyla sağladığı debugfs IO dosyasını (`/sys/kernel/debug/ec/ec0/io`) kullanarak donanım kayıtlarına (registers) doğrudan erişim sağlar.
+Victus Max içerisinde `LinuxEcController` (`src/victus-max-daemon/src/ec.rs`), Linux çekirdeğinin `ec_sys` sürücüsü aracılığıyla sağladığı debugfs IO dosyasını (`/sys/kernel/debug/ec/ec0/io`) kullanarak donanım kayıtlarına (registers) doğrudan erişim sağlar.
 
 ## Bellek Kayıt Haritası (Register Map)
 

@@ -28,10 +28,10 @@ Statik ve dinamik efektler daemon içindeki asenkron zamanlayıcı döngüleri t
 | `sparkle` / `disco` | Rastgele tuş/bölge parlamaları ve disko aydınlatması. |
 
 ## Tuş Başına Eşleme Sihirbazı (Per-Key HID Wizard)
-Tuş başına aydınlatmalı modellerde Linux çekirdeğinin tuş sıralaması ile donanım indeksleri farklılık gösterebilir. Servis; `start_per_key_wizard()`, `light_key_index()` ve `record_key_mapping()` metotlarıyla kullanıcının tuşları tek tek yakıp haritalamasını sağlayan interaktif bir eşleme motoru barındırır. Bu harita `/root/.config/omen-space/per_key_map.json` dosyasına yazılır.
+Tuş başına aydınlatmalı modellerde Linux çekirdeğinin tuş sıralaması ile donanım indeksleri farklılık gösterebilir. Servis; `start_per_key_wizard()`, `light_key_index()` ve `record_key_mapping()` metotlarıyla kullanıcının tuşları tek tek yakıp haritalamasını sağlayan interaktif bir eşleme motoru barındırır. Bu harita `~/.config/victus-max/per_key_map.json` (veya `/etc/victus-max/per_key_map.json`) dosyasına yazılır.
 
 ## Yapılandırma Kalıcılığı
-Uygulanan renk kodları, parlaklık seviyeleri ve animasyon hızları `/etc/omen-space/rgb.json` dosyasında saklanır ve sistem açılışında otomatik olarak geri yüklenir.
+Uygulanan renk kodları, parlaklık seviyeleri ve animasyon hızları `/etc/victus-max/rgb.json` dosyasında saklanır (eski `/etc/omen-space/rgb.json` geriye dönük fallback desteğiyle) ve sistem açılışında otomatik olarak geri yüklenir.
 
 ## İlgili Bağlantılar
 - Donanım Sürücüsü: [[hp-omen-extra-dkms]]

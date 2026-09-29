@@ -1,7 +1,7 @@
-# OMEN Space Grafik Kullanıcı Arayüzü (GTK4 + Libadwaita)
+# Victus Max Grafik Kullanıcı Arayüzü (GTK4 + Libadwaita)
 
 ## Genel Bakış
-`omen-gui` (`src/victus-max-gui/`), modern GNOME tasarım ilkelerine uygun olarak GTK4 ve Libadwaita kütüphaneleriyle geliştirilmiş birincil masaüstü kontrol merkezidir.
+`victus-max` (`src/victus-max-gui/`), modern GNOME tasarım ilkelerine uygun olarak GTK4 ve Libadwaita kütüphaneleriyle geliştirilmiş birincil masaüstü kontrol merkezidir. Geriye dönük uyumluluk için `omen-gui` sembolik bağı korunur.
 
 [[adr-001-rust-daemon-client-split]] mimari kararı uyarınca tamamen unprivileged standart kullanıcı oturumunda çalışır ve donanımla `daemon_client.rs` üzerinden D-Bus ile haberleşir.
 
@@ -11,7 +11,7 @@ Arayüz modüler sekmelere ayrılmıştır:
 
 ```mermaid
 graph TD
-    App[omen-gui Main Window] --> Mon[Canlı İzleme: monitoring.rs]
+    App[victus-max Main Window] --> Mon[Canlı İzleme: monitoring.rs]
     App --> Perf[Performans & Fan: performance_control.rs]
     App --> Curve[Fan Eğrisi Düzenleyici: fan_curve_editor.rs]
     App --> RGB[RGB Studio: keyboardrgb / desktop_rgb_gui]
@@ -33,7 +33,7 @@ graph TD
 D-Bus `telemetry_updated` sinyaline abone olarak CPU yükü, sıcaklıklar, GPU kullanımı ve fan devirlerini (RPM) gecikmesiz gösterir.
 
 ### 2. Performans ve Fan Denetimi (`performance_control.rs`)
-ACPI termal profilleri (`power-saver`, `balanced`, `performance`) ve fan modları (`auto`, `max`, `custom`) arasında anında tek tıkla geçiş sağlar.
+ACPI termal profilleri (`power-saver`, `balanced`, `performance`) ve fan modları (`better_auto`, `auto`, `max`, `custom`) arasında anında tek tıkla geçiş sağlar.
 
 ### 3. Fan Eğrisi Editörü (`fan_curve_editor.rs`)
 Detaylı analiz için bkz: [[fan-curve-editor-ui]].
@@ -48,7 +48,7 @@ Detaylı analiz için bkz: [[fan-curve-editor-ui]].
 Ekran yönlendirmesini değiştirir ve yeniden başlatma onayı isteyen AdwDialog penceresini açar.
 
 ### 7. Otomatik Tray Başlatıcı (`ensure_tray_running`)
-`omen-gui` açıldığında arka planda `omen-tray` sürecinin çalışıp çalışmadığını kontrol eder (`pgrep -x omen-tray`), çalışmıyorsa kullanıcı için otomatik olarak başlatır.
+`victus-max` açıldığında arka planda `victus-max-tray` sürecinin çalışıp çalışmadığını kontrol eder (`pgrep -x victus-max-tray`), çalışmıyorsa kullanıcı için otomatik olarak başlatır.
 
 ## İlgili Bağlantılar
 - Mimari Karar: [[adr-001-rust-daemon-client-split]]

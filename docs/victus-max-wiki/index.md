@@ -50,15 +50,15 @@ Sistem bileşenleri arasındaki IPC sözleşmeleri, D-Bus arayüz tanımları ve
 
 - [[dbus-ipc-protocol]] — `org.hp.omen` D-Bus ad alanı, zbus proxy trait mimarisi ve sinyal akış şeması.
 - [[fan-dbus-interface]] — `org.hp.omen.Fan` metotları, sinyalleri ve özel fan eğrisi JSON veri formatı.
-- [[power-dbus-interface]] — `org.hp.omen.Power` arayüzü ve `/etc/omen-space/power.json` dosya şeması.
+- [[power-dbus-interface]] — `org.hp.omen.Power` arayüzü ve `/etc/victus-max/power.json` dosya şeması.
 - [[rgb-dbus-interface]] — `org.hp.omen.Rgb` metotları, Hex renk kodlaması ve interaktif eşleme komutları.
 - [[mux-dbus-interface]] — `org.hp.omen.Mux` sözleşmesi ve ekran yönlendirme durum yanıtları.
 - [[undervolt-dbus-interface]] — `org.hp.omen.Undervolt` MSR ofset arayüzü ve yanıt modelleri.
-- [[ryzen-dbus-interface]] — `org.hp.omen.Ryzen` SMU ayar arayüzü ve `/etc/omen-space/ryzen.json` şeması.
+- [[ryzen-dbus-interface]] — `org.hp.omen.Ryzen` SMU ayar arayüzü ve `/etc/victus-max/ryzen.json` şeması.
 - [[sysmon-dbus-interface]] — `org.hp.omen.SysMon` telemetri yayını ve tanı raporu sözleşmesi.
 - [[system-telemetry-spec]] — `SystemStats` dinamik sensör veri paketi ve `HardwareSpecs` statik donanım modeli.
 - [[board-capabilities-matrix]] — `boards.json` donanım kabiliyet matrisi, `LinuxCapabilityClass` ve fallback mantığı.
-- [[app-profiles-spec]] — `/etc/omenspace/app_profiles.json` otomatik oyun kural şeması.
+- [[app-profiles-spec]] — `/etc/victus-max/app_profiles.json` otomatik oyun kural şeması.
 
 ---
 

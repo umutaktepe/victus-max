@@ -14,7 +14,8 @@
 | `set_power_limits(enabled: bool, pl1: i32, pl2: i32)` | `enabled`, `pl1` (Watt), `pl2` (Watt) | `String` | Intel RAPL PL1 ve PL2 sınırlarını ayarlar. |
 | `set_app_profiles_enabled(enabled: bool)` | `true` / `false` | `String` | Süreç bazlı otomatik profil tetiklemeyi açar/kapatır. |
 
-## Konfigürasyon Dosya Şeması (`/etc/omen-space/power.json`)
+## Konfigürasyon Dosya Şeması (`/etc/victus-max/power.json`)
+*(Not: Eski `/etc/omen-space/power.json` yoluna geriye dönük tam uyumluluk desteklenir)*
 
 ```json
 {

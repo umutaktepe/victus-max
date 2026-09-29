@@ -22,7 +22,7 @@ Donanımsal MUX anahtarlaması ekran panelinin fiziksel veri yolu bağlantısın
 Servis, sistemdeki aktif ekran çıkışlarını (`/sys/class/drm/`) ve bağlı panelleri tarayarak hangi GPU'nun hangi ekranı sürdüğünü raporlar.
 
 ### 4. Yapılandırma Kalıcılığı
-Kullanıcının tercih ettiği MUX modu `/etc/omen-space/mux.json` dosyasında kaydedilir.
+Kullanıcının tercih ettiği MUX modu `/etc/victus-max/mux.json` dosyasında kaydedilir (eski `/etc/omen-space/mux.json` geriye dönük fallback desteğiyle).
 
 ## İlgili Bağlantılar
 - Donanım Katmanı: [[hp-wmi-driver]]

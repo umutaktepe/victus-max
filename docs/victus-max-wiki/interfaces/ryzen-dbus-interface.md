@@ -14,7 +14,8 @@
 | `set_curve_optimizer(co: i32)` | CO ofseti (örn. `-20`) | `String` | Tüm çekirdeklere Curve Optimizer uygular. |
 | `get_ryzen_state()` | Yok | `String` (JSON) | Mevcut SMU parametrelerini ve aile bilgisini döner. |
 
-## Yapılandırma Dosyası (`/etc/omen-space/ryzen.json`)
+## Yapılandırma Dosyası (`/etc/victus-max/ryzen.json`)
+*(Not: Eski `/etc/omen-space/ryzen.json` yoluna geriye dönük tam uyumluluk desteklenir)*
 
 ```json
 {

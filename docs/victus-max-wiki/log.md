@@ -104,3 +104,16 @@ grep "^## \[" docs/victus-max-wiki/log.md | tail -5
   - Better Auto proaktif algoritmasının 8 seviyeli sıcaklık & yük matrisi, yukarı/aşağı histerezis eşikleri, tek adımlı iniş sınırlayıcısı (single-step ramp-down), ayarlanabilir akustik tavan, 88°C acil durum termal baypası, asgari 2600 RPM tabanı ve 10 saniyelik EC veri yolu koruması tablolarla örneklendirildi.
   - 5 gerçek dünya kullanım senaryosu (Ofis/Genel Çalışma, AAA/Espor Oyunculuğu, Sessiz Kütüphane Ortamı, Ağır Derleme & Render, Periyodik Fan Tozu Temizleme) eklendi.
   - CLI, GUI, Shift+F2 HUD ve Sistem Tepsisi hızlı kullanım örnekleri ve özet karşılaştırma matrisi sunuldu.
+
+---
+
+## [2026-09-29] Docs | Kapsamlı Dokümantasyon ve Wiki İsim Arındırması
+
+- **İşlem Türü:** Dokümantasyon Refaktörü ve Marka Standardizasyonu
+- **Kapsam:** `docs/` kök rehberleri (`architecture.md`, `backend.md`, `cli.md`, `driver.md`, `gui.md`, `tray.md`, `CODE_REVIEW_GUIDE.md`, `CONTRIBUTING.md`) ve `docs/victus-max-wiki/` bilgi tabanı sayfaları (`adr-001`, `board-capabilities-matrix`, `dbus-ipc-protocol`, `system-telemetry-spec`, `power-dbus-interface`, `ryzen-dbus-interface`, `packaging-and-dkms`, `polkit-dbus-security`, `systemd-services`, `udev-device-rules`, `conflict-detector`, `mux-service`, `power-automation-service`, `power-service`, `rgb-service`, `ryzen-service`, `sysmon-service`, `undervolt-service`, `index.md`).
+- **Detaylar:**
+  - `docs/` altındaki tüm modül ve mimari kılavuzları Victus Max workspace ve ikili dosya yapısına (`victus-max-*`) uyarlandı.
+  - CLI kılavuzundaki eski komutlar `victus-max-cli fan set-mode better-auto`, `set-ceiling`, `set-min-rpm`, `system clean-fans` ve `fetch` komutlarını içerecek şekilde yenilendi.
+  - Wiki dokümanlarındaki tüm eski "OMEN Space" ve "omenspace" adlandırmaları "Victus Max" olarak güncellendi; donanım uyumluluğu ve geriye dönük fallback dosya yolları (`/etc/omenspace/` ve `~/.config/omenspace/`) korundu.
+  - D-Bus ve mimari belgelerinde `victus-max-types` ve `victus-max-daemon` isimleri tam olarak tutarlı hale getirildi.
+

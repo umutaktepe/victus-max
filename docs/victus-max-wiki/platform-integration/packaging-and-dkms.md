@@ -1,7 +1,7 @@
 # Paketleme, DKMS ve Dağıtım Altyapısı
 
 ## Genel Bakış
-OMEN Space; Arch Linux (AUR), NixOS (Flakes), Ubuntu/Debian, Fedora ve openSUSE dahil olmak üzere başlıca Linux dağıtımlarında sorunsuz kurulup güncellenebilecek şekilde tasarlanmıştır.
+Victus Max; Arch Linux (AUR), NixOS (Flakes), Ubuntu/Debian, Fedora ve openSUSE dahil olmak üzere başlıca Linux dağıtımlarında sorunsuz kurulup güncellenebilecek şekilde tasarlanmıştır.
 
 ## Derleme ve İkili Optimizasyon (`Cargo.toml`)
 Kök dizindeki `Cargo.toml` yapılandırması, minimum ikili dosya boyutu ve maksimum çalışma hızı için optimize edilmiştir:

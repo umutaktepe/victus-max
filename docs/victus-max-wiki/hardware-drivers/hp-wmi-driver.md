@@ -3,7 +3,7 @@
 ## Genel Bakış
 HP WMI sürücüsü (`hp-wmi`), Linux çekirdeğinin HP dizüstü bilgisayarlardaki donanım yönetim arabirimini ACPI (Advanced Configuration and Power Interface) WMI GUID'leri üzerinden kontrol eden resmi mekanizmasıdır.
 
-OMEN Space ekosisteminde `hp-wmi`, çekirdeğin sunduğu standart sysfs aygıt düğümlerini (`/sys/devices/platform/hp-wmi/`) okuyup yazarak BIOS seviyesinde termal profilleri, GPU MUX yönlendirmesini ve donanım olay bildirimlerini yönetmek için temel zemin oluşturur.
+Victus Max ekosisteminde `hp-wmi`, çekirdeğin sunduğu standart sysfs aygıt düğümlerini (`/sys/devices/platform/hp-wmi/`) okuyup yazarak BIOS seviyesinde termal profilleri, GPU MUX yönlendirmesini ve donanım olay bildirimlerini yönetmek için temel zemin oluşturur.
 
 ## Çekirdek Mimarisi ve Arayüz Yolları
 

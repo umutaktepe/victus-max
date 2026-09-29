@@ -17,12 +17,12 @@ Projenin önceki nesil uygulaması olan Python tabanlı *OmenCtl*, tüm grafik a
 ## Alternatifler
 - **Alternatif A (Monolitik Sudo GUI):** Grafik uygulamasını `pkexec` veya `sudo` ile doğrudan root yetkisiyle başlatmak. (Güvenlik ve modern Wayland masaüstü entegrasyonu standartları gereğince reddedildi).
 - **Alternatif B (Setuid C Yardımcı Binary):** Yalnızca donanım yazımı yapan küçük C programlarına setuid biti vermek. (Bakım zorluğu, sinyal ve IPC senkronizasyon yetersizliği nedeniyle reddedildi).
-- **Alternatif C (Ayrık Rust Daemon + D-Bus IPC):** Donanım yetkisini tek bir arka plan servisinde (`omen-space-daemon`) toplamak ve kullanıcı arayüzlerini (`omen-gui`, `omen-cli`, `omen-overlay`, `omen-tray`) standart unprivileged kullanıcı oturumunda çalıştırmak.
+- **Alternatif C (Ayrık Rust Daemon + D-Bus IPC):** Donanım yetkisini tek bir arka plan servisinde (`victus-max-daemon`) toplamak ve kullanıcı arayüzlerini (`victus-max`, `victus-max-cli`, `victus-max-overlay`, `victus-max-tray`) standart unprivileged kullanıcı oturumunda çalıştırmak.
 
 ## Karar
 Sistem **İstemci-Sunucu (Client-Server) / Ayrık Ayrıcalık (Privilege Separation)** modeline geçirilmiştir:
 1. **Çekirdek Servis:** Root yetkisiyle bir `systemd` servisi olarak çalışan [[daemon-overview]], Linux System Bus üzerinde `org.hp.omen` adıyla D-Bus nesnelerini yayınlar.
-2. **Güvenli IPC:** Süreçler arası iletişimde sıfır maliyetli ve tip güvenli asenkron Rust kütüphanesi olan `zbus` kullanılmıştır. Ortak tipler ve D-Bus proxy arayüzleri [[dbus-ipc-protocol]] üzerinden `omen-types` kütüphanesinde paylaştırılmıştır.
+2. **Güvenli IPC:** Süreçler arası iletişimde sıfır maliyetli ve tip güvenli asenkron Rust kütüphanesi olan `zbus` kullanılmıştır. Ortak tipler ve D-Bus proxy arayüzleri [[dbus-ipc-protocol]] üzerinden `victus-max-types` kütüphanesinde paylaştırılmıştır.
 3. **Erişim Kontrolü:** Yalnızca `omen-hw` veya `wheel` grubundaki yerel kullanıcılara izin veren Polkit ve D-Bus kural seti ([[polkit-dbus-security]]) yapılandırılmıştır.
 4. **Hafif İstemciler:** [[gui-application]], [[quick-hud-overlay]], [[system-tray]] ve [[command-line-interface]] tamamen unprivileged kullanıcı yetkileriyle çalışır.
 
@@ -34,7 +34,7 @@ Sistem **İstemci-Sunucu (Client-Server) / Ayrık Ayrıcalık (Privilege Separat
 
 ### Olumsuz / Trade-off
 - D-Bus serileştirme/ters-serileştirme (IPC) ek bir soyutlama katmanı getirmiştir.
-- Yeni bir donanım yeteneği eklendiğinde hem daemon uç noktasının hem de `omen-types` D-Bus proxy sözleşmesinin güncellenmesi gerekmektedir.
+- Yeni bir donanım yeteneği eklendiğinde hem daemon uç noktasının hem de `victus-max-types` D-Bus proxy sözleşmesinin güncellenmesi gerekmektedir.
 
 ## İlgili Bağlantılar
 - Mimari Uygulayıcı: [[daemon-overview]]

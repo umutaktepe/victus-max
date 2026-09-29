@@ -1,7 +1,7 @@
 # Polkit ve D-Bus Güvenlik Politikası
 
 ## Genel Bakış
-OMEN Space'in ayrıcalık izolasyonu modelinde ([[adr-001-rust-daemon-client-split]]), root yetkili daemon ile unprivileged kullanıcı istemcileri arasındaki erişim sınırları D-Bus güvenlik politikası (`data/org.hp.omen.conf`) ile belirlenir.
+Victus Max'ın ayrıcalık izolasyonu modelinde ([[adr-001-rust-daemon-client-split]]), root yetkili daemon ile unprivileged kullanıcı istemcileri arasındaki erişim sınırları D-Bus güvenlik politikası (`data/org.hp.omen.conf`) ile belirlenir.
 
 ## D-Bus Güvenlik Politikası (`data/org.hp.omen.conf`)
 
@@ -42,7 +42,7 @@ Dosya `/usr/share/dbus-1/system.d/org.hp.omen.conf` (veya `/etc/dbus-1/system.d/
 ```
 
 ## Güvenlik Sağlaması
-1. **İsim Gaspını Önleme (No Name Spoofing):** Yalnızca `root` kullanıcısı `org.hp.omen` veri yolu adını alabilir. Yetkisiz bir yerel süreç kendisini OMEN Space daemon gibi tanıtamaz.
+1. **İsim Gaspını Önleme (No Name Spoofing):** Yalnızca `root` kullanıcısı `org.hp.omen` veri yolu adını alabilir. Yetkisiz bir yerel süreç kendisini Victus Max daemon gibi tanıtamaz.
 2. **Kötü Niyetli Yazılımları Engelleme:** Sistemde çalışan üçüncü parti korumasız web tarayıcıları veya izole edilmemiş scriptler donanım fanlarını kapatamaz veya voltaj değerlerini bozamaz.
 3. **Kullanıcı Kolaylığı:** Kullanıcı `omen-hw` veya `wheel` grubundaysa her fan/profil değişiminde şifre (sudo prompt) sormadan akıcı bir deneyim yaşar.
 

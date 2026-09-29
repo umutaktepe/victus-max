@@ -1,9 +1,9 @@
 # Uygulama ve Oyun Profilleri Şartnamesi (`app_profiles.json`)
 
 ## Genel Bakış
-OMEN Space, kullanıcının belirlediği süreçler (oyunlar, simülatörler, 3D modelleme yazılımları) başladığında otomatik donanım profili tetiklemek için JSON tabanlı bir kural motoru kullanır.
+Victus Max, kullanıcının belirlediği süreçler (oyunlar, simülatörler, 3D modelleme yazılımları) başladığında otomatik donanım profili tetiklemek için JSON tabanlı bir kural motoru kullanır.
 
-Bu kurallar `/etc/omenspace/app_profiles.json` dosyasında saklanır ve [[game-automation-service]] tarafından yürütülür.
+Bu kurallar öncelikli olarak `/etc/victus-max/app_profiles.json` dosyasında saklanır (eski `/etc/omenspace/app_profiles.json` yoluna geriye dönük tam uyumluluk korunur) ve [[game-automation-service]] tarafından yürütülür.
 
 ## Şema ve JSON Yapısı
 

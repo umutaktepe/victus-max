@@ -25,7 +25,7 @@ Servis yalnızca kayıtlı konfigürasyonu raporlamakla kalmaz, `/dev/cpu/0/msr`
 Aşırı voltaj düşürme kaynaklı sistem çökmelerini önlemek amacıyla yazılımsal güvenlik limitleri (örn. maksimum -150mV) tanımlanmıştır. Tanımlı limitlerin dışındaki D-Bus istekleri reddedilir.
 
 ### 5. Kalıcılık
-Yapılandırılan voltaj ve TCC değerleri `/etc/omen-space/undervolt.json` dosyasında saklanır ve sistem her açıldığında servis tarafından otomatik olarak MSR yazmaçlarına yazılır.
+Yapılandırılan voltaj ve TCC değerleri `/etc/victus-max/undervolt.json` dosyasında saklanır (eski `/etc/omen-space/undervolt.json` geriye dönük fallback desteğiyle) ve sistem her açıldığında servis tarafından otomatik olarak MSR yazmaçlarına yazılır.
 
 ## İlgili Bağlantılar
 - Donanım Sürücüsü: [[cpu-msr-undervolt]]

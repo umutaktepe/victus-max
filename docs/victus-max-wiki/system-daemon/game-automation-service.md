@@ -3,7 +3,7 @@
 ## Genel Bakış
 `GameAutomationService` (`src/victus-max-daemon/src/game_automation.rs`), sistemde belirli oyunlar veya ağır iş yükü uygulamaları başlatıldığında güç profilini ve fan modunu otomatik olarak ayarlayan arka plan servisidir.
 
-Servis, D-Bus üzerinde `org.hp.omen.AppProfiles` arayüzünü sunar ve `/etc/omenspace/app_profiles.json` dosyasında saklanan profil kurallarını ([[app-profiles-spec]]) uygular.
+Servis, D-Bus üzerinde `org.hp.omen.AppProfiles` arayüzünü sunar ve `/etc/victus-max/app_profiles.json` dosyasında saklanan profil kurallarını (eski `/etc/omenspace/app_profiles.json` fallback desteğiyle, bkz: [[app-profiles-spec]]) uygular.
 
 ## Çalışma Mekanizması
 

@@ -25,7 +25,7 @@ BIOS seviyesinde önceden tanımlanmış güç ve fan stratejilerini uygular:
 Ayrık NVIDIA ekran kartı bulunan sistemlerde, pil tüketimini düşürmek veya aşırı ısınmayı engellemek için `nvidia-smi` üzerinden güç tavanı ayarlanır.
 
 ### 4. Yapılandırma Kalıcılığı
-Uygulanan tüm güç ayarları, sistem yeniden başladığında korunmak üzere `/etc/omen-space/power.json` dosyasında saklanır (`PowerConfig`).
+Uygulanan tüm güç ayarları, sistem yeniden başladığında korunmak üzere `/etc/victus-max/power.json` dosyasında saklanır (`PowerConfig`, eski `/etc/omen-space/power.json` geriye dönük fallback desteğiyle).
 
 ## Otomasyon ve Harici Entegrasyon
 - **PPD Entegrasyonu:** [[power-automation-service]], GNOME güç yöneticisiyle çift yönlü senkronizasyon sağlar.
