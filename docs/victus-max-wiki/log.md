@@ -60,4 +60,22 @@ grep "^## \[" docs/victus-max-wiki/log.md | tail -5
   - Wiki MOC (`index.md`) ve işlem günlüğü (`log.md`) başlık ve yol komutları Victus Max kimliğiyle uyumlu hale getirildi.
 - **Sistem Durumu:** Kararlı, graf bağlantıları ve Obsidian wikilink'leri eksiksiz korunuyor.
 
+---
+
+## [2026-09-29] Feature | Victus Max Overlay (HUD) Modernizasyonu ve Better Auto Entegrasyonu
+
+- **İşlem Türü:** Arayüz İyileştirme, Vektör Varlık Çözümleme ve HUD Genişletmesi
+- **Kapsam:** `src/victus-max-overlay/`, `src/victus-max-gui/src/asset_resolver.rs`, `docs/victus-max-wiki/user-experience/quick-hud-overlay.md`.
+- **Detaylar:**
+  - Shift+F2 HUD başlığı `"VICTUS MAX HIZLI KONTROL"` olarak güncellendi ve yeni Victus Max hibrit logosu başlığa entegre edildi.
+  - Masaüstü ortamı / simge teması bağımsızlığı: Kırık kırmızı kutulara yol açan GNOME bağımlı sembolik simgeler yerine yerel SVG vektörleri (`eco.svg`, `balanced.svg`, `performance.svg`, `better_auto.svg`, `custom.svg`) doğrudan dosya yoluyla yüklendi.
+  - Fan modları 4 karta genişletildi (pencere genişliği 720px'e çıkarıldı):
+    - `[Q] Better Auto` (Turuncu/kırmızı neon vurgu)
+    - `[W] Otomatik`
+    - `[E] Maksimum`
+    - `[R] Özel`
+  - Klavye kısayolları ve alt bilgi etiketleri Q/W/E/R ile uyumlu hale getirildi.
+- **Test ve Doğrulama:** `cargo check --workspace` ve `cargo test --workspace` (46 test) hatasız tamamlandı.
+
+
 

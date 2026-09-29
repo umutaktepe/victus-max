@@ -18,18 +18,26 @@ fn main() {
 
     app.connect_startup(|_| {
         adw::init().expect("Failed to initialize libadwaita");
+        let display = gtk::gdk::Display::default().unwrap();
+        let icon_theme = gtk::IconTheme::for_display(&display);
+        icon_theme.add_search_path("assets");
+        icon_theme.add_search_path("src/victus-max-gui/assets");
+        icon_theme.add_search_path("src/victus-max-overlay/assets");
+        icon_theme.add_search_path("/usr/share/victus-max/assets");
+        icon_theme.add_search_path("/usr/share/omen-space/assets");
+
         let provider = gtk::CssProvider::new();
         provider.load_from_string(include_str!("style.css"));
         gtk::style_context_add_provider_for_display(
-            &gtk::gdk::Display::default().unwrap(),
+            &display,
             &provider,
             gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
         );
     });
 
     app.connect_activate(|app| {
-
         let overlay = overlay_window::OverlayWindow::new(app);
+        overlay.window.set_icon_name(Some("victus-max"));
         
         let key_controller = gtk::EventControllerKey::new();
         let app_c = app.clone();

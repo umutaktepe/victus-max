@@ -5,8 +5,10 @@ fn get_lang() -> String {
     let mut lang_code = "auto".to_string();
     
     if let Ok(home) = env::var("HOME") {
-        let path = format!("{}/.config/omenspace/gui_config.json", home);
-        if let Ok(json_str) = fs::read_to_string(&path) {
+        let path = format!("{}/.config/victus-max/gui_config.json", home);
+        let path_fallback = format!("{}/.config/omenspace/gui_config.json", home);
+        let content = fs::read_to_string(&path).or_else(|_| fs::read_to_string(&path_fallback));
+        if let Ok(json_str) = content {
             if let Ok(json) = serde_json::from_str::<serde_json::Value>(&json_str) {
                 if let Some(lang) = json.get("language").and_then(|v| v.as_str()) {
                     lang_code = lang.to_string();
@@ -35,7 +37,7 @@ pub fn t(key: &str) -> String {
     let is_tr = lang == "tr";
 
     match key {
-        "title" => if is_tr { "OMEN HIZLI AYARLAR" } else { "OMEN QUICK CONTROL" },
+        "title" => if is_tr { "VICTUS MAX HIZLI KONTROL" } else { "VICTUS MAX QUICK CONTROL" },
         "perf_mode" => if is_tr { "Performans Modu" } else { "Performance Mode" },
         "quiet" => if is_tr { "Sessiz" } else { "Quiet" },
         "eco_silent" => if is_tr { "Eko / Sessiz" } else { "Eco / Silent" },
@@ -45,6 +47,8 @@ pub fn t(key: &str) -> String {
         "max_power" => if is_tr { "Maksimum Güç" } else { "Max Power & Clock" },
         
         "fan_mode" => if is_tr { "Fan Modu" } else { "Fan Mode" },
+        "better_auto" => if is_tr { "Better Auto" } else { "Better Auto" },
+        "better_auto_desc" => if is_tr { "Proaktif akıllı soğutma" } else { "Proactive load-aware" },
         "auto" => if is_tr { "Otomatik" } else { "Auto (Dynamic)" },
         "auto_desc" => if is_tr { "Dinamik soğutma eğrisi" } else { "Adaptive thermal curve" },
         "max" => if is_tr { "Maksimum" } else { "Max (100% Turbo)" },

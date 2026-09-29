@@ -3,7 +3,29 @@ use libadwaita as adw;
 use adw::prelude::*;
 use std::rc::Rc;
 use std::cell::RefCell;
+use std::path::Path;
 use crate::daemon_client::{self, SystemStats};
+
+pub fn get_asset_path(filename: &str) -> String {
+    let victus_path = format!("/usr/share/victus-max/assets/{}", filename);
+    if Path::new(&victus_path).exists() {
+        return victus_path;
+    }
+    let omen_path = format!("/usr/share/omen-space/assets/{}", filename);
+    if Path::new(&omen_path).exists() {
+        return omen_path;
+    }
+    let local_gui = format!("src/victus-max-gui/assets/{}", filename);
+    if Path::new(&local_gui).exists() {
+        return local_gui;
+    }
+    let local_overlay = format!("src/victus-max-overlay/assets/{}", filename);
+    if Path::new(&local_overlay).exists() {
+        return local_overlay;
+    }
+    format!("assets/{}", filename)
+}
+
 // ── Overlay config (position, hotkey, margin) ─────────────────────────────────
 
 #[derive(Clone)]
@@ -28,8 +50,10 @@ impl Default for OverlayConfig {
 fn load_overlay_config() -> OverlayConfig {
     let mut cfg = OverlayConfig::default();
     if let Ok(home) = std::env::var("HOME") {
-        let path = format!("{}/.config/omenspace/settings.json", home);
-        if let Ok(s) = std::fs::read_to_string(&path) {
+        let path = format!("{}/.config/victus-max/settings.json", home);
+        let path_fallback = format!("{}/.config/omenspace/settings.json", home);
+        let content = std::fs::read_to_string(&path).or_else(|_| std::fs::read_to_string(&path_fallback));
+        if let Ok(s) = content {
             if let Ok(v) = serde_json::from_str::<serde_json::Value>(&s) {
                 if let Some(h) = v.get("overlay_halign").and_then(|x| x.as_str()) { cfg.halign = h.to_string(); }
                 if let Some(v2) = v.get("overlay_valign").and_then(|x| x.as_str()) { cfg.valign = v2.to_string(); }
@@ -63,13 +87,13 @@ impl OverlayWindow {
             .title(&crate::i18n::t("title"))
             .decorated(false)
             .resizable(false)
-            .default_width(680)
+            .default_width(720)
             .default_height(420)
             .css_classes(["omen-overlay-window"])
             .build();
 
         let active_power = Rc::new(RefCell::new("Default".to_string()));
-        let active_fan = Rc::new(RefCell::new("auto".to_string()));
+        let active_fan = Rc::new(RefCell::new("better_auto".to_string()));
         let power_btns = Rc::new(RefCell::new(Vec::new()));
         let fan_btns = Rc::new(RefCell::new(Vec::new()));
 
@@ -87,10 +111,18 @@ impl OverlayWindow {
             .spacing(10)
             .build();
 
-        let brand_icon = gtk::Image::builder()
-            .icon_name("preferences-desktop-display-symbolic")
-            .pixel_size(20)
-            .build();
+        let logo_path = get_asset_path("victus-max.png");
+        let brand_icon = if Path::new(&logo_path).exists() {
+            gtk::Image::builder()
+                .file(&logo_path)
+                .pixel_size(24)
+                .build()
+        } else {
+            gtk::Image::builder()
+                .icon_name("victus-max")
+                .pixel_size(24)
+                .build()
+        };
         header.append(&brand_icon);
 
         let title_label = gtk::Label::builder()
@@ -140,14 +172,14 @@ impl OverlayWindow {
             .build();
 
         let power_modes = [
-            (crate::i18n::t("quiet"), "1", crate::i18n::t("eco_silent"), "active-eco", "power-profile-power-saver-symbolic"),
-            (crate::i18n::t("default"), "2", crate::i18n::t("balanced"), "active", "power-profile-balanced-symbolic"),
-            (crate::i18n::t("performance"), "3", crate::i18n::t("max_power"), "active-perf", "power-profile-performance-symbolic"),
+            (crate::i18n::t("quiet"), "1", crate::i18n::t("eco_silent"), "active-eco", get_asset_path("eco.svg")),
+            (crate::i18n::t("default"), "2", crate::i18n::t("balanced"), "active", get_asset_path("balanced.svg")),
+            (crate::i18n::t("performance"), "3", crate::i18n::t("max_power"), "active-perf", get_asset_path("performance.svg")),
         ];
 
         let mut p_btns = Vec::new();
 
-        for (name, key_shortcut, desc, _active_class, icon_name) in power_modes.iter() {
+        for (name, key_shortcut, desc, _active_class, icon_path) in power_modes.iter() {
             let btn = gtk::Button::builder()
                 .css_classes(["mode-btn"])
                 .build();
@@ -162,10 +194,17 @@ impl OverlayWindow {
                 .spacing(6)
                 .build();
 
-            let icon = gtk::Image::builder()
-                .icon_name(*icon_name)
-                .pixel_size(18)
-                .build();
+            let icon = if Path::new(icon_path).exists() {
+                gtk::Image::builder()
+                    .file(icon_path)
+                    .pixel_size(18)
+                    .build()
+            } else {
+                gtk::Image::builder()
+                    .icon_name("power-profile-balanced-symbolic")
+                    .pixel_size(18)
+                    .build()
+            };
             top_row.append(&icon);
 
             let lbl = gtk::Label::builder()
@@ -222,14 +261,15 @@ impl OverlayWindow {
             .build();
 
         let fan_modes = [
-            ("auto", "Q", crate::i18n::t("auto"), "active", "weather-clear-symbolic"),
-            ("max", "W", crate::i18n::t("max"), "active-turbo", "weather-storm-symbolic"),
-            ("custom", "E", crate::i18n::t("custom"), "active", "emblem-system-symbolic"),
+            ("better_auto", "Q", crate::i18n::t("better_auto"), "active-better-auto", get_asset_path("better_auto.svg")),
+            ("auto", "W", crate::i18n::t("auto"), "active", get_asset_path("balanced.svg")),
+            ("max", "E", crate::i18n::t("max"), "active-turbo", get_asset_path("performance.svg")),
+            ("custom", "R", crate::i18n::t("custom"), "active", get_asset_path("custom.svg")),
         ];
 
         let mut f_btns = Vec::new();
 
-        for (mode_key, key_shortcut, title, _active_class, icon_name) in fan_modes.iter() {
+        for (mode_key, key_shortcut, title, _active_class, icon_path) in fan_modes.iter() {
             let btn = gtk::Button::builder()
                 .css_classes(["mode-btn"])
                 .build();
@@ -244,10 +284,17 @@ impl OverlayWindow {
                 .spacing(6)
                 .build();
 
-            let icon = gtk::Image::builder()
-                .icon_name(*icon_name)
-                .pixel_size(18)
-                .build();
+            let icon = if Path::new(icon_path).exists() {
+                gtk::Image::builder()
+                    .file(icon_path)
+                    .pixel_size(18)
+                    .build()
+            } else {
+                gtk::Image::builder()
+                    .icon_name("weather-clear-symbolic")
+                    .pixel_size(18)
+                    .build()
+            };
             top_row.append(&icon);
 
             let lbl = gtk::Label::builder()
@@ -268,6 +315,7 @@ impl OverlayWindow {
 
             let sub = gtk::Label::builder()
                 .label(&match *mode_key {
+                    "better_auto" => crate::i18n::t("better_auto_desc"),
                     "auto" => crate::i18n::t("auto_desc"),
                     "max" => crate::i18n::t("max_desc"),
                     _ => crate::i18n::t("custom_desc"),
@@ -339,7 +387,7 @@ impl OverlayWindow {
         footer.append(&hint1);
 
         let hint2 = gtk::Box::builder().orientation(gtk::Orientation::Horizontal).spacing(4).build();
-        hint2.append(&gtk::Label::builder().label("Q/W/E").css_classes(["shortcut-key"]).build());
+        hint2.append(&gtk::Label::builder().label("Q/W/E/R").css_classes(["shortcut-key"]).build());
         hint2.append(&gtk::Label::builder().label(&crate::i18n::t("fan_mode")).css_classes(["shortcut-hint"]).build());
         footer.append(&hint2);
 
@@ -416,14 +464,18 @@ impl OverlayWindow {
                     glib::Propagation::Stop
                 }
                 "q" => {
-                    this.select_fan_mode("auto");
+                    this.select_fan_mode("better_auto");
                     glib::Propagation::Stop
                 }
                 "w" => {
-                    this.select_fan_mode("max");
+                    this.select_fan_mode("auto");
                     glib::Propagation::Stop
                 }
                 "e" => {
+                    this.select_fan_mode("max");
+                    glib::Propagation::Stop
+                }
+                "r" => {
                     this.select_fan_mode("custom");
                     glib::Propagation::Stop
                 }
@@ -484,14 +536,18 @@ impl OverlayWindow {
         for (mode, btn) in self.fan_btns.borrow().iter() {
             btn.remove_css_class("active");
             btn.remove_css_class("active-turbo");
+            btn.remove_css_class("active-better-auto");
 
             let m_lower = mode.to_lowercase();
             let is_match = m_lower == cur_fan ||
+                (m_lower == "better_auto" && (cur_fan == "better_auto" || cur_fan == "better-auto" || cur_fan == "smart")) ||
                 (m_lower == "custom" && (cur_fan == "manual" || cur_fan == "custom" || cur_fan == "curve")) ||
                 (m_lower == "auto" && (cur_fan == "auto" || cur_fan == "ec" || cur_fan == "default"));
 
             if is_match {
-                if m_lower == "max" {
+                if m_lower == "better_auto" {
+                    btn.add_css_class("active-better-auto");
+                } else if m_lower == "max" {
                     btn.add_css_class("active-turbo");
                 } else {
                     btn.add_css_class("active");

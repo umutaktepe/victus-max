@@ -54,6 +54,7 @@ pub async fn get_power_profile() -> String {
 
 pub async fn set_fan_mode(mode: &str) -> Result<String, zbus::Error> {
     let normalized = match mode.to_lowercase().as_str() {
+        "better_auto" | "better-auto" | "smart" => "better_auto",
         "max" | "turbo" => "max",
         "custom" | "manual" => "custom",
         _ => "auto",
@@ -71,7 +72,7 @@ pub async fn get_fan_mode() -> String {
             }
         }
     }
-    "auto".to_string()
+    "better_auto".to_string()
 }
 
 // ── Telemetry and Hotkey Subscribers ─────────────────────────────────────────
