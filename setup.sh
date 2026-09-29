@@ -410,8 +410,8 @@ do_uninstall() {
     rm -rf /var/lib/victus-max /var/lib/omen-space /var/lib/omen-space-daemon
     rm -f /etc/dbus-1/system.d/org.hp.omen.conf
     rm -f /etc/systemd/system/victus-max-daemon.service /etc/systemd/system/omen-space-daemon.service
-    rm -f /usr/lib/sysusers.d/omen-space.conf
-    rm -f /usr/lib/udev/rules.d/99-omen-space.rules
+    rm -f /usr/lib/sysusers.d/omen-space.conf /usr/lib/sysusers.d/victus-max.conf
+    rm -f /usr/lib/udev/rules.d/99-omen-space.rules /usr/lib/udev/rules.d/99-victus-max.rules
 
     rm -f /usr/bin/victus-max-cli /usr/bin/omen-cli
     rm -f /usr/bin/victus-max-tray /usr/bin/omen-tray
