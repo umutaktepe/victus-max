@@ -1,0 +1,63 @@
+name: Release Automation
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    name: Build and Package Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential pkg-config \
+            libgtk-4-dev libadwaita-1-dev libsystemd-dev libdbus-1-dev \
+            libgtk4-layer-shell-dev libhidapi-dev
+
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Run test suite
+        run: cargo test --workspace
+
+      - name: Build release binaries
+        run: cargo build --release
+
+      - name: Package release archive
+        run: |
+          TAG_NAME=${GITHUB_REF_NAME:-v$(sed -n 's/^version = "\(.*\)"/\1/p' src/victus-max-gui/Cargo.toml | head -1)}
+          ARCHIVE_NAME="victus-max-${TAG_NAME}-x86_64.tar.gz"
+          mkdir -p dist/bin dist/data dist/driver
+          
+          cp target/release/victus-max-daemon dist/bin/
+          cp target/release/victus-max dist/bin/
+          cp target/release/victus-max-cli dist/bin/
+          cp target/release/victus-max-tray dist/bin/
+          cp target/release/victus-max-overlay dist/bin/
+          cp -r data/* dist/data/
+          cp -r driver/* dist/driver/
+          cp setup.sh install.sh scripts/victus-max-updater.sh dist/
+          
+          tar -czf "$ARCHIVE_NAME" -C dist .
+          echo "ARCHIVE_NAME=$ARCHIVE_NAME" >> $GITHUB_ENV
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.ARCHIVE_NAME }}
+          generate_release_notes: true
+          draft: false
+          prerelease: false
