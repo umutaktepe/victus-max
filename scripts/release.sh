@@ -25,6 +25,10 @@ for file in src/*/Cargo.toml; do
     echo "Updated $file to $CLEAN_VER"
 done
 
+# Update internal omen-types version requirements
+sed -i -E 's/(omen-types = \{ )version = "[^"]*", (path = "\.\.\/victus-max-types")/\1version = "'"$CLEAN_VER"'", \2/' src/*/Cargo.toml
+echo "Updated omen-types dependency versions to $CLEAN_VER"
+
 cargo check --workspace
 
 git add src/*/Cargo.toml Cargo.lock 2>/dev/null || git add src/*/Cargo.toml

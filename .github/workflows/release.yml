@@ -40,7 +40,7 @@ jobs:
         run: |
           TAG_NAME=${GITHUB_REF_NAME:-v$(sed -n 's/^version = "\(.*\)"/\1/p' src/victus-max-gui/Cargo.toml | head -1)}
           ARCHIVE_NAME="victus-max-${TAG_NAME}-x86_64.tar.gz"
-          mkdir -p dist/bin dist/data dist/driver
+          mkdir -p dist/bin dist/data dist/driver dist/scripts
           
           cp target/release/victus-max-daemon dist/bin/
           cp target/release/victus-max dist/bin/
@@ -49,7 +49,8 @@ jobs:
           cp target/release/victus-max-overlay dist/bin/
           cp -r data/* dist/data/
           cp -r driver/* dist/driver/
-          cp setup.sh install.sh scripts/victus-max-updater.sh dist/
+          cp scripts/victus-max-updater.sh dist/scripts/
+          cp setup.sh install.sh dist/
           
           tar -czf "$ARCHIVE_NAME" -C dist .
           echo "ARCHIVE_NAME=$ARCHIVE_NAME" >> $GITHUB_ENV

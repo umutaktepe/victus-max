@@ -188,6 +188,18 @@ remove_legacy_omenctl() {
 }
 
 do_build() {
+    if [[ -f "$SCRIPT_DIR/bin/victus-max-daemon" && \
+          -f "$SCRIPT_DIR/bin/victus-max-cli" && \
+          -f "$SCRIPT_DIR/bin/victus-max-tray" && \
+          -f "$SCRIPT_DIR/bin/victus-max" && \
+          -f "$SCRIPT_DIR/bin/victus-max-overlay" ]]; then
+        echo "====================================="
+        echo " All 5 pre-built binaries found in $SCRIPT_DIR/bin."
+        echo " Skipping build from source."
+        echo "====================================="
+        return 0
+    fi
+
     echo "====================================="
     echo " Building Victus Max (Daemon, CLI, GUI, Tray, Overlay)"
     echo "====================================="
@@ -285,7 +297,9 @@ do_install() {
 
     find_bin() {
         local name="$1"
-        if [[ -f "$SCRIPT_DIR/target/release/$name" ]]; then
+        if [[ -f "$SCRIPT_DIR/bin/$name" ]]; then
+            echo "$SCRIPT_DIR/bin/$name"
+        elif [[ -f "$SCRIPT_DIR/target/release/$name" ]]; then
             echo "$SCRIPT_DIR/target/release/$name"
         elif [[ -n "$(ls $SCRIPT_DIR/target/*/release/$name 2>/dev/null)" ]]; then
             ls $SCRIPT_DIR/target/*/release/$name | head -n 1
@@ -293,6 +307,14 @@ do_install() {
             echo ""
         fi
     }
+
+    if [[ -f "$SCRIPT_DIR/bin/victus-max-daemon" && \
+          -f "$SCRIPT_DIR/bin/victus-max-cli" && \
+          -f "$SCRIPT_DIR/bin/victus-max-tray" && \
+          -f "$SCRIPT_DIR/bin/victus-max" && \
+          -f "$SCRIPT_DIR/bin/victus-max-overlay" ]]; then
+        echo "All 5 pre-built binaries found in $SCRIPT_DIR/bin. Skipping build from source."
+    fi
 
     local daemon_bin=$(find_bin "victus-max-daemon")
     local cli_bin=$(find_bin "victus-max-cli")
