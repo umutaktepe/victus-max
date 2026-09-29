@@ -325,6 +325,9 @@ do_install() {
     cp data/org.hp.OmenSpace.desktop /usr/share/applications/
     cp data/org.hp.OmenSpace.service /usr/share/dbus-1/services/
     mkdir -p /usr/share/pixmaps
+    mkdir -p /usr/share/icons/hicolor/512x512/apps
+    mkdir -p /usr/share/victus-max/assets
+    mkdir -p /usr/share/omen-space/assets
     if [[ -d "data/icons/hicolor" ]]; then
         cp -r data/icons/hicolor/* /usr/share/icons/hicolor/
     fi
