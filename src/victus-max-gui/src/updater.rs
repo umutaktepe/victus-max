@@ -12,25 +12,30 @@ use std::process::Stdio;
 pub fn build_page(window: &adw::ApplicationWindow) -> gtk::Box {
     let page = gtk::Box::builder()
         .orientation(gtk::Orientation::Vertical)
-        .build();
-
-    let status_page = adw::StatusPage::builder()
-        .icon_name("software-update-available-symbolic")
-        .title(i18n::t("title_updater"))
-        .description(i18n::t("updater_desc"))
-        .margin_top(24)
-        .margin_bottom(12)
-        .build();
-    page.append(&status_page);
-
-    let content_box = gtk::Box::builder()
-        .orientation(gtk::Orientation::Vertical)
-        .spacing(24)
+        .spacing(20)
         .margin_start(24)
         .margin_end(24)
+        .margin_top(24)
         .margin_bottom(32)
         .build();
-    page.append(&content_box);
+
+    // ── Header (Matches Settings and Performance tabs) ─────────
+    let hdr = gtk::Box::builder()
+        .orientation(gtk::Orientation::Vertical)
+        .spacing(4)
+        .margin_bottom(4)
+        .build();
+    hdr.append(&gtk::Label::builder()
+        .label(i18n::t("title_updater"))
+        .css_classes(["page-title"])
+        .halign(gtk::Align::Start)
+        .build());
+    hdr.append(&gtk::Label::builder()
+        .label(i18n::t("updater_desc"))
+        .css_classes(["os-section-desc"])
+        .halign(gtk::Align::Start)
+        .build());
+    page.append(&hdr);
 
     // ── Victus Max update card ────────────────────────────────
     let app_group = adw::PreferencesGroup::builder()
@@ -43,15 +48,14 @@ pub fn build_page(window: &adw::ApplicationWindow) -> gtk::Box {
         .build();
     let app_icon = gtk::Image::builder()
         .icon_name("application-x-executable-symbolic")
-        .css_classes(["accent"])
-        .pixel_size(32)
+        .pixel_size(24)
         .margin_end(12)
         .build();
     ver_row.add_prefix(&app_icon);
     
     let version_badge = gtk::Label::builder()
         .label(format!("v{} ({})", env!("CARGO_PKG_VERSION"), env!("VICTUS_MAX_GIT_HASH")))
-        .css_classes(["os-chip-btn", "accent"])
+        .css_classes(["os-version-badge"])
         .valign(gtk::Align::Center)
         .build();
     ver_row.add_suffix(&version_badge);
@@ -67,7 +71,7 @@ pub fn build_page(window: &adw::ApplicationWindow) -> gtk::Box {
         .model(&channel_model)
         .build();
     let channel_icon = gtk::Image::builder()
-        .icon_name("software-properties-symbolic")
+        .icon_name("preferences-system-symbolic")
         .pixel_size(24)
         .margin_end(12)
         .build();
@@ -112,7 +116,7 @@ pub fn build_page(window: &adw::ApplicationWindow) -> gtk::Box {
     
     app_group.add(&check_row);
 
-    content_box.append(&app_group);
+    page.append(&app_group);
 
     // ── Firmware group ────────────────────────────────────────
     let specs = crate::daemon_client::get_hardware_specs_sync();
@@ -121,7 +125,7 @@ pub fn build_page(window: &adw::ApplicationWindow) -> gtk::Box {
         .description(i18n::t("firmware_desc"))
         .build();
 
-    let icons = ["firmware-motherboard-symbolic", "cpu-symbolic", "video-display-symbolic"];
+    let icons = ["computer-symbolic", "cpu-symbolic", "video-display-symbolic"];
     for (i, (device, ver)) in [
         ("HP BIOS",          specs.bios_version.as_str()),
         ("HP EC Firmware",   specs.ec_version.as_str()),
@@ -162,7 +166,7 @@ pub fn build_page(window: &adw::ApplicationWindow) -> gtk::Box {
     
     fw_group.add(&fwupd_row);
 
-    content_box.append(&fw_group);
+    page.append(&fw_group);
 
     page
 }
