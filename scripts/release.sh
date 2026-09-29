@@ -9,15 +9,39 @@ NEW_VER="${1:-}"
 
 if [ -z "$NEW_VER" ]; then
     CURRENT_VER=$(sed -n 's/^version = "\(.*\)"/\1/p' src/victus-max-gui/Cargo.toml | head -1)
-    echo "Usage: ./scripts/release.sh <new-version> (e.g. 2.1.4)"
+    echo "Usage: ./scripts/release.sh <new-version> (e.g. 1.0.0 or 2.1.4)"
     echo "Current version: $CURRENT_VER"
     exit 1
 fi
 
 CLEAN_VER="${NEW_VER#v}"
+
+# Rust Cargo & GitHub Actions require 3-component SemVer (MAJOR.MINOR.PATCH)
+# If user passes 1 or 1.0, automatically normalize to 1.0.0
+if [[ "$CLEAN_VER" =~ ^[0-9]+$ ]]; then
+    CLEAN_VER="${CLEAN_VER}.0.0"
+elif [[ "$CLEAN_VER" =~ ^[0-9]+\.[0-9]+$ ]]; then
+    CLEAN_VER="${CLEAN_VER}.0"
+fi
+
+if [[ ! "$CLEAN_VER" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
+    echo "ERROR: Invalid version format '$CLEAN_VER'. Must be SemVer (e.g. 1.0.0, 2.0.0)." >&2
+    exit 1
+fi
+
 TAG="v${CLEAN_VER}"
 
-echo "Preparing release $TAG..."
+echo "Preparing release $TAG (version: $CLEAN_VER)..."
+
+# Trap to restore files on unexpected failure
+cleanup() {
+    local exit_code=$?
+    if [ $exit_code -ne 0 ]; then
+        echo "❌ Release script failed. Restoring Cargo.toml files..."
+        git checkout -- src/*/Cargo.toml Cargo.lock 2>/dev/null || true
+    fi
+}
+trap cleanup EXIT
 
 # Update versions in all Cargo.toml
 for file in src/*/Cargo.toml; do
@@ -34,6 +58,9 @@ cargo check --workspace
 git add src/*/Cargo.toml Cargo.lock 2>/dev/null || git add src/*/Cargo.toml
 git commit -m "chore(release): bump version to $TAG"
 git tag -a "$TAG" -m "Release $TAG"
+
+# Disable trap on success
+trap - EXIT
 
 echo ""
 echo "✅ Release $TAG committed and tagged locally."
