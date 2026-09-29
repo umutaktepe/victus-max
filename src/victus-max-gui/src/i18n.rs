@@ -410,6 +410,15 @@ fn translate_tr(key: &'static str) -> &'static str {
         "channel_row" => "Kanal",
         "channel_sub" => "Hangi yayın kanalından güncelleme alınacak",
         "channel_stable" => "Kararlı (Stable)",
+        "channel_stable_sub" => "Doğrulanmış resmi GitHub sürümlerini takip eder",
+        "channel_canary" => "Canary (Git main)",
+        "channel_canary_sub" => "Main dalındaki en güncel commitleri ve özellikleri takip eder",
+        "fallback_notice" => "Henüz resmi bir GitHub Release yayınlanmadığından, Canary kanalı üzerinden en son değişiklikler denetlendi.",
+        "commit_by" => "Geliştirici",
+        "commit_date" => "Tarih",
+        "relaunch_app" => "Uygulamayı Yeniden Başlat",
+        "rate_limit_err" => "GitHub API istek limiti aşıldı. Lütfen birkaç dakika sonra tekrar deneyin.",
+        "view_on_github" => "GitHub'da Görüntüle",
         "channel_beta" => "Beta",
         "channel_dev" => "Geliştirici (Dev)",
         "auto_update_check" => "Otomatik Güncelleme Kontrolü",
@@ -805,6 +814,15 @@ fn translate_en(key: &'static str) -> &'static str {
         "channel_row" => "Channel",
         "channel_sub" => "Release channel to receive updates from",
         "channel_stable" => "Stable",
+        "channel_stable_sub" => "Tracks verified official GitHub releases",
+        "channel_canary" => "Canary (Git main)",
+        "channel_canary_sub" => "Tracks bleeding-edge commits and features on main branch",
+        "fallback_notice" => "No official GitHub Release found yet; checked latest commits from Canary channel.",
+        "commit_by" => "Author",
+        "commit_date" => "Date",
+        "relaunch_app" => "Restart Application",
+        "rate_limit_err" => "GitHub API rate limit exceeded. Please wait a few minutes.",
+        "view_on_github" => "View on GitHub",
         "channel_beta" => "Beta",
         "channel_dev" => "Developer (Dev)",
         "auto_update_check" => "Automatic Update Check",
@@ -939,5 +957,33 @@ fn translate_en(key: &'static str) -> &'static str {
 
         // Default fallback
         _ => key,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_updater_i18n_keys() {
+        assert_eq!(translate_tr("channel_canary"), "Canary (Git main)");
+        assert_eq!(translate_tr("channel_canary_sub"), "Main dalındaki en güncel commitleri ve özellikleri takip eder");
+        assert_eq!(translate_tr("channel_stable_sub"), "Doğrulanmış resmi GitHub sürümlerini takip eder");
+        assert_eq!(translate_tr("fallback_notice"), "Henüz resmi bir GitHub Release yayınlanmadığından, Canary kanalı üzerinden en son değişiklikler denetlendi.");
+        assert_eq!(translate_tr("commit_by"), "Geliştirici");
+        assert_eq!(translate_tr("commit_date"), "Tarih");
+        assert_eq!(translate_tr("relaunch_app"), "Uygulamayı Yeniden Başlat");
+        assert_eq!(translate_tr("rate_limit_err"), "GitHub API istek limiti aşıldı. Lütfen birkaç dakika sonra tekrar deneyin.");
+        assert_eq!(translate_tr("view_on_github"), "GitHub'da Görüntüle");
+
+        assert_eq!(translate_en("channel_canary"), "Canary (Git main)");
+        assert_eq!(translate_en("channel_canary_sub"), "Tracks bleeding-edge commits and features on main branch");
+        assert_eq!(translate_en("channel_stable_sub"), "Tracks verified official GitHub releases");
+        assert_eq!(translate_en("fallback_notice"), "No official GitHub Release found yet; checked latest commits from Canary channel.");
+        assert_eq!(translate_en("commit_by"), "Author");
+        assert_eq!(translate_en("commit_date"), "Date");
+        assert_eq!(translate_en("relaunch_app"), "Restart Application");
+        assert_eq!(translate_en("rate_limit_err"), "GitHub API rate limit exceeded. Please wait a few minutes.");
+        assert_eq!(translate_en("view_on_github"), "View on GitHub");
     }
 }
