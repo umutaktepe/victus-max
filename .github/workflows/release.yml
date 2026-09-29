@@ -25,7 +25,7 @@ jobs:
           sudo apt-get install -y \
             build-essential pkg-config \
             libgtk-4-dev libadwaita-1-dev libsystemd-dev libdbus-1-dev \
-            libgtk4-layer-shell-dev libhidapi-dev
+            libhidapi-dev
 
       - name: Set up Rust toolchain
         uses: dtolnay/rust-toolchain@stable
