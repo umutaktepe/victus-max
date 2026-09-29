@@ -91,3 +91,16 @@ grep "^## \[" docs/victus-max-wiki/log.md | tail -5
   - GUI uygulama kimliği (`APP_ID`) `org.hp.VictusMax` olarak ayarlandı, `org.hp.VictusMax.service` D-Bus aktivasyon birimi oluşturuldu ve `setup.sh` ile kurulum adımlarına eklendi.
   - Kurulum (`setup.sh`, `install.sh`) ve paketleme (`PKGBUILD`) betikleri Victus Max ikili dosyalarını önceliklendirecek ve eski `omen-*` isimlerine sembolik bağlar sunacak şekilde güncellendi.
 - **Test ve Doğrulama:** `cargo check --workspace` ve `cargo test --workspace` (46 test) hatasız tamamlandı.
+
+---
+
+## [2026-09-29] Docs | Kapsamlı İngilizce Performans ve Soğutma Modları Kılavuzu
+
+- **İşlem Türü:** Kullanıcı ve Geliştirici Dokümantasyonu
+- **Kapsam:** `docs/performance-and-cooling-modes.md`.
+- **Detaylar:**
+  - Tüm performans güç profilleri (`Quiet / Eco`, `Balanced`, `Performance`), ACPI platform_profile, Intel RAPL / AMD RyzenAdj ve NVIDIA Dynamic Boost (PPAB) mimarisi açıklandı.
+  - Tüm fan modları (`Better Auto`, `Auto`, `Max Boost`, `Custom`, `Hardware EC`) detaylandırıldı.
+  - Better Auto proaktif algoritmasının 8 seviyeli sıcaklık & yük matrisi, yukarı/aşağı histerezis eşikleri, tek adımlı iniş sınırlayıcısı (single-step ramp-down), ayarlanabilir akustik tavan, 88°C acil durum termal baypası, asgari 2600 RPM tabanı ve 10 saniyelik EC veri yolu koruması tablolarla örneklendirildi.
+  - 5 gerçek dünya kullanım senaryosu (Ofis/Genel Çalışma, AAA/Espor Oyunculuğu, Sessiz Kütüphane Ortamı, Ağır Derleme & Render, Periyodik Fan Tozu Temizleme) eklendi.
+  - CLI, GUI, Shift+F2 HUD ve Sistem Tepsisi hızlı kullanım örnekleri ve özet karşılaştırma matrisi sunuldu.

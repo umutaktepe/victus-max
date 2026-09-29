@@ -51,3 +51,4 @@ out/
 src-tauri/target/
 .superpowers/
 references/
+.obsidian/
