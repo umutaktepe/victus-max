@@ -76,7 +76,7 @@ Kullanıcı alanında (unprivileged) koşan grafik, komut satırı ve panel aray
 ## 🔒 Sistem Entegrasyonu ve Güvenlik (Platform Integration)
 Sistem seviyesinde kurulum, güvenlik sınırları, izin kuralları ve paketleme:
 
-- [[systemd-services]] — `victus-max-daemon.service` (ve geriye dönük `omen-space-daemon.service` alias) ve D-Bus etkinleştirilebilir servis tanımları.
+- [[systemd-services]] — `victus-max-daemon.service` ve D-Bus etkinleştirilebilir servis tanımları.
 - [[polkit-dbus-security]] — `org.hp.omen.conf` güvenlik politikası, `omen-hw` kullanıcı grubu ve root yetkilendirmesi.
-- [[udev-device-rules]] — `99-omen-space.rules` ile `/dev/cpu/*/msr` ve evdev girdi aygıt izinleri.
+- [[udev-device-rules]] — `99-victus-max.rules` ile `/dev/cpu/*/msr` ve evdev girdi aygıt izinleri.
 - [[packaging-and-dkms]] — Cargo ikili optimizasyonları, Arch PKGBUILD, Nix Flakes ve DKMS otomatik derleme zinciri.

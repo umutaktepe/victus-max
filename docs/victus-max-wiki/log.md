@@ -129,3 +129,16 @@ grep "^## \[" docs/victus-max-wiki/log.md | tail -5
   - Kurulum öncesinde var olan eski `omen-space-daemon.service` dosyasının temizlenmesi (`rm -f /etc/systemd/system/omen-space-daemon.service`) sağlanarak `Failed to enable unit: File already exists` hatası giderildi.
   - `setup.sh` sonundaki servis başlatma ve doğrulama testleri `victus-max-daemon` ve `victus-max-cli` olarak güncellendi.
 
+---
+
+## [2026-09-29] Cleanup | Omen-Space Mirasından Tam Arındırma (Decoupling)
+
+- **İşlem Türü:** Kod Tabanı ve Paketleme Temizliği
+- **Kapsam:** `data/victus-max-daemon.service`, `data/`, `setup.sh`, `PKGBUILD`, `docs/architecture.md`, `docs/victus-max-wiki/`.
+- **Detaylar:**
+  - `data/victus-max-daemon.service` dosyasından `Alias=omen-space-daemon.service` kaldırıldı; systemd üzerinde istenmeyen sembolik bağ oluşturulması sonlandırıldı.
+  - `data/` altındaki gereksiz `omen-space-daemon.service`, `org.hp.OmenSpace.desktop`, `org.hp.OmenSpace.service` ve `omenspace.png` dosyaları depodan tamamen silindi.
+  - `99-omen-space.rules` -> `99-victus-max.rules` ve `sysusers.d/omen-space.conf` -> `sysusers.d/victus-max.conf` olarak yeniden adlandırıldı.
+  - `setup.sh` ve `PKGBUILD` içerisinden tüm `omen-cli`, `omen-gui`, `omen-tray`, `omen-overlay`, `omen-space-daemon` sembolik bağları kaldırıldı; kurulum ve kaldırma adımları sistemi eski kırıntılardan tamamen arındıracak şekilde güncellendi.
+
+

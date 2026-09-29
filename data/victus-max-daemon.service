@@ -27,11 +27,10 @@ RestrictNamespaces=true
 
 # Allow /sys writes for unprivileged fan/power control via udev rules
 # StateDirectory ensures /var/lib/victus-max-daemon/ is created by systemd so
-# fan_config.json can be written under ProtectSystem=strict (fixes #232)
+# fan_config.json can be written under ProtectSystem=strict
 ProtectKernelTunables=no
 StateDirectory=victus-max-daemon
-ReadWritePaths=/sys /etc/victus-max /etc/omen-space /var/lib/victus-max-daemon /var/lib/omen-space-daemon
+ReadWritePaths=/sys /etc/victus-max /var/lib/victus-max-daemon
 
 [Install]
 WantedBy=multi-user.target
-Alias=omen-space-daemon.service

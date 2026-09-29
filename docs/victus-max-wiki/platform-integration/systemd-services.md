@@ -3,7 +3,7 @@
 ## Genel Bakış
 Victus Max, Linux sistem başlatma ve servis yönetiminde `systemd` altyapısını kullanır.
 
-Sistem, root yetkileriyle donanımı kontrol eden sistem servisi (`victus-max-daemon.service`, geriye dönük `omen-space-daemon.service` alias ile) ile masaüstü oturumunda D-Bus aktivasyonunu sağlayan kullanıcı servislerinden (`org.hp.VictusMax.service` ve `org.hp.OmenSpace.service`) oluşur.
+Sistem, root yetkileriyle donanımı kontrol eden sistem servisi (`victus-max-daemon.service`) ile masaüstü oturumunda D-Bus aktivasyonunu sağlayan kullanıcı servisinden (`org.hp.VictusMax.service`) oluşur.
 
 ## Sistem Servis Dosyası (`data/victus-max-daemon.service`)
 
@@ -23,7 +23,6 @@ StandardError=journal
 
 [Install]
 WantedBy=multi-user.target
-Alias=omen-space-daemon.service
 ```
 
 ### Kritik Özellikler
@@ -33,7 +32,7 @@ Alias=omen-space-daemon.service
 ## D-Bus Servis Aktivasyonu (`data/org.hp.VictusMax.service`)
 Kullanıcı grafik uygulamayı (`victus-max`) veya komut satırını çalıştırdığında, eğer D-Bus nesnesi henüz uykudaysa sistemin D-Bus aktivasyonuyla ilgili bileşeni ayağa kaldırmasını sağlar.
 
-## Kullanıcı ve Grup Tanımlaması (`data/sysusers.d/omen-space.conf`)
+## Kullanıcı ve Grup Tanımlaması (`data/sysusers.d/victus-max.conf`)
 Paket kurulumunda `sysusers.d` kuralı ile `omen-hw` adında bir sistem grubu oluşturulur. Bu grup, unprivileged kullanıcıların D-Bus üzerinden donanım komutu göndermesini yetkilendirmek için kullanılır.
 
 ## İlgili Bağlantılar

@@ -105,7 +105,7 @@ System integration files.
 - `victus-max-daemon.service`: The systemd root service definition.
 - `org.hp.VictusMax.desktop`: The application launcher for Desktop Environments (GNOME, KDE).
 - `org.hp.VictusMax.service`: D-Bus activation definition for user sessions.
-- `99-omen-space.rules`: Udev rules ensuring sysfs and MSR nodes have correct group permissions.
+- `99-victus-max.rules`: Udev rules ensuring sysfs and MSR nodes have correct group permissions.
 
 ---
 

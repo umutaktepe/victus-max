@@ -255,17 +255,26 @@ do_install() {
     killall victus-max victus-max-gui omen-gui 2>/dev/null || true
     killall victus-max-overlay omen-overlay 2>/dev/null || true
 
+    # Purge any legacy omen-space files & symlinks to keep system completely clean
+    rm -f /etc/systemd/system/omen-space-daemon.service
+    rm -f /usr/bin/omen-cli /usr/bin/omen-gui /usr/bin/omen-tray /usr/bin/omen-overlay /usr/bin/victus-max-gui
+    rm -rf /usr/libexec/omen-space /usr/share/omen-space /etc/xdg/autostart/omen-tray.desktop /etc/xdg/autostart/omenspace-tray.desktop
+    rm -f /usr/share/applications/omen-space.desktop /usr/share/applications/org.hp.OmenSpace.desktop
+    rm -f /usr/share/dbus-1/services/org.hp.OmenSpace.service
+    rm -f /usr/share/pixmaps/omenspace.png /usr/share/icons/hicolor/*/apps/omenspace.png
+    rm -f /usr/lib/sysusers.d/omen-space.conf /usr/lib/udev/rules.d/99-omen-space.rules
+
     echo "====================================="
     echo " Installing system files"
     echo "====================================="
-    mkdir -p /usr/libexec/omen-space
-    mkdir -p /etc/omen-space
+    mkdir -p /usr/libexec/victus-max
+    mkdir -p /etc/victus-max
     mkdir -p /etc/dbus-1/system.d
     mkdir -p /etc/systemd/system
     mkdir -p /usr/lib/sysusers.d
     mkdir -p /usr/lib/udev/rules.d
     mkdir -p /usr/bin
-    mkdir -p /usr/share/omen-space/assets
+    mkdir -p /usr/share/victus-max/assets
     mkdir -p /usr/share/applications
     mkdir -p /usr/share/pixmaps
     mkdir -p /etc/xdg/autostart
@@ -283,70 +292,43 @@ do_install() {
     }
 
     local daemon_bin=$(find_bin "victus-max-daemon")
-    if [[ -z "$daemon_bin" ]]; then daemon_bin=$(find_bin "omen-space-daemon"); fi
     local cli_bin=$(find_bin "victus-max-cli")
-    if [[ -z "$cli_bin" ]]; then cli_bin=$(find_bin "omen-cli"); fi
     local tray_bin=$(find_bin "victus-max-tray")
-    if [[ -z "$tray_bin" ]]; then tray_bin=$(find_bin "omen-tray"); fi
     local gui_bin=$(find_bin "victus-max")
-    if [[ -z "$gui_bin" ]]; then gui_bin=$(find_bin "victus-max-gui"); fi
-    if [[ -z "$gui_bin" ]]; then gui_bin=$(find_bin "omen-gui"); fi
     local overlay_bin=$(find_bin "victus-max-overlay")
-    if [[ -z "$overlay_bin" ]]; then overlay_bin=$(find_bin "omen-overlay"); fi
 
-    mkdir -p /usr/libexec/victus-max
-    mkdir -p /usr/libexec/omen-space
-    rm -f /usr/libexec/victus-max/victus-max-daemon /usr/libexec/omen-space/omen-space-daemon
+    rm -f /usr/libexec/victus-max/victus-max-daemon
     cp "${daemon_bin:-target/release/victus-max-daemon}" /usr/libexec/victus-max/victus-max-daemon
-    ln -sf /usr/libexec/victus-max/victus-max-daemon /usr/libexec/omen-space/omen-space-daemon
 
-    rm -f /usr/bin/victus-max-cli /usr/bin/omen-cli
+    rm -f /usr/bin/victus-max-cli
     cp "${cli_bin:-target/release/victus-max-cli}" /usr/bin/victus-max-cli
-    ln -sf /usr/bin/victus-max-cli /usr/bin/omen-cli
 
-    rm -f /usr/bin/victus-max-tray /usr/bin/omen-tray
+    rm -f /usr/bin/victus-max-tray
     cp "${tray_bin:-target/release/victus-max-tray}" /usr/bin/victus-max-tray
-    ln -sf /usr/bin/victus-max-tray /usr/bin/omen-tray
 
-    rm -f /usr/bin/victus-max /usr/bin/victus-max-gui /usr/bin/omen-gui
+    rm -f /usr/bin/victus-max
     cp "${gui_bin:-target/release/victus-max}" /usr/bin/victus-max
-    ln -sf /usr/bin/victus-max /usr/bin/victus-max-gui
-    ln -sf /usr/bin/victus-max /usr/bin/omen-gui
 
-    rm -f /usr/bin/victus-max-overlay /usr/bin/omen-overlay
+    rm -f /usr/bin/victus-max-overlay
     cp "${overlay_bin:-target/release/victus-max-overlay}" /usr/bin/victus-max-overlay
-    ln -sf /usr/bin/victus-max-overlay /usr/bin/omen-overlay
 
     install -m 644 data/org.hp.omen.conf /etc/dbus-1/system.d/
-    rm -f /etc/systemd/system/omen-space-daemon.service
     install -m 644 data/victus-max-daemon.service /etc/systemd/system/
-    install -m 644 data/sysusers.d/omen-space.conf /usr/lib/sysusers.d/
-    install -m 644 data/99-omen-space.rules /usr/lib/udev/rules.d/
-    rm -f /usr/share/applications/omen-space.desktop /usr/share/applications/org.hp.OmenSpace.desktop /usr/share/applications/org.hp.VictusMax.desktop
+    install -m 644 data/sysusers.d/victus-max.conf /usr/lib/sysusers.d/
+    install -m 644 data/99-victus-max.rules /usr/lib/udev/rules.d/
+    rm -f /usr/share/applications/org.hp.VictusMax.desktop
     cp data/org.hp.VictusMax.desktop /usr/share/applications/
-    cp data/org.hp.OmenSpace.desktop /usr/share/applications/
     cp data/org.hp.VictusMax.service /usr/share/dbus-1/services/
-    cp data/org.hp.OmenSpace.service /usr/share/dbus-1/services/
     mkdir -p /usr/share/pixmaps
     mkdir -p /usr/share/icons/hicolor/512x512/apps
     mkdir -p /usr/share/victus-max/assets
-    mkdir -p /usr/share/omen-space/assets
     if [[ -d "data/icons/hicolor" ]]; then
         cp -r data/icons/hicolor/* /usr/share/icons/hicolor/
     fi
     if [[ -d "src/victus-max-gui/assets" ]]; then
         cp src/victus-max-gui/assets/victus-max.png /usr/share/icons/hicolor/512x512/apps/victus-max.png
         cp src/victus-max-gui/assets/victus-max.png /usr/share/pixmaps/victus-max.png
-        cp src/victus-max-gui/assets/omenspace.png /usr/share/icons/hicolor/512x512/apps/omenspace.png
-        cp src/victus-max-gui/assets/omenspace.png /usr/share/pixmaps/omenspace.png
         cp -r src/victus-max-gui/assets/* /usr/share/victus-max/assets/
-        cp -r src/victus-max-gui/assets/* /usr/share/omen-space/assets/
-    elif [[ -d "src/omen-gui/assets" ]]; then
-        cp src/omen-gui/assets/victus-max.png /usr/share/icons/hicolor/512x512/apps/victus-max.png 2>/dev/null || true
-        cp src/omen-gui/assets/omenspace.png /usr/share/icons/hicolor/512x512/apps/omenspace.png
-        cp src/omen-gui/assets/omenspace.png /usr/share/pixmaps/omenspace.png
-        cp -r src/omen-gui/assets/* /usr/share/victus-max/assets/
-        cp -r src/omen-gui/assets/* /usr/share/omen-space/assets/
     fi
     gtk-update-icon-cache -f -t /usr/share/icons/hicolor || true
 
@@ -392,7 +374,7 @@ EOF
     echo "====================================="
     sleep 2 # Give daemon a moment to initialize on dbus
 
-    if /usr/bin/victus-max-cli system info 2>/dev/null || /usr/bin/omen-cli system info 2>/dev/null; then
+    if /usr/bin/victus-max-cli system info; then
         echo -e "\n✅ SUCCESS: CLI successfully communicated with the daemon!"
     else
         echo -e "\n❌ ERROR: CLI failed to communicate with the daemon. Check 'systemctl status victus-max-daemon'."

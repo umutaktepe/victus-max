@@ -1,3 +1,0 @@
-[D-BUS Service]
-Name=org.hp.OmenSpace
-Exec=/usr/bin/omen-gui --gapplication-service

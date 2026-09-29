@@ -3,9 +3,9 @@
 ## Genel Bakış
 Linux çekirdeği varsayılan olarak donanım MSR yazmaçlarını (`/dev/cpu/*/msr`) ve doğrudan girdi akışlarını (`/dev/input/event*`) yalnızca root erişimine açık tutar veya belirli gruplara kısıtlar.
 
-`data/99-omen-space.rules` dosyası, Victus Max servislerinin ve `omen-hw` grubunun ihtiyaç duyduğu donanım aygıt izinlerini kalıcı hale getirir.
+`data/99-victus-max.rules` dosyası, Victus Max servislerinin ve `omen-hw` grubunun ihtiyaç duyduğu donanım aygıt izinlerini kalıcı hale getirir.
 
-## Udev Kural Dosyası (`data/99-omen-space.rules`)
+## Udev Kural Dosyası (`data/99-victus-max.rules`)
 
 ```udev
 # Intel/AMD MSR aygıtları okuma/yazma izinleri
