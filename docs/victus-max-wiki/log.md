@@ -171,3 +171,18 @@ grep "^## \[" docs/victus-max-wiki/log.md | tail -5
   - `setup.sh` dosyasına `/etc/victus-max/keymaps` ve `/var/lib/victus-max-daemon` dizinlerinin kurulum anında oluşturulması eklendi.
   - Workspace testleri (52/52) ve release derlemesi başarıyla tamamlandı.
 
+
+---
+
+## [2026-09-29] Fix | Fan Curve Editor Pencere Saydamlık Hatası ve Libadwaita Dönüşümü
+
+- **İşlem Türü:** Arayüz & Görsel Hata Düzeltmesi (UI/UX Bugfix)
+- **Kapsam:** `src/victus-max-gui/src/fan_curve_editor.rs`, `src/victus-max-gui/src/performance_control.rs`.
+- **Kök Neden:**
+  - Fan Curve Editor penceresi çıplak bir `gtk::Window` üzerine `.css_classes(["os-card"])` verilerek açılıyordu. `@card_bg_color` Libadwaita karanlık modunda saydamlık (alfa) içerdiği için ve pencere seviyesinde opak arka plan render edilmediği için tüm pencere hayalet gibi saydam kalıyordu.
+  - Buna ek olarak `DrawingArea` içerisinde `cr.set_operator(gtk::cairo::Operator::Clear); cr.paint()` çağrısı yapıldığı için Cairo, pencerenin alfa tamponunu `0.0`a çekerek grafik alanını doğrudan masaüstüne / altındaki ana pencereye saydam delik açıyordu.
+  - Client-side decoration (HeaderBar) bulunmadığı için KDE KWin sunucu taraflı yabancı başlık çubuğu çiziyordu.
+- **Detaylar:**
+  - `fan_curve_editor.rs` içerisinde pencere `adw::Window` + `adw::ToolbarView` + `adw::HeaderBar` yapısına dönüştürüldü; böylece pencere opak Adwaita zeminine (`@window_bg_color`), yerel Adwaita başlığına ve kapatma butonuna kavuştu.
+  - Grafik çizim alanı `os-card` kart konteyneri içine alındı ve `cairo::Operator::Clear` kaldırılarak `Operator::Over` ile koyu kontrastlı şık bir grafik arka planı (`rgba(0,0,0,0.25)`) çizildi.
+  - Aynı `Operator::Clear` temizliği `performance_control.rs` üzerindeki ana fan eğrisi çizicisine de uygulandı.

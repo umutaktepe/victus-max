@@ -1,4 +1,6 @@
 use gtk::prelude::*;
+use libadwaita as adw;
+use libadwaita::prelude::*;
 use std::rc::Rc;
 use std::cell::RefCell;
 use crate::i18n;
@@ -10,23 +12,27 @@ pub fn show_fan_curve_editor(
     on_save: impl Fn(Vec<(f64, f64)>) + 'static,
     on_delete: impl Fn() + 'static,
 ) {
-    let dialog = gtk::Window::builder()
+    let window = adw::Window::builder()
         .title(i18n::t("custom_curve_title"))
         .transient_for(parent)
         .modal(true)
         .destroy_with_parent(true)
-        .default_width(360)
-        .default_height(420)
-        .css_classes(["os-card"])
+        .default_width(380)
+        .default_height(520)
+        .resizable(false)
         .build();
+
+    let toolbar_view = adw::ToolbarView::new();
+    let header_bar = adw::HeaderBar::new();
+    toolbar_view.add_top_bar(&header_bar);
 
     let vbox = gtk::Box::builder()
         .orientation(gtk::Orientation::Vertical)
         .spacing(12)
         .margin_top(12)
-        .margin_bottom(12)
-        .margin_start(12)
-        .margin_end(12)
+        .margin_bottom(16)
+        .margin_start(16)
+        .margin_end(16)
         .build();
 
     vbox.append(&gtk::Label::builder()
@@ -42,6 +48,12 @@ pub fn show_fan_curve_editor(
         .build());
 
     let pts = Rc::new(RefCell::new(points));
+
+    let chart_card = gtk::Box::builder()
+        .orientation(gtk::Orientation::Vertical)
+        .css_classes(["os-card"])
+        .halign(gtk::Align::Center)
+        .build();
 
     let da = gtk::DrawingArea::builder()
         .width_request(320)
@@ -65,9 +77,11 @@ pub fn show_fan_curve_editor(
              pad + (1.0 - speed / 100.0) * ah)
         };
 
-        cr.set_operator(gtk::cairo::Operator::Clear);
-        cr.paint().expect("Invalid cairo surface");
+        // Graph inner background (subtle dark container)
         cr.set_operator(gtk::cairo::Operator::Over);
+        cr.set_source_rgba(0.0, 0.0, 0.0, 0.25);
+        cr.rectangle(pad, pad, aw, ah);
+        let _ = cr.fill();
 
         cr.set_line_width(0.5);
         cr.set_source_rgba(0.5, 0.5, 0.5, 0.15);
@@ -78,7 +92,7 @@ pub fn show_fan_curve_editor(
             cr.move_to(pad, y); cr.line_to(pad + aw, y); let _ = cr.stroke();
         }
 
-        cr.set_source_rgba(0.5, 0.5, 0.5, 0.3);
+        cr.set_source_rgba(0.5, 0.5, 0.5, 0.35);
         cr.set_line_width(1.0);
         cr.rectangle(pad, pad, aw, ah);
         let _ = cr.stroke();
@@ -206,39 +220,42 @@ pub fn show_fan_curve_editor(
     });
     da.add_controller(drag);
 
-    vbox.append(&da);
+    chart_card.append(&da);
+    vbox.append(&chart_card);
 
     let hbox = gtk::Box::builder()
         .orientation(gtk::Orientation::Horizontal)
-        .spacing(8)
+        .spacing(10)
         .halign(gtk::Align::End)
+        .margin_top(4)
         .build();
 
     let save_btn = gtk::Button::builder()
         .label(i18n::t("save"))
-        .css_classes(["suggested-action"])
+        .css_classes(["suggested-action", "pill"])
         .build();
     let pts_save = pts.clone();
-    let d2 = dialog.clone();
+    let w_save = window.clone();
     save_btn.connect_clicked(move |_| {
         on_save(pts_save.borrow().clone());
-        d2.destroy();
+        w_save.close();
     });
 
     let delete_btn = gtk::Button::builder()
         .label(i18n::t("delete"))
-        .css_classes(["destructive-action"])
+        .css_classes(["destructive-action", "pill"])
         .build();
-    let d3 = dialog.clone();
+    let w_del = window.clone();
     delete_btn.connect_clicked(move |_| {
         on_delete();
-        d3.destroy();
+        w_del.close();
     });
 
     hbox.append(&delete_btn);
     hbox.append(&save_btn);
     vbox.append(&hbox);
 
-    dialog.set_child(Some(&vbox));
-    dialog.present();
+    toolbar_view.set_content(Some(&vbox));
+    window.set_content(Some(&toolbar_view));
+    window.present();
 }

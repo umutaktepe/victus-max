@@ -357,10 +357,11 @@ pub fn build_page() -> gtk::Box {
              pad + (1.0 - speed / 100.0) * ah)
         };
 
-        // Background transparent
-        cr.set_operator(gtk::cairo::Operator::Clear);
-        cr.paint().expect("Invalid cairo surface");
+        // Graph inner background (subtle dark container)
         cr.set_operator(gtk::cairo::Operator::Over);
+        cr.set_source_rgba(0.0, 0.0, 0.0, 0.25);
+        cr.rectangle(pad, pad, aw, ah);
+        let _ = cr.fill();
 
         // Subtle grid
         cr.set_line_width(0.5);
