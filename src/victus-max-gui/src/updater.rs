@@ -47,7 +47,7 @@ pub fn build_page(window: &adw::ApplicationWindow) -> gtk::Box {
         .subtitle(i18n::t("last_checked"))
         .build();
     let app_icon = gtk::Image::builder()
-        .icon_name("application-x-executable-symbolic")
+        .icon_name("victus-max")
         .pixel_size(24)
         .margin_end(12)
         .build();
