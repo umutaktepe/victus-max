@@ -31,7 +31,7 @@ pub async fn run_live_dashboard(conn: &zbus::Connection) -> Result<()> {
 
     let user = env::var("USER").unwrap_or_else(|_| "user".to_string());
     let hostname = std::fs::read_to_string("/proc/sys/kernel/hostname")
-        .unwrap_or_else(|_| "omen-laptop".to_string())
+        .unwrap_or_else(|_| "victus-laptop".to_string())
         .trim()
         .to_string();
 
@@ -49,7 +49,7 @@ pub async fn run_live_dashboard(conn: &zbus::Connection) -> Result<()> {
 
     let os_name = get_os_release_name().unwrap_or_else(|| "Linux".to_string());
 
-    let ascii_logo = [
+    let ascii_logo_omen = [
         "\x1b[38;2;0;162;255m         .::.         \x1b[0m",
         "\x1b[38;2;20;140;255m       .::::::.       \x1b[0m",
         "\x1b[38;2;40;120;255m     .::::::::::.     \x1b[0m",
@@ -64,11 +64,33 @@ pub async fn run_live_dashboard(conn: &zbus::Connection) -> Result<()> {
         "\x1b[38;2;0;162;255m         '::'         \x1b[0m",
     ];
 
+    let ascii_logo_victus = [
+        "\x1b[38;2;0;162;255m ::::::.        .:::::: \x1b[0m",
+        "\x1b[38;2;20;140;255m  '::::::.    .::::::'  \x1b[0m",
+        "\x1b[38;2;40;120;255m   '::::::.  .::::::'   \x1b[0m",
+        "\x1b[38;2;60;100;255m    '::::::..::::::'    \x1b[0m",
+        "\x1b[38;2;80;80;255m     '::::::::::::'     \x1b[0m",
+        "\x1b[38;2;110;60;255m      '::::::::::'      \x1b[0m",
+        "\x1b[38;2;140;40;255m       '::::::::'       \x1b[0m",
+        "\x1b[38;2;170;20;255m        '::::::'        \x1b[0m",
+        "\x1b[38;2;190;10;230m         '::::'         \x1b[0m",
+        "\x1b[38;2;210;0;200m          '::'          \x1b[0m",
+        "\x1b[38;2;225;0;160m           ''           \x1b[0m",
+        "\x1b[38;2;240;0;120m                        \x1b[0m",
+    ];
+
+    let prod_check = sys_json["system"]["product_name"].as_str().unwrap_or("Victus");
+    let ascii_logo = if prod_check.to_lowercase().contains("omen") {
+        &ascii_logo_omen
+    } else {
+        &ascii_logo_victus
+    };
+
     loop {
         if need_redraw {
             need_redraw = false;
 
-            let product_name = sys_json["system"]["product_name"].as_str().unwrap_or("HP OMEN Laptop");
+            let product_name = sys_json["system"]["product_name"].as_str().unwrap_or("HP Victus Gaming Laptop");
             let board_id = sys_json["system"]["board_id"].as_str().unwrap_or("8BBE");
             let kernel = sys_json["system"]["kernel"].as_str().unwrap_or("Linux");
             let cpu_name = sys_json["system"]["cpu_name"].as_str().unwrap_or("Processor");
@@ -164,7 +186,7 @@ pub async fn run_live_dashboard(conn: &zbus::Connection) -> Result<()> {
             row_idx += 1;
 
             execute!(out, cursor::MoveTo(0, row_idx))?;
-            write!(out, "\x1b[1;31momen-cli\x1b[0m \x1b[1;32m>\x1b[0m {}\x1b[K", input)?;
+            write!(out, "\x1b[1;36mvictus-max-cli\x1b[0m \x1b[1;32m>\x1b[0m {}\x1b[K", input)?;
             out.flush()?;
         }
 
@@ -226,7 +248,7 @@ pub async fn run_live_dashboard(conn: &zbus::Connection) -> Result<()> {
     Ok(())
 }
 
-pub async fn print_omen_fetch(conn: &zbus::Connection) -> Result<()> {
+pub async fn print_victus_fetch(conn: &zbus::Connection) -> Result<()> {
     let platform = PlatformProxy::new(conn).await?;
     let fan = FanProxy::new(conn).await?;
     let power = PowerProxy::new(conn).await?;
@@ -257,11 +279,11 @@ pub async fn print_omen_fetch(conn: &zbus::Connection) -> Result<()> {
 
     let user = env::var("USER").unwrap_or_else(|_| "user".to_string());
     let hostname = std::fs::read_to_string("/proc/sys/kernel/hostname")
-        .unwrap_or_else(|_| "omen-laptop".to_string())
+        .unwrap_or_else(|_| "victus-laptop".to_string())
         .trim()
         .to_string();
 
-    let product_name = sys_json["system"]["product_name"].as_str().unwrap_or("HP OMEN Laptop");
+    let product_name = sys_json["system"]["product_name"].as_str().unwrap_or("HP Victus Gaming Laptop");
     let board_id = sys_json["system"]["board_id"].as_str().unwrap_or("8BBE");
     let kernel = sys_json["system"]["kernel"].as_str().unwrap_or("Linux");
     let cpu_name = sys_json["system"]["cpu_name"].as_str().unwrap_or("Processor");
@@ -272,7 +294,7 @@ pub async fn print_omen_fetch(conn: &zbus::Connection) -> Result<()> {
     let pl1 = power_json["pl1_w"].as_i64().unwrap_or(0);
     let pl2 = power_json["pl2_w"].as_i64().unwrap_or(0);
     let undervolt_mv = power_json["undervolt_mv"].as_i64().unwrap_or(0);
-            let gpu_w = power_json["gpu_w"].as_u64().unwrap_or(0);
+    let gpu_w = power_json["gpu_w"].as_u64().unwrap_or(0);
 
     let fan_mode = fan_json["mode"].as_str().unwrap_or("auto");
     let fan1_rpm = fan_json["fans"]["1"]["current"].as_u64().unwrap_or(0);
@@ -318,7 +340,7 @@ pub async fn print_omen_fetch(conn: &zbus::Connection) -> Result<()> {
         "\x1b[100m   \x1b[101m   \x1b[102m   \x1b[103m   \x1b[104m   \x1b[105m   \x1b[106m   \x1b[107m   \x1b[0m".to_string(),
     ];
 
-    let ascii_logo = [
+    let ascii_logo_omen = [
         "\x1b[38;2;0;162;255m         .::.         \x1b[0m",
         "\x1b[38;2;20;140;255m       .::::::.       \x1b[0m",
         "\x1b[38;2;40;120;255m     .::::::::::.     \x1b[0m",
@@ -335,6 +357,30 @@ pub async fn print_omen_fetch(conn: &zbus::Connection) -> Result<()> {
         "",
         "",
     ];
+
+    let ascii_logo_victus = [
+        "\x1b[38;2;0;162;255m ::::::.        .:::::: \x1b[0m",
+        "\x1b[38;2;20;140;255m  '::::::.    .::::::'  \x1b[0m",
+        "\x1b[38;2;40;120;255m   '::::::.  .::::::'   \x1b[0m",
+        "\x1b[38;2;60;100;255m    '::::::..::::::'    \x1b[0m",
+        "\x1b[38;2;80;80;255m     '::::::::::::'     \x1b[0m",
+        "\x1b[38;2;110;60;255m      '::::::::::'      \x1b[0m",
+        "\x1b[38;2;140;40;255m       '::::::::'       \x1b[0m",
+        "\x1b[38;2;170;20;255m        '::::::'        \x1b[0m",
+        "\x1b[38;2;190;10;230m         '::::'         \x1b[0m",
+        "\x1b[38;2;210;0;200m          '::'          \x1b[0m",
+        "\x1b[38;2;225;0;160m           ''           \x1b[0m",
+        "\x1b[38;2;240;0;120m                        \x1b[0m",
+        "",
+        "",
+        "",
+    ];
+
+    let ascii_logo = if product_name.to_lowercase().contains("omen") {
+        &ascii_logo_omen
+    } else {
+        &ascii_logo_victus
+    };
 
     println!();
     let max_lines = ascii_logo.len().max(info_lines.len());
@@ -551,7 +597,7 @@ async fn execute_input_command(input: &str, conn: &zbus::Connection) -> String {
             use crate::Cli;
             use crate::run_command;
 
-            let args = format!("omen-cli {}", input);
+            let args = format!("victus-max-cli {}", input);
             let args_vec = match shlex::split(&args) {
                 Some(v) => v,
                 None => return format!("[{}] \x1b[31mInvalid input quotation\x1b[0m", now),

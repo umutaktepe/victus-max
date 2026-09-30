@@ -16,7 +16,7 @@ struct Cli {
 
 #[derive(Subcommand, Debug, Clone)]
 pub enum Commands {
-    /// Show fastfetch / neofetch style HP Victus & OMEN system summary
+    /// Show fastfetch / neofetch style Victus Max system summary
     Fetch,
     /// RGB keyboard lighting controls
     Rgb {
@@ -80,7 +80,7 @@ async fn main() -> Result<()> {
 
 async fn run_command(cmd: &Commands, conn: &zbus::Connection) -> Result<()> {
     match cmd {
-        Commands::Fetch => fetch::print_omen_fetch(conn).await?,
+        Commands::Fetch => fetch::print_victus_fetch(conn).await?,
         Commands::Rgb { cmd } => commands::rgb::handle(cmd, conn).await?,
         Commands::Fan { cmd } => commands::fan::handle(cmd, conn).await?,
         Commands::Power { cmd } => commands::power::handle(cmd, conn).await?,

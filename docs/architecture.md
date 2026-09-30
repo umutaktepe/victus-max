@@ -80,7 +80,7 @@ The floating gaming HUD overlay (`victus-max-overlay`).
 - **Role:** Lightweight Wayland/X11 HUD toggled via `Shift + F2` to quickly adjust fan and power modes in-game without alt-tabbing.
 
 ### 2.4. `src/victus-max-cli/`
-The command-line tool (`victus-max-cli`, with `omen-cli` alias).
+The command-line tool (`victus-max-cli`).
 - **Language:** Rust
 - **Role:** Allows scripts or power users to control hardware directly from the terminal (e.g., `victus-max-cli fan set-mode better-auto`).
 

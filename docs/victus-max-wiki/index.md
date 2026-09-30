@@ -69,7 +69,7 @@ Kullanıcı alanında (unprivileged) koşan grafik, komut satırı ve panel aray
 - [[gui-application]] — GTK4 ve Libadwaita ile inşa edilmiş ana masaüstü kontrol merkezi, sekme mimarisi ve D-Bus istemcisi.
 - [[quick-hud-overlay]] — Oyun esnasında Shift+F2 ile ekrana gelen, sıfır gecikmeli yarı saydam Wayland GTK4 HUD paneli.
 - [[system-tray]] — Masaüstü bildirim alanında çalışan hafif (<2MB) hızlı profil seçici ve gösterge simgesi.
-- [[command-line-interface]] — Terminal ve otomasyon betikleri için `victus-max-cli` (ve `omen-cli`) komut hiyerarşisi ve ASCII donanım bilgi çıktısı (`fetch`).
+- [[command-line-interface]] — Terminal ve otomasyon betikleri için `victus-max-cli` komut hiyerarşisi ve ASCII donanım bilgi çıktısı (`fetch`).
 - [[fan-curve-editor-ui]] — GTK4 DrawingArea üzerinde çalışan etkileşimli fan eğrisi ve spline çizim bileşeni.
 - [[updater-service]] — OTA güncelleme merkezi arayüzü, GitHub commit/release takibi, Polkit yetkilendirmeli güncelleme süreci ve aşamalı terminal görünümü.
 

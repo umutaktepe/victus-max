@@ -23,8 +23,8 @@ pub async fn handle(cmd: &OverlayCommand, conn: &zbus::Connection) -> Result<()>
             }
         }
         OverlayCommand::Daemon => {
-            println!("{} Starting OMEN Overlay in daemon mode...", "🎮".cyan());
-            let _ = std::process::Command::new("omen-overlay")
+            println!("{} Starting Victus Max Overlay in daemon mode...", "🎮".cyan());
+            let _ = std::process::Command::new("victus-max-overlay")
                 .arg("--daemon")
                 .spawn();
         }

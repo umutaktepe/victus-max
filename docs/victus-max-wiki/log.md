@@ -211,3 +211,16 @@ grep "^## \[" docs/victus-max-wiki/log.md | tail -5
   - GitHub Actions etiket tetiklemeli otomatik release iş akışı (`release.yml`) ve yerel sürüm yükseltme aracı (`scripts/release.sh`) hazırlandı; `setup.sh` önceden derlenmiş ikili paketleri algılayacak şekilde güncellendi.
 - **Mimari Karar:** [[adr-006-github-update-and-release-architecture]]
 
+---
+
+## [2026-09-30] Cleanup | Komut Satırı Arayüzü (CLI) İsimlendirme ve Victus ASCII Logo Güncellemesi
+
+- **İşlem Türü:** CLI Marka Temizliği ve Donanım Tespiti (De-branding & UI Polish)
+- **Kapsam:** `src/victus-max-cli/src/fetch.rs`, `src/victus-max-cli/src/main.rs`, `src/victus-max-cli/src/commands/overlay.rs`, `docs/victus-max-wiki/user-experience/command-line-interface.md`, `docs/architecture.md`, `docs/cli.md`.
+- **Detaylar:**
+  - `victus-max-cli` interaktif terminal panosu (`fetch.rs`) içerisindeki `omen-cli >` istemci metni `victus-max-cli >` olarak güncellendi.
+  - Alt komut çalıştırıcı fallback dizesindeki `omen-cli` çağrısı `victus-max-cli` olarak düzeltildi.
+  - Canlı pano ve fetch çıktısı için HP Victus modellerine özel geometrik mavi-mor degradeli Victus "V" ASCII logosu eklendi; OMEN modellerinde OMEN eşkenar dörtgeni, Victus modellerinde ise Victus logosu dinamik olarak gösterilecek şekilde yapılandırıldı.
+  - `overlay.rs` ve `main.rs` içerisindeki eski marka referansları arındırıldı; ilgili dokümantasyon sayfaları güncellendi.
+
+

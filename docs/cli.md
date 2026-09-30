@@ -1,6 +1,6 @@
 # Victus Max CLI (`victus-max-cli`)
 
-The `victus-max-cli` crate provides a lightning-fast command-line interface for power users, script writers, terminal enthusiasts, and headless environments. For backward compatibility, `omen-cli` is also provided as a symlink.
+The `victus-max-cli` crate provides a lightning-fast command-line interface for power users, script writers, terminal enthusiasts, and headless environments.
 
 ## Responsibilities
 
