@@ -235,5 +235,17 @@ grep "^## \[" docs/victus-max-wiki/log.md | tail -5
   - RGB ANSI Truecolor (24-bit) paleti ile amblemin kızıl metalik çerçevesi, alevli turuncu boynuzları ve kor halindeki altın sarısı Victus V geçişi (`#FF2020` -> `#FF8000` -> `#FFD020`) renklendirildi.
   - Canlı pano ve `victus-max-cli fetch` sistem bilgi satırlarıyla (12 satır) birebir piksel hizalaması sağlandı.
 
+---
+
+## [2026-09-30] Feature | Yüksek Çözünürlüklü Unicode Half-Block Victus Max Amblemi
+
+- **İşlem Türü:** Terminal Grafiği & Detaylı Piksel Sanatı (Unicode Half-Block TrueColor)
+- **Kapsam:** `src/victus-max-cli/src/fetch.rs`.
+- **Detaylar:**
+  - Karakter alanı sınırını aşmak ve amblemdeki tüm ince detayları (tribal alev boynuzları, kafatası/maske göz yuvaları, kaş kavisleri, kılıç kabzası ve altın Victus V) terminalde net gösterebilmek amacıyla `▀` (`\u2580`) Unicode yarım-blok (half-block) tekniğine geçildi.
+  - Her karakter hücresinin üst pikseli ön plan (`38;2;R;G;B`), alt pikseli arka plan (`48;2;R;G;B`) olarak bağımsız renklendirilerek 28×14 karakterlik alanda tam **28×28 (784 piksel) 24-bit TrueColor** çözünürlük elde edildi.
+  - `get_ascii_logo` fonksiyonu ortaklaştırılarak kod tekrarı önlendi; OMEN ve Victus modelleri için dinamik donanım tespiti korundu.
+
+
 
 
