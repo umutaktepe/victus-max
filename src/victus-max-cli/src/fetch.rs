@@ -8,7 +8,7 @@ use crossterm::{
     cursor,
     event::{self, Event, KeyCode, KeyModifiers},
     execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen, DisableLineWrap, EnableLineWrap, Clear, ClearType},
 };
 
 use crate::dbus_proxy::{PlatformProxy, FanProxy, PowerProxy, RgbProxy, MuxProxy, SysMonProxy};
@@ -21,9 +21,9 @@ pub enum LogoResolution {
 }
 
 pub fn detect_logo_resolution(cols: u16, rows: u16) -> LogoResolution {
-    if cols >= 105 && rows >= 25 {
+    if cols >= 115 && rows >= 27 {
         LogoResolution::Large
-    } else if cols >= 88 && rows >= 20 {
+    } else if cols >= 100 && rows >= 23 {
         LogoResolution::Medium
     } else {
         LogoResolution::Compact
@@ -160,7 +160,7 @@ pub fn get_ascii_logo(product_name: &str, res: LogoResolution) -> (&'static [&'s
 pub async fn run_live_dashboard(conn: &zbus::Connection) -> Result<()> {
     enable_raw_mode()?;
     let mut out = stdout();
-    execute!(out, EnterAlternateScreen, cursor::Hide)?;
+    execute!(out, EnterAlternateScreen, cursor::Hide, DisableLineWrap, Clear(ClearType::All))?;
 
     let platform = PlatformProxy::new(conn).await?;
     let fan = FanProxy::new(conn).await?;
@@ -246,7 +246,14 @@ pub async fn run_live_dashboard(conn: &zbus::Connection) -> Result<()> {
                 format!("\x1b[1;36m{}\x1b[0m: {} ({})", crate::i18n::t("host"), product_name, board_id),
                 format!("\x1b[1;36mCPU\x1b[0m: {}", cpu_name),
                 format!("\x1b[1;36m{}\x1b[0m: \x1b[1;32m{}\x1b[0m [PL1: {}W / PL2: {}W]", crate::i18n::t("power_profile"), power_active, pl1, pl2),
-                format!("\x1b[1;36m{}\x1b[0m: CPU: {}°C | GPU: {}°C | Fan1: {} RPM | Fan2: {} RPM [\x1b[33m{}\x1b[0m]", crate::i18n::t("thermal_fans"), cpu_temp, gpu_temp, fan1_rpm, fan2_rpm, fan_mode),
+                {
+                    let fan_summary = if fan1_rpm == fan2_rpm && fan1_rpm > 0 {
+                        format!("{} RPM", fan1_rpm)
+                    } else {
+                        format!("{}/{} RPM", fan1_rpm, fan2_rpm)
+                    };
+                    format!("\x1b[1;36m{}\x1b[0m: CPU: {}°C | GPU: {}°C | Fans: {} [\x1b[33m{}\x1b[0m]", crate::i18n::t("thermal_fans"), cpu_temp, gpu_temp, fan_summary, fan_mode)
+                },
                 format!("\x1b[1;36m{}\x1b[0m: \x1b[1;35m{}\x1b[0m | \x1b[1;31mTGP\x1b[0m: {}W | \x1b[1;36mUV\x1b[0m: {}mV", crate::i18n::t("gpu_mux"), mux_mode, gpu_w, undervolt_mv),
                 format!("\x1b[1;36m{}\x1b[0m: {}% {} | \x1b[1;36mRGB\x1b[0m: {}", crate::i18n::t("battery_care"), battery_limit, crate::i18n::t("limit"), rgb_mode),
                 format!("\x1b[1;36m{}\x1b[0m: {}", crate::i18n::t("conflicts"), if conflict_clean { format!("\x1b[32m{}\x1b[0m", crate::i18n::t("clean")) } else { format!("\x1b[31m{}\x1b[0m", crate::i18n::t("warning")) }),
@@ -260,45 +267,45 @@ pub async fn run_live_dashboard(conn: &zbus::Connection) -> Result<()> {
             for i in 0..max_lines {
                 let logo_part = ascii_logo.get(i).copied().unwrap_or(&padding_spaces);
                 let info_part = info_lines.get(i).map(|s| s.as_str()).unwrap_or("");
-                execute!(out, cursor::MoveTo(2, row_idx))?;
-                write!(out, "{}   {}\x1b[K", logo_part, info_part)?;
+                execute!(out, cursor::MoveTo(0, row_idx))?;
+                write!(out, "\x1b[2K  {}   {}\x1b[K", logo_part, info_part)?;
                 row_idx += 1;
             }
 
             // Compact Cheatsheet
             execute!(out, cursor::MoveTo(0, row_idx))?;
-            write!(out, "\x1b[1;30m--------------------------------------------------------------------------------\x1b[0m\x1b[K")?;
+            write!(out, "\x1b[2K\x1b[1;30m--------------------------------------------------------------------------------\x1b[0m\x1b[K")?;
             row_idx += 1;
 
-            execute!(out, cursor::MoveTo(2, row_idx))?;
-            write!(out, "\x1b[1;36mFan\x1b[0m: \x1b[32mfan auto|ec|max|50\x1b[0m | \x1b[1;36mPower\x1b[0m: \x1b[32mperf perf|bal|eco\x1b[0m | \x1b[1;36mMUX\x1b[0m: \x1b[32mmux hybrid|discrete\x1b[0m\x1b[K")?;
+            execute!(out, cursor::MoveTo(0, row_idx))?;
+            write!(out, "\x1b[2K  \x1b[1;36mFan\x1b[0m: \x1b[32mfan auto|ec|max|50\x1b[0m | \x1b[1;36mPower\x1b[0m: \x1b[32mperf perf|bal|eco\x1b[0m | \x1b[1;36mMUX\x1b[0m: \x1b[32mmux hybrid|discrete\x1b[0m\x1b[K")?;
             row_idx += 1;
 
-            execute!(out, cursor::MoveTo(2, row_idx))?;
-            write!(out, "\x1b[1;36mRGB\x1b[0m: \x1b[32mrgb red|blue|off\x1b[0m | \x1b[1;36mBat\x1b[0m: \x1b[32mbat 80\x1b[0m | \x1b[1;36mUtils\x1b[0m: \x1b[32muv -50\x1b[0m | \x1b[32mclean\x1b[0m | \x1b[32mdiag\x1b[0m | \x1b[32mexit\x1b[0m\x1b[K")?;
+            execute!(out, cursor::MoveTo(0, row_idx))?;
+            write!(out, "\x1b[2K  \x1b[1;36mRGB\x1b[0m: \x1b[32mrgb red|blue|off\x1b[0m | \x1b[1;36mBat\x1b[0m: \x1b[32mbat 80\x1b[0m | \x1b[1;36mUtils\x1b[0m: \x1b[32muv -50\x1b[0m | \x1b[32mclean\x1b[0m | \x1b[32mdiag\x1b[0m | \x1b[32mexit\x1b[0m\x1b[K")?;
             row_idx += 1;
 
             // Notification / Log Area
             execute!(out, cursor::MoveTo(0, row_idx))?;
-            write!(out, "\x1b[1;30m--------------------------------------------------------------------------------\x1b[0m\x1b[K")?;
+            write!(out, "\x1b[2K\x1b[1;30m--------------------------------------------------------------------------------\x1b[0m\x1b[K")?;
             row_idx += 1;
 
             execute!(out, cursor::MoveTo(0, row_idx))?;
-            write!(out, "\x1b[1;33mExecution Log & Notifications:\x1b[0m\x1b[K")?;
+            write!(out, "\x1b[2K\x1b[1;33mExecution Log & Notifications:\x1b[0m\x1b[K")?;
             row_idx += 1;
 
             for log in &logs {
-                execute!(out, cursor::MoveTo(2, row_idx))?;
-                write!(out, "{}\x1b[K", log)?;
+                execute!(out, cursor::MoveTo(0, row_idx))?;
+                write!(out, "\x1b[2K  {}\x1b[K", log)?;
                 row_idx += 1;
             }
 
             execute!(out, cursor::MoveTo(0, row_idx))?;
-            write!(out, "\x1b[1;30m--------------------------------------------------------------------------------\x1b[0m\x1b[K")?;
+            write!(out, "\x1b[2K\x1b[1;30m--------------------------------------------------------------------------------\x1b[0m\x1b[K")?;
             row_idx += 1;
 
             execute!(out, cursor::MoveTo(0, row_idx))?;
-            write!(out, "\x1b[1;36mvictus-max-cli\x1b[0m \x1b[1;32m>\x1b[0m {}\x1b[K", input)?;
+            write!(out, "\x1b[2K\x1b[1;36mvictus-max-cli\x1b[0m \x1b[1;32m>\x1b[0m {}\x1b[K", input)?;
             out.flush()?;
         }
 
@@ -310,6 +317,7 @@ pub async fn run_live_dashboard(conn: &zbus::Connection) -> Result<()> {
                     let (new_logo, new_w) = get_ascii_logo(prod_check, res);
                     ascii_logo = new_logo;
                     logo_width = new_w;
+                    let _ = execute!(out, Clear(ClearType::All));
                     need_redraw = true;
                 }
                 Event::Key(key) => {
@@ -366,7 +374,7 @@ pub async fn run_live_dashboard(conn: &zbus::Connection) -> Result<()> {
     }
 
     disable_raw_mode()?;
-    execute!(out, LeaveAlternateScreen, cursor::Show)?;
+    execute!(out, EnableLineWrap, LeaveAlternateScreen, cursor::Show)?;
     Ok(())
 }
 
@@ -454,7 +462,14 @@ pub async fn print_victus_fetch(conn: &zbus::Connection) -> Result<()> {
         format!("\x1b[1;36m{}\x1b[0m: {} ({})", crate::i18n::t("host"), product_name, board_id),
         format!("\x1b[1;36mCPU\x1b[0m: {}", cpu_name),
         format!("\x1b[1;36m{}\x1b[0m: \x1b[1;32m{}\x1b[0m [PL1: {}W / PL2: {}W]", crate::i18n::t("power_profile"), power_active, pl1, pl2),
-        format!("\x1b[1;36m{}\x1b[0m: CPU: {}°C | GPU: {}°C | Fan1: {} RPM | Fan2: {} RPM [\x1b[33m{}\x1b[0m]", crate::i18n::t("thermal_fans"), cpu_temp, gpu_temp, fan1_rpm, fan2_rpm, fan_mode),
+        {
+            let fan_summary = if fan1_rpm == fan2_rpm && fan1_rpm > 0 {
+                format!("{} RPM", fan1_rpm)
+            } else {
+                format!("{}/{} RPM", fan1_rpm, fan2_rpm)
+            };
+            format!("\x1b[1;36m{}\x1b[0m: CPU: {}°C | GPU: {}°C | Fans: {} [\x1b[33m{}\x1b[0m]", crate::i18n::t("thermal_fans"), cpu_temp, gpu_temp, fan_summary, fan_mode)
+        },
         format!("\x1b[1;36m{}\x1b[0m: \x1b[1;35m{}\x1b[0m | \x1b[1;31mTGP\x1b[0m: {}W | \x1b[1;36mUV\x1b[0m: {}mV", crate::i18n::t("gpu_mux"), mux_mode, gpu_w, undervolt_mv),
         format!("\x1b[1;36m{}\x1b[0m: {}% {} | \x1b[1;36mRGB\x1b[0m: {}", crate::i18n::t("battery_care"), battery_limit, crate::i18n::t("limit"), rgb_mode),
         format!("\x1b[1;36m{}\x1b[0m: {}", crate::i18n::t("conflicts"), if conflict_clean { format!("\x1b[32m{}\x1b[0m", crate::i18n::t("clean")) } else { format!("\x1b[31m{}\x1b[0m", crate::i18n::t("warning")) }),

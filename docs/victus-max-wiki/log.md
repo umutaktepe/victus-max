@@ -261,6 +261,22 @@ grep "^## \[" docs/victus-max-wiki/log.md | tail -5
   - Canlı interaktif panoda (`run_live_dashboard`) `Event::Resize` dinleyicisi eklenerek pencere boyutu değiştirildiğinde logonun anında ve sıfır gecikmeyle yeni boyuta adapte olması sağlandı.
   - `fetch` çıktısında ve canlı panoda `logo_width` üzerinden dinamik padding uygulanarak telemetri metin hizalaması pürüzsüzleştirildi.
 
+---
+
+## [2026-09-30] Fix | CLI Canlı Panosunda Satır Kayması ve Sol Kenar Karakter Artığı Temizliği
+
+- **İşlem Türü:** Hata Düzeltme & Terminal Çizim Hijyeni (ANSI Line-Wrap & Margin Hygiene)
+- **Kapsam:** `src/victus-max-cli/src/fetch.rs`.
+- **Detaylar:**
+  - Canlı panoda (`victus-max-cli`) terminalin sol kenarında beliren hayalet `6_` ve `r_` karakter artıkları araştırıldı.
+  - Sorunun kök nedeni tespit edildi: `Host:` satırındaki `16-s0xxx` model adının ve `Thermal/Fans:` satırındaki `[better-auto]` etiketinin 90-100 sütunluk terminallerde sağ kenarı aşarak alt satırın 0. sütununa taşması (`auto-wrap`) ve eski kodun çizime `(2, row_idx)` koordinatından başlayıp 0. sütunu silmemesi nedeniyle bu karakterlerin ekranda donup kalması.
+  - `crossterm::terminal::DisableLineWrap` ile canlı pano süresince otomatik satır taşması engellendi; çıkışta `EnableLineWrap` ile terminal eski haline döndürüldü.
+  - Çizim imleci satırın en başına (`MoveTo(0, row_idx)`) çekilerek her satır başına `\x1b[2K` (satırın tamamını temizle) ANSI dizisi eklendi.
+  - Çözünürlük geçiş eşikleri güvenlik payı verilerek güncellendi (Medium $\ge 100$, Large $\ge 115$).
+  - `Thermal/Fans` satırı (`Fans: 2600 RPM` veya `Fans: 2400/2600 RPM`) kompaktlaştırılarak gereksiz etiket tekrarları kaldırıldı ve satır genişliği 30 karakter daraltıldı.
+  - Pencere yeniden boyutlandığında (`Event::Resize`) ekran `Clear(ClearType::All)` ile sıfırlanarak küçülme anındaki hayalet karakterler tamamen yok edildi.
+
+
 
 
 
