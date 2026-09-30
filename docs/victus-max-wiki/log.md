@@ -223,4 +223,17 @@ grep "^## \[" docs/victus-max-wiki/log.md | tail -5
   - Canlı pano ve fetch çıktısı için HP Victus modellerine özel geometrik mavi-mor degradeli Victus "V" ASCII logosu eklendi; OMEN modellerinde OMEN eşkenar dörtgeni, Victus modellerinde ise Victus logosu dinamik olarak gösterilecek şekilde yapılandırıldı.
   - `overlay.rs` ve `main.rs` içerisindeki eski marka referansları arındırıldı; ilgili dokümantasyon sayfaları güncellendi.
 
+---
+
+## [2026-09-30] Feature | Resmi Victus Max Amblemi ASCII Sanatı (CLI Emblemi)
+
+- **İşlem Türü:** CLI Görsel Tasarım & Terminal Estetiği (ASCII Art Polish)
+- **Kapsam:** `src/victus-max-cli/src/fetch.rs`.
+- **Detaylar:**
+  - `images/victus-max.png` resmi ambleminden esinlenerek 12 satırlık, 26 sütunluk simetrik Victus Max amblemi ASCII sanatı tasarlandı.
+  - OMEN dış eşkenar dörtgeni, tepe tribal alev boynuzları, kılıç omurgası ve alt yarıda kalın, parlak Victus "V" kanatları (`##\ ... /##`) terminal karakterleriyle stilize edildi.
+  - RGB ANSI Truecolor (24-bit) paleti ile amblemin kızıl metalik çerçevesi, alevli turuncu boynuzları ve kor halindeki altın sarısı Victus V geçişi (`#FF2020` -> `#FF8000` -> `#FFD020`) renklendirildi.
+  - Canlı pano ve `victus-max-cli fetch` sistem bilgi satırlarıyla (12 satır) birebir piksel hizalaması sağlandı.
+
+
 
