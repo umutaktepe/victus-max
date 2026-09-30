@@ -276,6 +276,21 @@ grep "^## \[" docs/victus-max-wiki/log.md | tail -5
   - `Thermal/Fans` satırı (`Fans: 2600 RPM` veya `Fans: 2400/2600 RPM`) kompaktlaştırılarak gereksiz etiket tekrarları kaldırıldı ve satır genişliği 30 karakter daraltıldı.
   - Pencere yeniden boyutlandığında (`Event::Resize`) ekran `Clear(ClearType::All)` ile sıfırlanarak küçülme anındaki hayalet karakterler tamamen yok edildi.
 
+---
+
+## [2026-09-30] Fix | GUI Güncelleyici Polkit Kimlik Doğrulama Dayanıklılığı ve Root Yönetimi
+
+- **İşlem Türü:** Hata Düzeltme & Yetki Yükseltme Dayanıklılığı (Polkit Resilience & Privilege Handling)
+- **Kapsam:** `src/victus-max-gui/src/updater.rs`, `src/victus-max-gui/src/i18n.rs`, `setup.sh`.
+- **Detaylar:**
+  - Grafiksel güncelleme esnasında `pkexec` üzerinden çağrılan güncelleyicinin, oturumda aktif bir Polkit Authentication Agent bulunmadığında veya GUI `sudo` ile çalıştırıldığında `/dev/tty` açılamaması sonucu `exit status: 127` ile başarısız olması sorunu çözüldü.
+  - `unsafe { libc::geteuid() == 0 }` kontrolü eklenerek GUI zaten root/sudo ile çalıştırıldıysa gereksiz `pkexec` çağrısı baypas edildi ve doğrudan güncelleyici ikili dosyası tetiklendi.
+  - `is_polkit_auth_error` fonksiyonu ile Polkit kimlik doğrulama ajanı eksikliği (`exit status: 127`, `textual authentication agent`, `No such device or address`, `not authorized`) anında yakalanıp kullanıcıya Türkçe ve İngilizce net rehberlik metni (`polkit_agent_missing`) sağlandı.
+  - Hata durumunda terminal çıktı penceresi otomatik olarak açılarak (`term_toggle.set_active(true)`) kullanıcının doğrudan teknik detayları görmesi sağlandı.
+  - `resolve_updater_bin` fonksiyonu `/usr/bin/victus-max-updater` ve yerel çalışma dizinlerini de denetleyecek biçimde güçlendirildi.
+  - `setup.sh` içerisine `/usr/bin/victus-max-updater` sembolik bağı eklenerek güncelleyicinin doğrudan terminal komutu olarak da çalıştırılabilmesi sağlandı.
+
+
 
 
 

@@ -215,7 +215,7 @@ fn show_firmware_update_modal(window: &adw::ApplicationWindow) {
                 if out.status.success() {
                     dialog_clone.set_body(i18n::t("no_updates"));
                 } else {
-                    dialog_clone.set_body(i18n::t("update_failed"));
+                    dialog_clone.set_body(i18n::t("update_check_failed"));
                 }
             } else {
                 dialog_clone.set_body(i18n::t("fwupdmgr_missing"));
@@ -451,8 +451,25 @@ fn show_app_update_modal(window: &adw::ApplicationWindow) {
 pub fn resolve_updater_bin() -> String {
     if std::path::Path::new("/usr/libexec/victus-max/victus-max-updater").exists() {
         "/usr/libexec/victus-max/victus-max-updater".to_string()
+    } else if std::path::Path::new("/usr/bin/victus-max-updater").exists() {
+        "/usr/bin/victus-max-updater".to_string()
     } else if std::path::Path::new("/usr/share/victus-max/setup.sh").exists() {
         "/usr/share/victus-max/setup.sh".to_string()
+    } else if let Ok(cwd) = std::env::current_dir() {
+        let script = cwd.join("scripts/victus-max-updater.sh");
+        if script.exists() {
+            script.to_string_lossy().to_string()
+        } else if cwd.join("setup.sh").exists() {
+            cwd.join("setup.sh").to_string_lossy().to_string()
+        } else {
+            let manifest_dir = env!("CARGO_MANIFEST_DIR");
+            let script = format!("{}/../../scripts/victus-max-updater.sh", manifest_dir);
+            if std::path::Path::new(&script).exists() {
+                script
+            } else {
+                "victus-max-updater".to_string()
+            }
+        }
     } else {
         let manifest_dir = env!("CARGO_MANIFEST_DIR");
         let script = format!("{}/../../scripts/victus-max-updater.sh", manifest_dir);
@@ -479,6 +496,14 @@ pub fn parse_stage_line(line: &str) -> Option<(f64, &str)> {
     } else {
         None
     }
+}
+
+pub fn is_polkit_auth_error(err_text: &str, logs: &str) -> bool {
+    err_text.contains("127")
+        || logs.contains("textual authentication agent")
+        || logs.contains("No such device or address")
+        || logs.contains("not authorized")
+        || logs.contains("dismissed")
 }
 
 fn start_update_process(vbox: gtk::Box, dialog: gtk::Window, channel: crate::update_checker::UpdateChannel) {
@@ -543,15 +568,22 @@ fn start_update_process(vbox: gtk::Box, dialog: gtk::Window, channel: crate::upd
     let d_c = dialog.clone();
     let v_c = vbox.clone();
     let log_view_for_scroll = log_view.clone();
+    let term_toggle_clone = term_toggle.clone();
 
     glib::spawn_future_local(async move {
-        let mut cmd = match tokio::process::Command::new("pkexec")
-            .arg(&updater_bin)
-            .arg(channel.as_str())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
-        {
+        let is_root = unsafe { libc::geteuid() == 0 };
+        let mut cmd_builder = if is_root {
+            tokio::process::Command::new(&updater_bin)
+        } else {
+            let mut c = tokio::process::Command::new("pkexec");
+            c.arg(&updater_bin);
+            c
+        };
+        cmd_builder.arg(channel.as_str());
+        cmd_builder.stdout(Stdio::piped());
+        cmd_builder.stderr(Stdio::piped());
+
+        let mut cmd = match cmd_builder.spawn() {
             Ok(c) => c,
             Err(e) => {
                 pbar_clone.set_fraction(1.0);
@@ -667,6 +699,17 @@ fn start_update_process(vbox: gtk::Box, dialog: gtk::Window, channel: crate::upd
             };
             title_clone.set_label(&format!("{}: {}", i18n::t("update_failed"), err_text));
 
+            let (start_iter, end_iter) = buf_clone.bounds();
+            let all_logs = buf_clone.text(&start_iter, &end_iter, false);
+            let is_polkit_err = is_polkit_auth_error(&err_text, &all_logs);
+
+            if is_polkit_err {
+                status_clone.set_label(i18n::t("polkit_agent_missing"));
+                status_clone.set_wrap(true);
+                status_clone.add_css_class("error");
+                term_toggle_clone.set_active(true);
+            }
+
             let btn_box = gtk::Box::builder()
                 .orientation(gtk::Orientation::Horizontal)
                 .spacing(8)
@@ -724,5 +767,14 @@ mod tests {
         let bin = resolve_updater_bin();
         assert!(!bin.is_empty());
         assert!(bin.contains("victus-max-updater") || bin.contains("setup.sh"));
+    }
+
+    #[test]
+    fn test_is_polkit_auth_error() {
+        assert!(is_polkit_auth_error("exit status: 127", ""));
+        assert!(is_polkit_auth_error("exit status: 1", "Error creating textual authentication agent: Error opening current controlling terminal for the process ('/dev/tty'): No such device or address"));
+        assert!(is_polkit_auth_error("exit status: 1", "Error: not authorized"));
+        assert!(is_polkit_auth_error("exit status: 126", "authorization dismissed"));
+        assert!(!is_polkit_auth_error("exit status: 1", "error: could not compile victus-max"));
     }
 }

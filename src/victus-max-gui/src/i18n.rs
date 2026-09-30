@@ -438,7 +438,9 @@ fn translate_tr(key: &'static str) -> &'static str {
         "close" => "Kapat",
         "cancel" => "İptal",
         "no_updates" => "Sisteminiz güncel. Yeni bir güncelleme bulunamadı.",
-        "update_failed" => "Güncelleme denetimi başarısız",
+        "update_failed" => "Güncelleme başarısız",
+        "update_check_failed" => "Güncelleme denetimi başarısız",
+        "polkit_agent_missing" => "Kimlik doğrulama penceresi açılamadı (Polkit Agent bulunamadı veya GUI 'sudo' ile başlatılmış).\nLütfen masaüstü kimlik doğrulayıcınızı (polkit-kde-agent vb.) kontrol edin veya güncellemeyi terminalden çalıştırın:\nsudo setup.sh update",
         "fwupdmgr_missing" => "fwupdmgr yüklü değil veya erişilemiyor.",
         "ok_btn" => "Tamam",
 
@@ -842,7 +844,9 @@ fn translate_en(key: &'static str) -> &'static str {
         "close" => "Close",
         "cancel" => "Cancel",
         "no_updates" => "Your system is up to date. No new updates found.",
-        "update_failed" => "Update check failed",
+        "update_failed" => "Update failed",
+        "update_check_failed" => "Update check failed",
+        "polkit_agent_missing" => "Authentication dialog could not be displayed (Polkit Agent not found or GUI started with 'sudo').\nPlease check your desktop authentication agent (e.g. polkit-kde-agent) or update via terminal:\nsudo setup.sh update",
         "fwupdmgr_missing" => "fwupdmgr is not installed or accessible.",
         "ok_btn" => "OK",
 

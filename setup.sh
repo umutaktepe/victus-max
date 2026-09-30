@@ -325,6 +325,7 @@ do_install() {
     rm -f /usr/libexec/victus-max/victus-max-daemon
     cp "${daemon_bin:-target/release/victus-max-daemon}" /usr/libexec/victus-max/victus-max-daemon
     install -m 755 scripts/victus-max-updater.sh /usr/libexec/victus-max/victus-max-updater
+    ln -sf /usr/libexec/victus-max/victus-max-updater /usr/bin/victus-max-updater
 
     rm -f /usr/bin/victus-max-cli
     cp "${cli_bin:-target/release/victus-max-cli}" /usr/bin/victus-max-cli
@@ -448,6 +449,7 @@ do_uninstall() {
     rm -f /usr/bin/victus-max-tray /usr/bin/omen-tray
     rm -f /usr/bin/victus-max /usr/bin/victus-max-gui /usr/bin/omen-gui
     rm -f /usr/bin/victus-max-overlay /usr/bin/omen-overlay
+    rm -f /usr/bin/victus-max-updater
 
     rm -rf /usr/share/victus-max
     rm -rf /usr/share/omen-space
