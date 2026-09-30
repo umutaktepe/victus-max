@@ -246,6 +246,22 @@ grep "^## \[" docs/victus-max-wiki/log.md | tail -5
   - Her karakter hücresinin üst pikseli ön plan (`38;2;R;G;B`), alt pikseli arka plan (`48;2;R;G;B`) olarak bağımsız renklendirilerek 28×14 karakterlik alanda tam **28×28 (784 piksel) 24-bit TrueColor** çözünürlük elde edildi.
   - `get_ascii_logo` fonksiyonu ortaklaştırılarak kod tekrarı önlendi; OMEN ve Victus modelleri için dinamik donanım tespiti korundu.
 
+---
+
+## [2026-09-30] Feature | Dinamik ve Adaptif Logo Çözünürlüğü (Compact / Medium / Ultra HD)
+
+- **İşlem Türü:** Terminal Boyut Tespiti & Dinamik Grafik Ölçekleme (Adaptive Multi-Resolution)
+- **Kapsam:** `src/victus-max-cli/src/fetch.rs`.
+- **Detaylar:**
+  - `crossterm::terminal::size()` ile terminal penceresinin satır ve sütun boyutunu anlık analiz eden `detect_logo_resolution` fonksiyonu eklendi.
+  - 3 farklı çözünürlük seviyesi entegre edildi:
+    - **Ultra HD (40×20 karakter, 40×40 = 1.600 TrueColor piksel):** Geniş veya tam ekran pencerelerde (cols >= 105, rows >= 25) devreye girerek maksimum detay sağlar.
+    - **Medium (34×17 karakter, 34×34 = 1.156 TrueColor piksel):** Standart orta boy terminallerde (cols >= 88, rows >= 20) çalışır.
+    - **Compact (28×14 karakter, 28×28 = 784 TrueColor piksel):** Küçük veya bölünmüş (tiled) pencerelerde metin kaymasını önleyecek şekilde kompakt gösterim sunar.
+  - Canlı interaktif panoda (`run_live_dashboard`) `Event::Resize` dinleyicisi eklenerek pencere boyutu değiştirildiğinde logonun anında ve sıfır gecikmeyle yeni boyuta adapte olması sağlandı.
+  - `fetch` çıktısında ve canlı panoda `logo_width` üzerinden dinamik padding uygulanarak telemetri metin hizalaması pürüzsüzleştirildi.
+
+
 
 
 
