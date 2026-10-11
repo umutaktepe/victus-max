@@ -309,6 +309,20 @@ fn translate_tr(key: &'static str) -> &'static str {
         "tcc_label" => "TCC Offset (Maksimum CPU Sıcaklığı)",
         "tcc_sub" => "Hedef tavan sıcaklık: 100°C - TCC Ofseti (Örn: 3°C ofset = 97°C Max)",
         "tcc_offset_str" => "Ofset",
+        "ryzen_power_limits_title" => "Güç Limitleri (AMD Ryzen PPT / STAPM)",
+        "ryzen_power_limits_desc" => "STAPM kasa termal bütçesini, PPT Slow uzun süreli paket limitini, PPT Fast ise anlık turbo tavanını belirler.",
+        "ryzen_power_limits_desc_linked" => "AMD Ryzen SMU Güç Limitleri (Zen 4/5 Kuralı: PPT Slow ≤ PPT Fast, STAPM = PPT Fast)",
+        "ryzen_power_limits_desc_hierarchy" => "AMD Ryzen SMU Güç Limitleri (Kural: STAPM ≤ PPT Slow ≤ PPT Fast)",
+        "stapm_label" => "STAPM — Sürekli Kasa Güç Limiti",
+        "stapm_sub" => "Kasa termal doyumu sonrası sürekli güç bütçesi (Watt)",
+        "stapm_linked_label" => "STAPM — Sürekli Kasa Güç Limiti (PPT Fast ile Bağlı)",
+        "stapm_linked_sub" => "Zen 4/5 SMU yazılımlarında STAPM tavanı otomatik olarak PPT Fast ile eşitlenir (STAPM = PPT Fast)",
+        "slow_ppt_label" => "PPT Slow — Uzun Süreli Paket Güç Limiti",
+        "slow_ppt_sub" => "Ortalama sürekli yük altındaki paket güç limiti (Watt)",
+        "fast_ppt_label" => "PPT Fast — Kısa Süreli Turbo Güç Limiti",
+        "fast_ppt_sub" => "Anlık yük patlamaları için izin verilen tepe tavan (Watt)",
+        "tctl_temp_label" => "Tctl Sıcaklık Limiti (Maksimum CPU Sıcaklığı)",
+        "tctl_temp_sub" => "İşlemcinin termal kısmaya girmeden önceki tepe sıcaklık hedefi",
         "reset_defaults" => "Varsayılanlara Sıfırla",
         "test_safe_mode" => "⚡ Test Et (30sn Güvenli Mod)",
         "apply_save" => "Uygula & Kaydet",
@@ -709,6 +723,20 @@ fn translate_en(key: &'static str) -> &'static str {
         "tcc_label" => "TCC Offset (Max CPU Temperature)",
         "tcc_sub" => "Target peak temperature: 100°C - TCC Offset (e.g. 3°C offset = 97°C Max)",
         "tcc_offset_str" => "Offset",
+        "ryzen_power_limits_title" => "Power Limits (AMD Ryzen PPT / STAPM)",
+        "ryzen_power_limits_desc" => "STAPM manages chassis thermal budget, PPT Slow sets long-duration package limit, and PPT Fast sets short-duration boost ceiling.",
+        "ryzen_power_limits_desc_linked" => "AMD Ryzen SMU Power Limits (Zen 4/5 Rule: PPT Slow ≤ PPT Fast, STAPM = PPT Fast)",
+        "ryzen_power_limits_desc_hierarchy" => "AMD Ryzen SMU Power Limits (Rule: STAPM ≤ PPT Slow ≤ PPT Fast)",
+        "stapm_label" => "STAPM — Sustained Chassis Power Limit",
+        "stapm_sub" => "Chassis thermal saturation sustained power budget (Watts)",
+        "stapm_linked_label" => "STAPM — Sustained Chassis Power Limit (Linked to PPT Fast)",
+        "stapm_linked_sub" => "Zen 4/5 SMU firmware automatically locks STAPM ceiling to PPT Fast (STAPM = PPT Fast)",
+        "slow_ppt_label" => "PPT Slow — Long Duration Package Power Limit",
+        "slow_ppt_sub" => "Average sustained package power limit (Watts)",
+        "fast_ppt_label" => "PPT Fast — Short Duration Turbo Limit",
+        "fast_ppt_sub" => "Peak power ceiling during transient boost bursts (Watts)",
+        "tctl_temp_label" => "Tctl Temperature Limit (Max CPU Temperature)",
+        "tctl_temp_sub" => "Target peak temperature before thermal throttling begins",
         "reset_defaults" => "Reset to Defaults",
         "test_safe_mode" => "⚡ Test (30s Safe Mode)",
         "apply_save" => "Apply & Save",
@@ -989,5 +1017,42 @@ mod tests {
         assert_eq!(translate_en("relaunch_app"), "Restart Application");
         assert_eq!(translate_en("rate_limit_err"), "GitHub API rate limit exceeded. Please wait a few minutes.");
         assert_eq!(translate_en("view_on_github"), "View on GitHub");
+    }
+
+    #[test]
+    fn test_power_limits_i18n_keys() {
+        assert_eq!(
+            translate_tr("stapm_linked_label"),
+            "STAPM — Sürekli Kasa Güç Limiti (PPT Fast ile Bağlı)"
+        );
+        assert_eq!(
+            translate_tr("stapm_linked_sub"),
+            "Zen 4/5 SMU yazılımlarında STAPM tavanı otomatik olarak PPT Fast ile eşitlenir (STAPM = PPT Fast)"
+        );
+        assert_eq!(
+            translate_tr("ryzen_power_limits_desc_linked"),
+            "AMD Ryzen SMU Güç Limitleri (Zen 4/5 Kuralı: PPT Slow ≤ PPT Fast, STAPM = PPT Fast)"
+        );
+        assert_eq!(
+            translate_tr("ryzen_power_limits_desc_hierarchy"),
+            "AMD Ryzen SMU Güç Limitleri (Kural: STAPM ≤ PPT Slow ≤ PPT Fast)"
+        );
+
+        assert_eq!(
+            translate_en("stapm_linked_label"),
+            "STAPM — Sustained Chassis Power Limit (Linked to PPT Fast)"
+        );
+        assert_eq!(
+            translate_en("stapm_linked_sub"),
+            "Zen 4/5 SMU firmware automatically locks STAPM ceiling to PPT Fast (STAPM = PPT Fast)"
+        );
+        assert_eq!(
+            translate_en("ryzen_power_limits_desc_linked"),
+            "AMD Ryzen SMU Power Limits (Zen 4/5 Rule: PPT Slow ≤ PPT Fast, STAPM = PPT Fast)"
+        );
+        assert_eq!(
+            translate_en("ryzen_power_limits_desc_hierarchy"),
+            "AMD Ryzen SMU Power Limits (Rule: STAPM ≤ PPT Slow ≤ PPT Fast)"
+        );
     }
 }

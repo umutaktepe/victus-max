@@ -238,7 +238,8 @@ impl UndervoltService {
             if self.is_amd {
                 if plane == "core" {
                     let count = mv.clamp(-30, 30);
-                    let _ = std::process::Command::new("ryzenadj").arg(format!("--set-coall={}", count)).output();
+                    let arg = format!("--set-coall={}", count);
+                    let _ = crate::cpu_tier::run_ryzenadj(&[&arg]).await;
                     info!("Undervolt: AMD Curve Optimizer restored to {}", count);
                 }
             } else {
@@ -252,6 +253,12 @@ impl UndervoltService {
                     }
                 }
             }
+        }
+        if self.is_amd && cfg.tcc_offset > 0 {
+            let max_temp = (100 - cfg.tcc_offset).clamp(70, 105);
+            let arg = format!("--tctl-temp={}", max_temp);
+            let _ = crate::cpu_tier::run_ryzenadj(&[&arg]).await;
+            info!("Undervolt: AMD Tctl limit restored to {}°C", max_temp);
         }
     }
 
@@ -300,8 +307,15 @@ impl UndervoltService {
         }
 
         if self.is_amd {
-            if plane == "core" {
-                let _ = std::process::Command::new("ryzenadj").arg(format!("--set-coall={}", mv)).output();
+            let prev_mv = {
+                let cfg = self.config.lock().await;
+                cfg.offsets.get(&plane.to_lowercase()).copied().unwrap_or(0)
+            };
+            if plane == "core" && (mv != 0 || prev_mv != 0) {
+                let arg = format!("--set-coall={}", mv);
+                let _ = crate::cpu_tier::run_ryzenadj(&[&arg]).await;
+            } else if mv == 0 && prev_mv == 0 {
+                return "OK".to_string();
             }
         } else {
             let bits = convert_offset(mv);
@@ -329,7 +343,7 @@ impl UndervoltService {
         {
             let mut cfg = self.config.lock().await;
             cfg.offsets.insert(plane.to_lowercase(), mv);
-            cfg.pending_confirmation = true;
+            cfg.pending_confirmation = mv != 0;
             cfg.save();
         }
 
@@ -337,16 +351,23 @@ impl UndervoltService {
         "OK".to_string()
     }
 
-    /// SetTccOffset(val) — write Intel TCC (thermal throttle) offset to MSR 0x1a2.
-    /// Mirrors Python SetTccOffset(). Range 0–15.
+    /// SetTccOffset(val) — write Intel TCC (thermal throttle) offset to MSR 0x1a2,
+    /// or AMD Tctl temperature limit via RyzenAdj.
     async fn set_tcc_offset(&self, val: i32) -> String {
-        let val = val.clamp(0, 15);
-
-        if self.available {
-            if self.is_amd {
-                let max_temp = 100 - val;
-                let _ = std::process::Command::new("ryzenadj").arg(format!("--tctl-temp={}", max_temp)).output();
+        let saved_offset = if self.is_amd {
+            let max_temp = if val >= 60 {
+                val.clamp(70, 105)
             } else {
+                (100 - val.clamp(0, 30)).clamp(70, 105)
+            };
+            if self.available {
+                let arg = format!("--tctl-temp={}", max_temp);
+                let _ = crate::cpu_tier::run_ryzenadj(&[&arg]).await;
+            }
+            100 - max_temp
+        } else {
+            let val = val.clamp(0, 15);
+            if self.available {
                 // FIX #7: Proper read-modify-write for MSR 0x1a2 (Temperature Target).
                 // We must preserve Tj_max (bits 15:8) and reserved bits. A blind write
                 // sets Tj_max to 0, which the CPU silicon rejects with a #GP fault.
@@ -385,14 +406,15 @@ impl UndervoltService {
                     warn!("SetTccOffset: MSR 0x1a2 write failed");
                 }
             }
-        }
+            val
+        };
 
         {
             let mut cfg = self.config.lock().await;
-            cfg.tcc_offset = val;
+            cfg.tcc_offset = saved_offset;
             cfg.save();
         }
-        info!("SetTccOffset: {}", val);
+        info!("SetTccOffset: offset={} (target={}°C)", saved_offset, 100 - saved_offset);
         "OK".to_string()
     }
 
@@ -408,11 +430,18 @@ impl UndervoltService {
             warning = Some("RyzenAdj is not installed. Please install ryzenadj to use AMD Undervolting & Power Limits.".to_string());
         }
 
+        let tctl_temp = if cfg.tcc_offset > 0 {
+            (100 - cfg.tcc_offset).clamp(70, 105)
+        } else {
+            95
+        };
+
         let json = serde_json::json!({
             "available": self.available,
             "is_amd": self.is_amd,
             "offsets": cfg.offsets,
             "tcc_offset": cfg.tcc_offset,
+            "tctl_temp": tctl_temp,
             "external_controller": external,
             "warning": warning,
         });

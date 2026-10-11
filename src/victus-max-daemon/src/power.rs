@@ -49,6 +49,8 @@ struct PowerConfig {
     undervolt_mv: i32,
     tcc_offset: i32,
     pl1_w: u32,
+    #[serde(default)]
+    slow_ppt_w: u32,
     pl2_w: u32,
     pl_enabled: bool,
     gpu_w: u32,
@@ -63,6 +65,7 @@ impl Default for PowerConfig {
             undervolt_mv: 0,
             tcc_offset: 0,
             pl1_w: 45,
+            slow_ppt_w: 45,
             pl2_w: 80,
             pl_enabled: false,
             gpu_w: 0,
@@ -110,6 +113,15 @@ impl PowerService {
         // Detect real hardware profile on start
         config.power_profile = Self::detect_current_profile().await;
 
+        let specs = crate::sysmon::get_hardware_specs();
+        let (vendor, _, _) = crate::cpu_tier::classify_cpu(&specs.cpu_spec);
+        if vendor == crate::cpu_tier::CpuVendor::Amd && config.slow_ppt_w == 0 {
+            // Migrate legacy pre-Ryzen power.json (which only stored Intel 45W/80W defaults)
+            // so we do not overwrite active AMD SMU limits on startup.
+            config.pl_enabled = false;
+            config.save();
+        }
+
         let app_state = Arc::new(Mutex::new(AppState {
             active_app: None,
             pre_app_state: None,
@@ -134,10 +146,8 @@ impl PowerService {
     async fn apply_startup_tuning(&self) {
         let cfg = self.config.lock().await.clone();
         if cfg.pl_enabled {
-            drop(cfg);
-            // Apply power limits — re-read config inside helper
-            let cfg2 = self.config.lock().await.clone();
-            Self::apply_rapl_limits(cfg2.pl1_w, cfg2.pl2_w).await;
+            let slow = if cfg.slow_ppt_w > 0 { Some(cfg.slow_ppt_w) } else { None };
+            Self::apply_rapl_limits(cfg.pl1_w, cfg.pl2_w, slow).await;
         }
     }
 
@@ -511,22 +521,29 @@ impl PowerService {
     }
 
 
-    // ── Intel RAPL power limits ────────────────────────────────────────────────
+    // ── Intel RAPL & AMD RyzenAdj power limits ─────────────────────────────────
 
-    async fn apply_rapl_limits(pl1: u32, pl2: u32) {
+    async fn apply_rapl_limits(pl1: u32, pl2: u32, slow_opt: Option<u32>) {
         let specs = crate::sysmon::get_hardware_specs();
-        let is_amd = specs.cpu_spec.to_uppercase().contains("AMD");
+        let (vendor, _, ranges) = crate::cpu_tier::classify_cpu(&specs.cpu_spec);
+        let is_amd = vendor == crate::cpu_tier::CpuVendor::Amd;
 
         if is_amd {
-            let mw1 = pl1 * 1000;
-            let mw2 = pl2 * 1000;
-            let _ = tokio::process::Command::new("ryzenadj")
-                .arg(format!("--stapm-limit={}", mw1))
-                .arg(format!("--slow-limit={}", mw1))
-                .arg(format!("--fast-limit={}", mw2))
-                .output()
-                .await;
-            info!("AMD RyzenAdj limits set: STAPM/Slow={}W Fast={}W", pl1, pl2);
+            let raw_slow = slow_opt.unwrap_or(pl1);
+            let (stapm_w, slow_w, fast_w) = crate::cpu_tier::normalize_ryzen_limits(
+                pl1,
+                raw_slow,
+                pl2,
+                ranges.stapm_fast_linked,
+            );
+            let arg_stapm = format!("--stapm-limit={}", stapm_w * 1000);
+            let arg_slow = format!("--slow-limit={}", slow_w * 1000);
+            let arg_fast = format!("--fast-limit={}", fast_w * 1000);
+            let _ = crate::cpu_tier::run_ryzenadj(&[&arg_stapm, &arg_slow, &arg_fast]).await;
+            info!(
+                "AMD RyzenAdj limits set (linked={}): STAPM={}W Slow={}W Fast={}W",
+                ranges.stapm_fast_linked, stapm_w, slow_w, fast_w
+            );
         } else {
             let rapl1 = "/sys/class/powercap/intel-rapl/intel-rapl:0/constraint_0_power_limit_uw";
             let rapl2 = "/sys/class/powercap/intel-rapl/intel-rapl:0/constraint_1_power_limit_uw";
@@ -546,7 +563,8 @@ impl PowerService {
 #[interface(name = "org.hp.omen.Power")]
 impl PowerService {
 
-    /// GetPowerProfile — returns JSON matching Python GetPowerProfile().
+    /// GetPowerProfile — lightweight poll endpoint (called every 1.5s by GUI & 3s by Tray).
+    /// Does NOT spawn `ryzenadj -i` so high-frequency polling never touches the AMD SMU mailbox.
     async fn get_power_profile(&self) -> String {
         let cfg = self.config.lock().await.clone();
         let mut active = Self::detect_current_profile().await;
@@ -562,21 +580,22 @@ impl PowerService {
             }
         }
 
-        let mut real_pl1 = cfg.pl1_w;
-        let mut real_pl2 = cfg.pl2_w;
-        if let Some(val) = sysfs_read_async("/sys/class/powercap/intel-rapl/intel-rapl:0/constraint_0_power_limit_uw").await {
-            if let Ok(uw) = val.parse::<u32>() { real_pl1 = uw / 1_000_000; }
-        }
-        if let Some(val) = sysfs_read_async("/sys/class/powercap/intel-rapl/intel-rapl:0/constraint_1_power_limit_uw").await {
-            if let Ok(uw) = val.parse::<u32>() { real_pl2 = uw / 1_000_000; }
-        }
+        let specs = crate::sysmon::get_hardware_specs();
+        let (vendor, tier, ranges) = crate::cpu_tier::classify_cpu(&specs.cpu_spec);
+        let is_amd = vendor == crate::cpu_tier::CpuVendor::Amd;
 
-        let available_profiles = Self::get_available_profiles().await;
+        let real_pl1 = if cfg.pl_enabled { cfg.pl1_w } else { ranges.sustained_default };
+        let real_pl2 = if cfg.pl_enabled { cfg.pl2_w } else { ranges.burst_default };
+        let real_slow_ppt = if cfg.pl_enabled && cfg.slow_ppt_w > 0 { cfg.slow_ppt_w } else { real_pl1 };
 
         let json = serde_json::json!({
             "available": true,
             "active": active,
             "profiles": available_profiles,
+            "is_amd": is_amd,
+            "stapm_fast_linked": ranges.stapm_fast_linked,
+            "cpu_tier": format!("{:?}", tier),
+            "ranges": ranges,
             "app_profiles_enabled": cfg.app_profiles_enabled,
             "app_profiles": cfg.app_profiles,
             "active_app": null,
@@ -584,8 +603,61 @@ impl PowerService {
             "tcc_offset": cfg.tcc_offset,
             "pl1_w": real_pl1,
             "pl2_w": real_pl2,
+            "stapm_w": real_pl1,
+            "fast_ppt_w": real_pl2,
+            "slow_ppt_w": real_slow_ppt,
+            "tctl_temp": 0,
             "pl_enabled": cfg.pl_enabled,
             "gpu_w": cfg.gpu_w,
+        });
+        json.to_string()
+    }
+
+    /// GetPowerLimitsInfo — queries live hardware power limits (Intel RAPL sysfs or AMD `ryzenadj -i`
+    /// serialized behind `RYZENADJ_MUTEX`) for the Advanced Power tab.
+    async fn get_power_limits_info(&self) -> String {
+        let cfg = self.config.lock().await.clone();
+        let specs = crate::sysmon::get_hardware_specs();
+        let (vendor, tier, ranges) = crate::cpu_tier::classify_cpu(&specs.cpu_spec);
+        let is_amd = vendor == crate::cpu_tier::CpuVendor::Amd;
+
+        let has_saved_limits = cfg.pl_enabled && (!is_amd || cfg.slow_ppt_w > 0);
+        let mut real_pl1 = if has_saved_limits { cfg.pl1_w } else { ranges.sustained_default };
+        let mut real_pl2 = if has_saved_limits { cfg.pl2_w } else { ranges.burst_default };
+        let mut real_slow_ppt = if has_saved_limits && cfg.slow_ppt_w > 0 { cfg.slow_ppt_w } else { real_pl1 };
+        let mut live_tctl: Option<u32> = None;
+
+        if is_amd {
+            if let Some(metrics) = crate::cpu_tier::fetch_live_ryzen_metrics().await {
+                if let Some(stapm) = metrics.stapm_w { real_pl1 = stapm; }
+                if let Some(slow) = metrics.slow_limit_w {
+                    real_slow_ppt = slow;
+                    if metrics.stapm_w.is_none() { real_pl1 = slow; }
+                }
+                if let Some(fast) = metrics.fast_limit_w { real_pl2 = fast; }
+                if let Some(tctl) = metrics.tctl_temp_c { live_tctl = Some(tctl); }
+            }
+        } else {
+            if let Some(val) = sysfs_read_async("/sys/class/powercap/intel-rapl/intel-rapl:0/constraint_0_power_limit_uw").await {
+                if let Ok(uw) = val.parse::<u32>() { real_pl1 = uw / 1_000_000; }
+            }
+            if let Some(val) = sysfs_read_async("/sys/class/powercap/intel-rapl/intel-rapl:0/constraint_1_power_limit_uw").await {
+                if let Ok(uw) = val.parse::<u32>() { real_pl2 = uw / 1_000_000; }
+            }
+        }
+
+        let json = serde_json::json!({
+            "is_amd": is_amd,
+            "stapm_fast_linked": ranges.stapm_fast_linked,
+            "cpu_tier": format!("{:?}", tier),
+            "ranges": ranges,
+            "pl1_w": real_pl1,
+            "pl2_w": real_pl2,
+            "stapm_w": real_pl1,
+            "fast_ppt_w": real_pl2,
+            "slow_ppt_w": real_slow_ppt,
+            "tctl_temp": live_tctl.unwrap_or(0),
+            "pl_enabled": cfg.pl_enabled,
         });
         json.to_string()
     }
@@ -657,15 +729,53 @@ impl PowerService {
             let mut cfg = self.config.lock().await;
             cfg.pl_enabled = enabled;
             cfg.pl1_w = pl1 as u32;
+            cfg.slow_ppt_w = pl1 as u32;
             cfg.pl2_w = pl2 as u32;
             cfg.save();
         }
 
         if enabled {
-            Self::apply_rapl_limits(pl1 as u32, pl2 as u32).await;
+            Self::apply_rapl_limits(pl1 as u32, pl2 as u32, None).await;
         }
 
         info!("SetPowerLimits: enabled={}, PL1={}W, PL2={}W", enabled, pl1, pl2);
+        "OK".to_string()
+    }
+
+    /// SetRyzenPowerLimits — Sets STAPM, PPT Slow, and PPT Fast independently on AMD Ryzen
+    /// while enforcing the CPU generation's SMU rules (`STAPM == Fast >= Slow` on Zen 4/5,
+    /// `STAPM <= Slow <= Fast` on Zen 2/3/3+).
+    async fn set_ryzen_power_limits(&self, enabled: bool, stapm: i32, slow: i32, fast: i32) -> String {
+        if !(1..=200).contains(&stapm) || !(1..=200).contains(&slow) || !(1..=250).contains(&fast) {
+            warn!("SetRyzenPowerLimits: out of safe range stapm={} slow={} fast={}", stapm, slow, fast);
+            return "FAIL".to_string();
+        }
+        let specs = crate::sysmon::get_hardware_specs();
+        let (_, _, ranges) = crate::cpu_tier::classify_cpu(&specs.cpu_spec);
+        let (norm_stapm, norm_slow, norm_fast) = crate::cpu_tier::normalize_ryzen_limits(
+            stapm as u32,
+            slow as u32,
+            fast as u32,
+            ranges.stapm_fast_linked,
+        );
+
+        {
+            let mut cfg = self.config.lock().await;
+            cfg.pl_enabled = enabled;
+            cfg.pl1_w = norm_stapm;
+            cfg.slow_ppt_w = norm_slow;
+            cfg.pl2_w = norm_fast;
+            cfg.save();
+        }
+
+        if enabled {
+            Self::apply_rapl_limits(norm_stapm, norm_fast, Some(norm_slow)).await;
+        }
+
+        info!(
+            "SetRyzenPowerLimits: enabled={}, STAPM={}W, Slow={}W, Fast={}W (linked={})",
+            enabled, norm_stapm, norm_slow, norm_fast, ranges.stapm_fast_linked
+        );
         "OK".to_string()
     }
 

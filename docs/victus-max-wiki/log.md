@@ -290,9 +290,50 @@ grep "^## \[" docs/victus-max-wiki/log.md | tail -5
   - `resolve_updater_bin` fonksiyonu `/usr/bin/victus-max-updater` ve yerel çalışma dizinlerini de denetleyecek biçimde güçlendirildi.
   - `setup.sh` içerisine `/usr/bin/victus-max-updater` sembolik bağı eklenerek güncelleyicinin doğrudan terminal komutu olarak da çalıştırılabilmesi sağlandı.
 
+---
 
+## [2026-10-10] Feature | İşlemciye Duyarlı (Adaptive) AMD Ryzen Güç Limitleri ve Canlı PMTable Telemetrisi
 
+- **İşlem Türü:** Mimari Genişletme, Canlı Donanım Okuma ve Adaptif GTK4 Arayüzü
+- **Kapsam:** `src/victus-max-daemon/src/cpu_tier.rs`, `src/victus-max-daemon/src/power.rs`, `src/victus-max-daemon/src/undervolt.rs`, `src/victus-max-gui/src/daemon_client.rs`, `src/victus-max-gui/src/undervolt.rs`, `src/victus-max-gui/src/i18n.rs`, `docs/victus-max-wiki/`.
+- **Detaylar:**
+  - `cpu_tier.rs` modülü oluşturularak işlemciler mimari ve TDP sınıflarına (`AmdUltraLow` U-serisi, `AmdStandardHs` HS/H-serisi, `AmdExtremeHx` HX-serisi, `IntelStandard`, `IntelExtreme`) ayrıldı ve her sınıf için güvenli STAPM/PL1, Fast PPT/PL2 ve Tctl sıcaklık aralıkları tanımlandı.
+  - Systemd kısıtlı `PATH` ortamlarında `/usr/local/bin/ryzenadj` ikili dosyasının her zaman bulunabilmesi için `resolve_ryzenadj_bin` çözümleyicisi eklendi.
+  - `power.rs` içindeki `GetPowerProfile` metodu, AMD Ryzen işlemcilerde `ryzenadj -i` çıktısını 500ms zaman aşımıyla sorgulayıp `STAPM LIMIT`, `PPT LIMIT FAST`, `PPT LIMIT SLOW` ve `THM LIMIT CORE` değerlerini canlı olarak ayrıştıracak (`parse_ryzenadj_info_output`) ve D-Bus JSON yanıtında sunacak şekilde genişletildi; ayrıca 3 limiti bağımsız yazmak için `SetRyzenPowerLimits(enabled, stapm, slow, fast)` D-Bus metodu eklendi.
+  - `undervolt.rs` (GUI) içerisindeki Power Limits grubu AMD Ryzen algılandığında başlıklarını, alt açıklamalarını, slider aralıklarını ve canlı değerlerini otomatik olarak `STAPM`, `PPT Slow`, `PPT Fast` (3 bağımsız güç slider'ı) ve doğrudan `Tctl Sıcaklık Limiti (°C)` olarak güncelleyecek biçimde uyarlandı.
+  - Türkçe ve İngilizce dil sözlüklerine (`i18n.rs`) AMD Ryzen güç ve sıcaklık terimleri eklendi.
+- **Mimari Karar:** [[adr-007-adaptive-ryzen-power-limits]]
+- **Test ve Doğrulama:** `cpu_tier_test` (5 test) ve `ryzen_telemetry_test` (2 test) dahil tüm çalışma alanı testleri (`cargo test --workspace`, toplam 69 test) sıfır hatayla geçti.
 
+---
 
+## [2026-10-10] Fix | AMD Ryzen SMU Posta Kutusu Çakışması, Eski Config Göçü ve Canlı Limit Senkronizasyonu
 
+- **İşlem Türü:** Kök Neden Analizi & Eşzamanlılık Düzeltmesi (Systematic Debugging)
+- **Kapsam:** `src/victus-max-daemon/src/cpu_tier.rs`, `src/victus-max-daemon/src/power.rs`, `src/victus-max-daemon/src/undervolt.rs`, `src/victus-max-types/src/lib.rs`, `src/victus-max-gui/src/daemon_client.rs`, `src/victus-max-gui/src/undervolt.rs`, `docs/victus-max-wiki/`.
+- **Kök Neden:**
+  1. `performance_control.rs` (1.5s zamanlayıcı) ve `victus-max-tray` (3.0s zamanlayıcı) aktif güç profilini öğrenmek için sürekli `GetPowerProfile()` metodunu çağırıyordu. `ryzenadj -i` çağrısı doğrudan `GetPowerProfile()` içinde yer aldığı için dakikada ~40 kez eşzamanlı `ryzenadj -i` süreci başlatılıyor ve `/dev/mem` üzerinden PCI SMN `0x60`/`0x64` yazmaçlarında yarış koşulu (race condition) oluşarak MP1 SMU posta kutusunu kilitliyordu (`Unable to get MP1 SMU Obj`).
+  2. `/etc/victus-max/power.json` içinde Ryzen desteği öncesinden kalma Intel varsayılanları (`pl1_w: 45, pl2_w: 80, pl_enabled: true, slow_ppt_w: 0`) ve `/etc/victus-max/undervolt.json` içinde `tcc_offset: 11` (`89°C`) bulunduğu için servis başlangıcında ve SMU kilitlenmesi sonrası fallback durumunda arayüzde gerçek donanım değerleri (`48W / 43W / 48W / 88°C`) yerine `75W / 45W / 80W / 89°C` görünüyordu.
+  3. Gelişmiş Güç (`undervolt.rs`) sayfası yalnızca uygulama ilk açıldığında bir kez yükleniyor, sekmeye geçiş yapıldığında (`connect_map`) güncellenmiyordu.
+- **Detaylar:**
+  - `GetPowerProfile()` içerisinden `ryzenadj -i` çağrısı tamamen çıkarıldı; canlı limit sorgusu yalnızca Gelişmiş Güç sekmesi tarafından çağrılan yeni `GetPowerLimitsInfo()` D-Bus metoduna ayrıldı.
+  - Tüm `ryzenadj` çağrıları `cpu_tier::run_ryzenadj` altında `RYZENADJ_MUTEX` (`tokio::sync::Mutex`) ve 40ms SMU dinlenme aralığı ile serileştirildi; `fetch_live_ryzen_metrics` için 2 saniyelik önbellek eklendi.
+  - AMD sistemlerde `slow_ppt_w == 0` olan eski `power.json` kayıtları başlangıçta otomatik temizlenerek (`pl_enabled = false`) donanım limitlerini ezmesi önlendi.
+  - GUI tarafında sekme her görüntülendiğinde (`page.connect_map`) canlı değerlerin yenilenmesi ve `apply_all_tuning_sync` ile ayarların tek görevde sıralı uygulanması sağlandı.
+- **Mimari Karar:** [[adr-007-adaptive-ryzen-power-limits]]
+
+---
+
+## [2026-10-11] Feature | AMD Ryzen Nesillerine Göre STAPM–Fast PPT SMU Bağlaması ve Hiyerarşi Koruması
+
+- **İşlem Türü:** Donanım SMU Modellemesi, Hiyerarşik Doğrulama ve GTK4 Reaktif Slider Senkronizasyonu
+- **Kapsam:** `src/victus-max-daemon/src/cpu_tier.rs`, `src/victus-max-daemon/src/power.rs`, `src/victus-max-daemon/tests/cpu_tier_test.rs`, `src/victus-max-gui/src/daemon_client.rs`, `src/victus-max-gui/src/undervolt.rs`, `docs/victus-max-wiki/`.
+- **Detaylar:**
+  - `is_zen4_or_newer_ryzen` fonksiyonu ile AMD Ryzen işlemciler mimari nesline göre ayrıştırıldı: Phoenix, Hawk Point, Dragon Range (Zen 4) ve Strix Point (Zen 5) işlemcilerde `stapm_fast_linked = true` bayrağı tanımlandı; Rembrandt (Zen 3+), Cezanne/Lucienne (Zen 3/2) işlemcilerde `stapm_fast_linked = false` olarak belirlendi.
+  - SMU donanım kısıtları modellendi: Zen 4 ve Zen 5'te `--fast-limit` komutunun STAPM sınırını otomatik olarak Fast PPT'ye kilitlemesi (`STAPM = PPT Fast`) ve `PPT Slow <= PPT Fast` gereksinimi; eski nesillerde ise 3 bağımsız kademeli `STAPM <= PPT Slow <= PPT Fast` hiyerarşisi doğrulandı.
+  - `cpu_tier::normalize_ryzen_limits` fonksiyonu geliştirildi; D-Bus üzerinden gelen güç limitleri donanıma yazılmadan önce CPU nesline göre normalize edilerek geçersiz SMU parametrelerinin önüne geçildi.
+  - `GetPowerLimitsInfo` D-Bus metodu ve JSON şeması `stapm_fast_linked` alanını dönecek şekilde genişletildi.
+  - GTK4 Libadwaita Gelişmiş Güç arayüzünde (`undervolt.rs`) ilişkisel slider senkronizasyonu uygulandı: Zen 4/5 sistemlerde STAPM ve PPT Fast slider'ları çift yönlü reaktif olarak bağlandı (`STAPM <-> PPT Fast`), PPT Slow ise tavanı aşmayacak şekilde sınırlandı. Eski Ryzen nesillerinde ise 3 slider bağımsız kalırken `STAPM <= PPT Slow <= PPT Fast` hiyerarşisi korundu.
+- **Mimari Karar:** [[adr-007-adaptive-ryzen-power-limits]]
+- **Test ve Doğrulama:** `test_zen4_and_zen5_stapm_fast_linked_detection`, `test_normalize_ryzen_limits_coupled_vs_hierarchy` ve GTK4 slider etkileşim simülasyonu testleri dahil tüm workspace testleri (`cargo test --workspace`) başarıyla geçti.
 

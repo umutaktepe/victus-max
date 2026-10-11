@@ -13,6 +13,7 @@ Sistem mimarisindeki temel teknik seçimler, gerekçeleri, değerlendirilen alte
 - [[adr-004-native-msr-and-smu-mailbox-tuning]] — Dış CLI araçlarına bağımlı kalmadan Intel MSR ve AMD SMU posta kutusu protokollerinin yerel Rust ile işletilmesi.
 - [[adr-005-better-auto-proactive-fan-and-victus-max]] — Proaktif Better Auto çift matrisli fan algoritması, 10s EC yazma aralığı, ayarlanabilir taban/tavan ve bağımsız Victus Max mimarisi.
 - [[adr-006-github-update-and-release-architecture]] — GitHub REST API entegrasyonu, kalıcı Canary/Stable kanal seçimi, sıfır-404 fallback ve Polkit ayrımıyla güvenli OTA güncelleme mimarisi.
+- [[adr-007-adaptive-ryzen-power-limits]] — İşlemci TDP sınıfına göre dinamik STAPM/PPT/Tctl slider aralıkları ve RyzenAdj PMTable üzerinden canlı telemetri okuma mimarisi.
 
 ---
 

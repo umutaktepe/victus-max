@@ -458,11 +458,62 @@ pub async fn get_power_profile_async() -> Result<String, Box<dyn std::error::Err
     Ok(res)
 }
 
+#[allow(dead_code)]
 pub async fn get_power_profile_raw_async() -> Result<String, Box<dyn std::error::Error>> {
     let conn = get_conn().await?;
     let proxy = PowerProxy::new(&conn).await?;
     let res = proxy.get_power_profile().await?;
     Ok(res)
+}
+
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+pub struct CpuPowerProfileRanges {
+    pub sustained_min: u32,
+    pub sustained_max: u32,
+    pub sustained_default: u32,
+    pub burst_min: u32,
+    pub burst_max: u32,
+    pub burst_default: u32,
+    pub temp_min: u32,
+    pub temp_max: u32,
+    pub temp_default: u32,
+    #[serde(default)]
+    pub stapm_fast_linked: bool,
+}
+
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+pub struct PowerProfileInfo {
+    #[serde(default)]
+    pub is_amd: bool,
+    #[serde(default)]
+    pub stapm_fast_linked: bool,
+    #[serde(default)]
+    pub cpu_tier: String,
+    #[serde(default)]
+    pub pl1_w: u32,
+    #[serde(default)]
+    pub pl2_w: u32,
+    #[serde(default)]
+    pub stapm_w: u32,
+    #[serde(default)]
+    pub fast_ppt_w: u32,
+    #[serde(default)]
+    pub slow_ppt_w: u32,
+    #[serde(default)]
+    pub tctl_temp: u32,
+    #[serde(default)]
+    pub ranges: Option<CpuPowerProfileRanges>,
+}
+
+pub async fn get_power_profile_info_async() -> Result<PowerProfileInfo, Box<dyn std::error::Error>> {
+    let conn = get_conn().await?;
+    let proxy = PowerProxy::new(&conn).await?;
+    let json_str = match proxy.get_power_limits_info().await {
+        Ok(s) => s,
+        Err(_) => proxy.get_power_profile().await?,
+    };
+    let info: PowerProfileInfo = serde_json::from_str(&json_str)?;
+    Ok(info)
 }
 
 pub fn get_power_profile_sync() -> String {
@@ -579,6 +630,7 @@ pub async fn get_gpu_info_async() -> Result<String, Box<dyn std::error::Error>> 
 
 // ── Undervolt wrappers ───────────────────────────────────────────────────────
 
+#[allow(dead_code)]
 pub fn set_undervolt_sync(core_mv: i32, cache_mv: i32) {
     let rt = get_runtime();
     rt.spawn(async move {
@@ -598,6 +650,7 @@ pub fn set_undervolt_sync(core_mv: i32, cache_mv: i32) {
     });
 }
 
+#[allow(dead_code)]
 pub fn set_power_limits_sync(pl1: i32, pl2: i32) {
     let rt = get_runtime();
     rt.spawn(async move {
@@ -611,6 +664,21 @@ pub fn set_power_limits_sync(pl1: i32, pl2: i32) {
     });
 }
 
+#[allow(dead_code)]
+pub fn set_ryzen_power_limits_sync(stapm: i32, slow: i32, fast: i32) {
+    let rt = get_runtime();
+    rt.spawn(async move {
+        if let Ok(conn) = get_conn().await {
+            if let Ok(proxy) = PowerProxy::new(&conn).await {
+                if let Err(e) = proxy.set_ryzen_power_limits(true, stapm, slow, fast).await {
+                    notify_dbus_error("Güç limitleri ayarlanamıyor (RyzenAdj)", &e).await;
+                }
+            }
+        }
+    });
+}
+
+#[allow(dead_code)]
 pub fn set_tcc_offset_sync(val: i32) {
     let rt = get_runtime();
     rt.spawn(async move {
@@ -618,6 +686,36 @@ pub fn set_tcc_offset_sync(val: i32) {
             if let Ok(proxy) = UndervoltProxy::new(&conn).await {
                 if let Err(e) = proxy.set_tcc_offset(val).await {
                     notify_dbus_error("TCC offset ayarlanamıyor", &e).await;
+                }
+            }
+        }
+    });
+}
+
+pub fn apply_all_tuning_sync(is_amd: bool, core_mv: i32, cache_mv: i32, pl1: i32, slow: i32, pl2: i32, tcc: i32) {
+    let rt = get_runtime();
+    rt.spawn(async move {
+        if let Ok(conn) = get_conn().await {
+            if let Ok(uv_proxy) = UndervoltProxy::new(&conn).await {
+                if let Err(e) = uv_proxy.set_offset("core", core_mv).await {
+                    notify_dbus_error("Undervolt (core) uygulanamıyor", &e).await;
+                }
+                if !is_amd {
+                    if let Err(e) = uv_proxy.set_offset("cache", cache_mv).await {
+                        notify_dbus_error("Undervolt (cache) uygulanamıyor", &e).await;
+                    }
+                }
+                if let Err(e) = uv_proxy.set_tcc_offset(tcc).await {
+                    notify_dbus_error("TCC/Tctl limiti ayarlanamıyor", &e).await;
+                }
+            }
+            if let Ok(pwr_proxy) = PowerProxy::new(&conn).await {
+                if is_amd {
+                    if let Err(e) = pwr_proxy.set_ryzen_power_limits(true, pl1, slow, pl2).await {
+                        notify_dbus_error("Güç limitleri ayarlanamıyor (RyzenAdj)", &e).await;
+                    }
+                } else if let Err(e) = pwr_proxy.set_power_limits(true, pl1, pl2).await {
+                    notify_dbus_error("Güç limitleri ayarlanamıyor (RAPL)", &e).await;
                 }
             }
         }

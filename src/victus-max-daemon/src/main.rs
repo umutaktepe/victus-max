@@ -9,6 +9,7 @@ mod mux;
 mod platform;
 mod undervolt;
 mod capabilities;
+pub mod cpu_tier;
 mod ryzen;
 mod wmi_diagnostics;
 mod notifier;

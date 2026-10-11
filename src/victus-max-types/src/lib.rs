@@ -50,7 +50,9 @@ pub struct HardwareSpecs {
 pub trait Power {
     async fn set_power_profile(&self, profile: &str) -> zbus::Result<String>;
     async fn get_power_profile(&self) -> zbus::Result<String>;
+    async fn get_power_limits_info(&self) -> zbus::Result<String>;
     async fn set_power_limits(&self, enabled: bool, pl1: i32, pl2: i32) -> zbus::Result<String>;
+    async fn set_ryzen_power_limits(&self, enabled: bool, stapm: i32, slow: i32, fast: i32) -> zbus::Result<String>;
     async fn set_app_profiles_enabled(&self, enabled: bool) -> zbus::Result<String>;
 }
 
