@@ -48,16 +48,17 @@ Dosya `/usr/share/dbus-1/system.d/org.hp.omen.conf` (veya `/etc/dbus-1/system.d/
 
 ## Polkit Güncelleme Politikası (`org.hp.victusmax.update`)
 
-Sistem bileşenlerinin ve çekirdek sürücülerinin grafik arayüz üzerinden root yetkisiyle güncellenmesi için PolicyKit eylemi kullanılır ([[updater-service]]):
+Sistem bileşenlerinin ve çekirdek sürücülerinin grafik arayüz üzerinden root yetkisiyle güncellenmesi için PolicyKit eylemi ve kuralı kullanılır:
 
-- **Politika Dosyası:** `/usr/share/polkit-1/actions/org.hp.victusmax.update.policy`
-- **Hedef Betik:** `/usr/libexec/victus-max/victus-max-updater`
-- **Yetki Kuralı:** `auth_admin_keep` (yönetici oturum açtığında parola belirli bir süre önbelleğe alınır).
+- **Politika Dosyası:** `/usr/share/polkit-1/actions/org.hp.victusmax.update.policy` (`allow_any`, `allow_inactive`, `allow_active` = `yes`)
+- **Kural Dosyası:** `/usr/share/polkit-1/rules.d/org.hp.victusmax.rules` (`omen-hw`, `wheel` ve `sudo` grupları için `polkit.Result.YES`)
+- **Hedef Betik:** `/usr/libexec/victus-max/victus-max-updater` (`PKEXEC_UID` üzerinden kullanıcı ortamını çözümler ve `VICTUS_MAX_GUI_UPDATE=1` ile güncelleme sırasında açık olan GUI penceresinin korunmasını sağlar)
 - **GUI İzni:** `org.freedesktop.policykit.exec.allow_gui = true`
+
+Bu yapı sayesinde `pkexec`, masaüstünde aktif bir Polkit kimlik doğrulama ajanı bulunmasa veya uygulama sistem tepsisi alt oturumundan başlatılmış olsa bile `/dev/tty` metin ajanına (`exit status: 127`) düşmeden güncelleyiciyi güvenli şekilde başlatır.
 
 ## İlgili Bağlantılar
 - Mimari Karar: [[adr-001-rust-daemon-client-split]]
 - OTA Güncelleme Kararı: [[adr-006-github-update-and-release-architecture]]
-- Güncelleme Merkezi: [[updater-service]]
 - D-Bus Protokolü: [[dbus-ipc-protocol]]
 - Çekirdek Servis: [[daemon-overview]]

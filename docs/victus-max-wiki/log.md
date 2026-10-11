@@ -337,3 +337,15 @@ grep "^## \[" docs/victus-max-wiki/log.md | tail -5
 - **Mimari Karar:** [[adr-007-adaptive-ryzen-power-limits]]
 - **Test ve Doğrulama:** `test_zen4_and_zen5_stapm_fast_linked_detection`, `test_normalize_ryzen_limits_coupled_vs_hierarchy` ve GTK4 slider etkileşim simülasyonu testleri dahil tüm workspace testleri (`cargo test --workspace`) başarıyla geçti.
 
+---
+
+## [2026-10-12] Fix | Polkit Güncelleme Yetkilendirmesi (`/dev/tty` Exit 127) ve GUI Süreç Koruma
+
+- **İşlem Türü:** Polkit Yetkilendirme Politikası, Güncelleyici Betik Dayanıklılığı ve CI/CD İyileştirmesi
+- **Kapsam:** `data/org.hp.victusmax.update.policy`, `data/org.hp.victusmax.rules`, `scripts/victus-max-updater.sh`, `setup.sh`, `.github/workflows/release.yml`, `docs/victus-max-wiki/platform-integration/polkit-dbus-security.md`.
+- **Detaylar:**
+  - Güncelleme Merkezi'nde `pkexec /usr/libexec/victus-max/victus-max-updater` çağrıldığında, oturumda grafiksel bir Polkit ajanı bulunmaması veya uygulamanın `setup.sh` sonrası `su -` alt oturumundan başlatılması nedeniyle `pkexec`'in metin tabanlı `/dev/tty` ajanına düşüp `exit status: 127` (`No such device or address`) hatası vermesi çözüldü.
+  - `data/org.hp.victusmax.update.policy` içinde yalnızca `/usr/libexec/victus-max/victus-max-updater` ikilisine bağlı olan `org.hp.victusmax.update` eylemi `yes` olarak güncellendi ve `/usr/share/polkit-1/rules.d/org.hp.victusmax.rules` kuralı eklendi.
+  - `scripts/victus-max-updater.sh` ve `setup.sh` içine `PKEXEC_UID` üzerinden `SUDO_USER` çözümlemesi eklendi; böylece `pkexec` altında çalıştığında kullanıcının yerel Rust araç zincirinin (`~/.cargo/bin/cargo`) doğrudan bulunması sağlandı.
+  - `VICTUS_MAX_GUI_UPDATE=1` ortam değişkeni ile GUI içinden başlatılan güncellemelerde `setup.sh` içerisindeki `killall victus-max` adımı atlanarak güncelleme sırasında GUI penceresinin kapanması ve çıktı borusunun (`SIGPIPE`) kopması engellendi.
+- **İlgili Bağlantılar:** [[polkit-dbus-security]], [[adr-006-github-update-and-release-architecture]]

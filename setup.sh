@@ -9,6 +9,10 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
+if [[ -z "${SUDO_USER:-}" && -n "${PKEXEC_UID:-}" ]]; then
+    export SUDO_USER="$(id -nu "$PKEXEC_UID" 2>/dev/null || true)"
+fi
+
 install_dependencies() {
     echo "====================================="
     echo " Installing system dependencies..."
@@ -97,6 +101,9 @@ install_dependencies() {
 # power-profiles-daemon dependency.  We detect this upfront and ask the user before
 # proceeding so they can make an informed choice.
 check_conflicting_power_managers() {
+    if [[ "${VICTUS_MAX_GUI_UPDATE:-0}" == "1" ]]; then
+        return 0
+    fi
     local CONFLICTS=()
 
     # system76-power conflicts with power-profiles-daemon on Arch/Manjaro
@@ -264,7 +271,9 @@ do_install() {
     systemctl stop victus-max-daemon.service omen-space-daemon.service 2>/dev/null || true
     systemctl disable omen-space-daemon.service 2>/dev/null || true
     killall victus-max-tray omen-tray 2>/dev/null || true
-    killall victus-max victus-max-gui omen-gui 2>/dev/null || true
+    if [[ "${VICTUS_MAX_GUI_UPDATE:-0}" != "1" ]]; then
+        killall victus-max victus-max-gui omen-gui 2>/dev/null || true
+    fi
     killall victus-max-overlay omen-overlay 2>/dev/null || true
 
     # Purge any legacy omen-space files & symlinks to keep system completely clean
@@ -343,8 +352,11 @@ do_install() {
     install -m 644 data/victus-max-daemon.service /etc/systemd/system/
     install -m 644 data/sysusers.d/victus-max.conf /usr/lib/sysusers.d/
     install -m 644 data/99-victus-max.rules /usr/lib/udev/rules.d/
-    mkdir -p /usr/share/polkit-1/actions
+    mkdir -p /usr/share/polkit-1/actions /usr/share/polkit-1/rules.d
     install -m 644 data/org.hp.victusmax.update.policy /usr/share/polkit-1/actions/
+    if [[ -f data/org.hp.victusmax.rules ]]; then
+        install -m 644 data/org.hp.victusmax.rules /usr/share/polkit-1/rules.d/
+    fi
     mkdir -p /usr/share/victus-max
     cp setup.sh /usr/share/victus-max/setup.sh 2>/dev/null || true
     rm -f /usr/share/applications/org.hp.VictusMax.desktop
@@ -460,6 +472,7 @@ do_uninstall() {
     rm -f /usr/share/dbus-1/services/org.hp.VictusMax.service
     rm -f /usr/share/dbus-1/services/org.hp.OmenSpace.service
     rm -f /usr/share/polkit-1/actions/org.hp.victusmax.update.policy
+    rm -f /usr/share/polkit-1/rules.d/org.hp.victusmax.rules
     rm -f /usr/share/pixmaps/victus-max.png
     rm -f /usr/share/pixmaps/omenspace.png
     rm -f /usr/share/icons/hicolor/*/apps/victus-max.png

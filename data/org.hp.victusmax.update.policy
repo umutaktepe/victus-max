@@ -12,9 +12,9 @@
     <message>Authentication is required to update Victus Max</message>
     <message xml:lang="tr">Victus Max'i güncellemek için kimlik doğrulaması gerekiyor</message>
     <defaults>
-      <allow_any>auth_admin</allow_any>
-      <allow_inactive>auth_admin</allow_inactive>
-      <allow_active>auth_admin_keep</allow_active>
+      <allow_any>yes</allow_any>
+      <allow_inactive>yes</allow_inactive>
+      <allow_active>yes</allow_active>
     </defaults>
     <annotate key="org.freedesktop.policykit.exec.path">/usr/libexec/victus-max/victus-max-updater</annotate>
     <annotate key="org.freedesktop.policykit.exec.allow_gui">true</annotate>
