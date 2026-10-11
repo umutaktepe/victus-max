@@ -5,6 +5,11 @@ on:
     tags:
       - 'v*.*.*'
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v1.1.0, leave empty to use Cargo.toml version)'
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -38,7 +43,14 @@ jobs:
 
       - name: Package release archive
         run: |
-          TAG_NAME=${GITHUB_REF_NAME:-v$(sed -n 's/^version = "\(.*\)"/\1/p' src/victus-max-gui/Cargo.toml | head -1)}
+          if [ -n "${{ inputs.tag }}" ]; then
+            RAW_TAG="${{ inputs.tag }}"
+            TAG_NAME="v${RAW_TAG#v}"
+          elif [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            TAG_NAME="${GITHUB_REF_NAME}"
+          else
+            TAG_NAME="v$(sed -n 's/^version = "\(.*\)"/\1/p' src/victus-max-gui/Cargo.toml | head -1)"
+          fi
           ARCHIVE_NAME="victus-max-${TAG_NAME}-x86_64.tar.gz"
           mkdir -p dist/bin dist/data dist/driver dist/scripts
           
@@ -53,11 +65,13 @@ jobs:
           cp setup.sh install.sh dist/
           
           tar -czf "$ARCHIVE_NAME" -C dist .
+          echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
           echo "ARCHIVE_NAME=$ARCHIVE_NAME" >> $GITHUB_ENV
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ env.TAG_NAME }}
           name: Victus Max ${{ env.TAG_NAME }}
           files: ${{ env.ARCHIVE_NAME }}
           generate_release_notes: true
