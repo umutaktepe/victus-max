@@ -48,7 +48,10 @@ node_modules/
 dist/
 out/
 .next/
-src-tauri/target/
+
+# Superpowers scratch
 .superpowers/
+
+src-tauri/target/
 references/
 .obsidian/

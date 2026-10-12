@@ -14,6 +14,7 @@ Sistem mimarisindeki temel teknik seçimler, gerekçeleri, değerlendirilen alte
 - [[adr-005-better-auto-proactive-fan-and-victus-max]] — Proaktif Better Auto çift matrisli fan algoritması, 10s EC yazma aralığı, ayarlanabilir taban/tavan ve bağımsız Victus Max mimarisi.
 - [[adr-006-github-update-and-release-architecture]] — GitHub REST API entegrasyonu, kalıcı Canary/Stable kanal seçimi, sıfır-404 fallback ve Polkit ayrımıyla güvenli OTA güncelleme mimarisi.
 - [[adr-007-adaptive-ryzen-power-limits]] — İşlemci TDP sınıfına göre dinamik STAPM/PPT/Tctl slider aralıkları ve RyzenAdj PMTable üzerinden canlı telemetri okuma mimarisi.
+- [[adr-008-power-profile-limit-presets]] — Güç modu profilleri (presets), 30sn sessiz emniyet kilidi (watchdog), AC/sleep donanım senkronizasyonu ve çift yönlü slider override mimarisi.
 
 ---
 

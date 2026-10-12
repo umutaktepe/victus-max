@@ -349,3 +349,21 @@ grep "^## \[" docs/victus-max-wiki/log.md | tail -5
   - `scripts/victus-max-updater.sh` ve `setup.sh` içine `PKEXEC_UID` üzerinden `SUDO_USER` çözümlemesi eklendi; böylece `pkexec` altında çalıştığında kullanıcının yerel Rust araç zincirinin (`~/.cargo/bin/cargo`) doğrudan bulunması sağlandı.
   - `VICTUS_MAX_GUI_UPDATE=1` ortam değişkeni ile GUI içinden başlatılan güncellemelerde `setup.sh` içerisindeki `killall victus-max` adımı atlanarak güncelleme sırasında GUI penceresinin kapanması ve çıktı borusunun (`SIGPIPE`) kopması engellendi.
 - **İlgili Bağlantılar:** [[polkit-dbus-security]], [[adr-006-github-update-and-release-architecture]]
+
+---
+
+## [2026-10-13] Feature | Güç Modu Profilleri (Presets), 30sn Emniyet Kilidi ve Donanımsal Koruma Mimarisi
+
+- **İşlem Türü:** Güç Yönetimi, Donanımsal Limit Koruma (Watchdog), Olay Eşitleme ve GTK4 Arayüz Genişletmesi
+- **Kapsam:** `src/victus-max-types/`, `src/victus-max-daemon/`, `src/victus-max-gui/`, `src/victus-max-cli/`, `docs/victus-max-wiki/`.
+- **Detaylar:**
+  - `omen_types` içine `PowerModeLimits` ve `PowerModeProfilesConfig` yapıları ile `PowerProxy` D-Bus genişletmeleri eklendi.
+  - `cpu_tier.rs` modülüne CPU sınıfına (AMD Standard HS, Extreme HX, UltraLow U, Intel Standard H/P, Intel Extreme HX) göre optimize edilmiş varsayılan limit profilleri (`build_default_power_presets`) eklendi.
+  - `PowerService` (`power.rs`) içine `/etc/victus-max/power.json` kalıcılığı ile `limit_presets`, `manual_override`, `apply_preset_limits`, `get_power_presets`, `set_power_preset_mode`, `save_power_preset`, `reset_power_presets` D-Bus metotları eklendi.
+  - 30 saniyelik arka plan sessiz emniyet kilidi (watchdog) tokio zamanlayıcısı eklendi; HP EC/BIOS'un limitleri sıfırlaması sessizce engellendi.
+  - `power_automation.rs` içinde PPD `ActiveProfile` sinyalleri, AC şarj takma/çıkarma döngüsü ve `org.freedesktop.login1` uykudan uyanma (`PrepareForSleep(false)`) sinyali dinlenerek güç profilleri ve limitleri otomatik senkronize edildi.
+  - GTK4 Libadwaita Gelişmiş Güç (`undervolt.rs`) sayfasına 3 adet güç modu kartı (Power Save, Balanced, Performance), durum rozeti, çift yönlü slider override senkronizasyonu ve mimariye duyarlı (Ryzen: STAPM/Slow/Fast/Temp; Intel: PL1/PL2/TCC) modal düzenleme penceresi eklendi.
+  - `victus-max-cli power presets [list|set|reset]` ve `victus-max-cli power limits` komutları eklenerek terminalden canlı durum sorgulama ve profil yönetimi sağlandı.
+- **Mimari Karar:** [[adr-008-power-profile-limit-presets]]
+- **Test ve Doğrulama:** Tüm çalışma alanı testleri (`cargo test --workspace`, 118 test) sıfır hatayla geçti.
+
