@@ -5,11 +5,28 @@ use std::fs;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio::time::{sleep, Duration};
-use crate::notifier::DesktopNotifier;
 use std::sync::OnceLock;
 use std::path::PathBuf;
 
+#[zbus::proxy(
+    interface = "org.freedesktop.login1.Manager",
+    default_service = "org.freedesktop.login1",
+    default_path = "/org/freedesktop/login1"
+)]
+trait LogindManager {
+    #[zbus(signal)]
+    fn prepare_for_sleep(&self, start: bool) -> zbus::Result<()>;
+}
+
 static AC_ONLINE_PATH: OnceLock<Option<PathBuf>> = OnceLock::new();
+
+pub fn normalize_ppd_mode(s: &str) -> &'static str {
+    match s.to_lowercase().as_str() {
+        "performance" => "performance",
+        "power-saver" | "quiet" | "low-power" | "cool" => "power-saver",
+        _ => "balanced",
+    }
+}
 
 #[derive(Clone)]
 pub struct PowerAutomationService {
@@ -26,6 +43,7 @@ impl PowerAutomationService {
     pub fn start_monitor(&self) {
         let last_state = self.last_ac_state.clone();
 
+        // PPD PropertiesChanged listener
         tokio::spawn(async move {
             if let Ok(conn) = zbus::Connection::system().await {
                 if let Ok(proxy) = PropertiesProxy::builder(&conn)
@@ -40,12 +58,12 @@ impl PowerAutomationService {
                                     if let Some(val) = args.changed_properties().get("ActiveProfile") {
                                         if let Ok(profile_str) = <&str>::try_from(val) {
                                             info!("PPD Profile changed to: {}", profile_str);
-                                            let mode = match profile_str {
-                                                "performance" => "Performance",
-                                                "power-saver" => "Quiet",
-                                                _ => "Default",
-                                            };
-                                            let _ = crate::platform::set_thermal_policy_by_name(mode);
+                                            let norm = normalize_ppd_mode(profile_str);
+                                            if let Ok(conn) = zbus::Connection::system().await {
+                                                if let Ok(pwr_proxy) = omen_types::PowerProxy::new(&conn).await {
+                                                    let _ = pwr_proxy.set_power_preset_mode(norm).await;
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -56,6 +74,7 @@ impl PowerAutomationService {
             }
         });
 
+        // AC online/offline polling loop
         tokio::spawn(async move {
             loop {
                 sleep(Duration::from_secs(4)).await;
@@ -67,24 +86,49 @@ impl PowerAutomationService {
                         *state_lock = Some(current_ac);
                         if current_ac {
                             info!("AC Power connected. Applying AC Performance Profile...");
-                            DesktopNotifier::send_notification(
-                                "Victus Max Power Automation",
-                                "AC Power connected. Switched to Performance mode.",
-                                0,
-                            ).await;
-                            let _ = crate::platform::set_thermal_policy_by_name("Performance");
+                            if let Ok(conn) = zbus::Connection::system().await {
+                                if let Ok(pwr_proxy) = omen_types::PowerProxy::new(&conn).await {
+                                    let _ = pwr_proxy.set_power_preset_mode("performance").await;
+                                }
+                            }
                         } else {
                             info!("Battery Power connected. Applying Battery Saver Profile...");
-                            DesktopNotifier::send_notification(
-                                "Victus Max Power Automation",
-                                "Running on Battery. Switched to Quiet/Saver mode.",
-                                1,
-                            ).await;
-                            let _ = crate::platform::set_thermal_policy_by_name("Quiet");
+                            if let Ok(conn) = zbus::Connection::system().await {
+                                if let Ok(pwr_proxy) = omen_types::PowerProxy::new(&conn).await {
+                                    let _ = pwr_proxy.set_power_preset_mode("power-saver").await;
+                                }
+                            }
                         }
                     }
                 } else {
                     *state_lock = Some(current_ac);
+                }
+            }
+        });
+
+        // systemd-logind sleep/resume listener
+        tokio::spawn(async move {
+            if let Ok(conn) = zbus::Connection::system().await {
+                if let Ok(logind_proxy) = LogindManagerProxy::new(&conn).await {
+                    if let Ok(mut stream) = logind_proxy.receive_prepare_for_sleep().await {
+                        while let Some(signal) = stream.next().await {
+                            if let Ok(args) = signal.args() {
+                                if !args.start() {
+                                    info!("System resumed from sleep. Re-enforcing power presets in 1.5s...");
+                                    tokio::time::sleep(tokio::time::Duration::from_millis(1500)).await;
+                                    if let Ok(pwr) = omen_types::PowerProxy::new(&conn).await {
+                                        if let Ok(raw_json) = pwr.get_power_presets().await {
+                                            if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&raw_json) {
+                                                if let Some(active) = parsed.get("active_mode").and_then(|v| v.as_str()) {
+                                                    let _ = pwr.set_power_preset_mode(active).await;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         });
@@ -112,4 +156,35 @@ fn is_ac_power_connected() -> bool {
         }
     }
     true // default to AC if undetectable
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_normalize_ppd_mode_performance() {
+        assert_eq!(normalize_ppd_mode("performance"), "performance");
+        assert_eq!(normalize_ppd_mode("Performance"), "performance");
+        assert_eq!(normalize_ppd_mode("PERFORMANCE"), "performance");
+    }
+
+    #[test]
+    fn test_normalize_ppd_mode_power_saver() {
+        assert_eq!(normalize_ppd_mode("power-saver"), "power-saver");
+        assert_eq!(normalize_ppd_mode("Power-Saver"), "power-saver");
+        assert_eq!(normalize_ppd_mode("quiet"), "power-saver");
+        assert_eq!(normalize_ppd_mode("Quiet"), "power-saver");
+        assert_eq!(normalize_ppd_mode("low-power"), "power-saver");
+        assert_eq!(normalize_ppd_mode("cool"), "power-saver");
+    }
+
+    #[test]
+    fn test_normalize_ppd_mode_balanced_fallback() {
+        assert_eq!(normalize_ppd_mode("balanced"), "balanced");
+        assert_eq!(normalize_ppd_mode("Balanced"), "balanced");
+        assert_eq!(normalize_ppd_mode("default"), "balanced");
+        assert_eq!(normalize_ppd_mode("unknown-profile"), "balanced");
+        assert_eq!(normalize_ppd_mode(""), "balanced");
+    }
 }
