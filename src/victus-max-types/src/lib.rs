@@ -41,6 +41,35 @@ pub struct HardwareSpecs {
     pub kernel_version: String,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PowerModeLimits {
+    pub stapm_w: u32,
+    pub slow_ppt_w: u32,
+    pub fast_ppt_w: u32,
+    pub tctl_temp: u32,
+}
+
+impl Default for PowerModeLimits {
+    fn default() -> Self {
+        Self {
+            stapm_w: 45,
+            slow_ppt_w: 45,
+            fast_ppt_w: 65,
+            tctl_temp: 95,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub struct PowerModeProfilesConfig {
+    pub power_saver: PowerModeLimits,
+    pub balanced: PowerModeLimits,
+    pub performance: PowerModeLimits,
+    pub active_mode: Option<String>,
+    #[serde(default)]
+    pub manual_override: bool,
+}
+
 // ── Power Service Proxy ────────────────────────────────────────────────────────
 #[proxy(
     interface = "org.hp.omen.Power",
@@ -54,6 +83,10 @@ pub trait Power {
     async fn set_power_limits(&self, enabled: bool, pl1: i32, pl2: i32) -> zbus::Result<String>;
     async fn set_ryzen_power_limits(&self, enabled: bool, stapm: i32, slow: i32, fast: i32) -> zbus::Result<String>;
     async fn set_app_profiles_enabled(&self, enabled: bool) -> zbus::Result<String>;
+    async fn get_power_presets(&self) -> zbus::Result<String>;
+    async fn set_power_preset_mode(&self, mode: &str) -> zbus::Result<String>;
+    async fn save_power_preset(&self, mode: &str, stapm_w: u32, slow_ppt_w: u32, fast_ppt_w: u32, tctl_temp: u32) -> zbus::Result<String>;
+    async fn reset_power_presets(&self) -> zbus::Result<String>;
 }
 
 // ── Fan Service Proxy ─────────────────────────────────────────────────────────
@@ -159,4 +192,37 @@ pub trait AppProfiles {
     async fn get_profiles(&self) -> zbus::Result<String>;
     async fn add_profile(&self, process_name: &str, power_profile: &str, fan_mode: &str) -> zbus::Result<String>;
     async fn remove_profile(&self, process_name: &str) -> zbus::Result<String>;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_power_mode_limits_serde() {
+        let limits = PowerModeLimits {
+            stapm_w: 35,
+            slow_ppt_w: 35,
+            fast_ppt_w: 35,
+            tctl_temp: 82,
+        };
+        let json = serde_json::to_string(&limits).expect("serialize limits");
+        let parsed: PowerModeLimits = serde_json::from_str(&json).expect("deserialize limits");
+        assert_eq!(parsed, limits);
+    }
+
+    #[test]
+    fn test_power_mode_profiles_config_serde() {
+        let config = PowerModeProfilesConfig {
+            power_saver: PowerModeLimits { stapm_w: 20, slow_ppt_w: 20, fast_ppt_w: 25, tctl_temp: 70 },
+            balanced: PowerModeLimits { stapm_w: 35, slow_ppt_w: 35, fast_ppt_w: 35, tctl_temp: 82 },
+            performance: PowerModeLimits { stapm_w: 45, slow_ppt_w: 45, fast_ppt_w: 45, tctl_temp: 88 },
+            active_mode: Some("balanced".to_string()),
+            manual_override: false,
+        };
+        let json = serde_json::to_string(&config).expect("serialize config");
+        let parsed: PowerModeProfilesConfig = serde_json::from_str(&json).expect("deserialize config");
+        assert_eq!(parsed, config);
+        assert_eq!(parsed.active_mode.as_deref(), Some("balanced"));
+    }
 }
