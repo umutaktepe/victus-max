@@ -120,6 +120,31 @@ fn read_msr(addr: u64, cpu: usize) -> Option<u64> {
     Some(u64::from_le_bytes(buf))
 }
 
+pub fn write_intel_tcc_offset(val: i32) -> bool {
+    let val = val.clamp(0, 15);
+    let mut write_ok = true;
+    let cpu_count = count_cpus();
+    for cpu in 0..cpu_count {
+        let path = msr_path(cpu);
+        if let Ok(mut f) = std::fs::OpenOptions::new().read(true).write(true).open(&path) {
+            use std::io::{Seek, SeekFrom, Read, Write};
+            if f.seek(SeekFrom::Start(MSR_TEMPERATURE)).is_ok() {
+                let mut bytes = [0u8; 8];
+                if f.read_exact(&mut bytes).is_ok() {
+                    let cur_val = u64::from_le_bytes(bytes);
+                    let new_val = (cur_val & !0x0F000000u64) | ((val as u64 & 0x0F) << 24);
+                    if f.seek(SeekFrom::Start(MSR_TEMPERATURE)).is_ok() {
+                        if f.write_all(&new_val.to_le_bytes()).is_err() {
+                            write_ok = false;
+                        }
+                    } else { write_ok = false; }
+                } else { write_ok = false; }
+            } else { write_ok = false; }
+        } else { write_ok = false; }
+    }
+    write_ok
+}
+
 fn ensure_msr_module() {
     if !Path::new("/dev/cpu/0/msr").exists() {
         let _ = std::process::Command::new("modprobe").arg("msr").output();
@@ -368,41 +393,7 @@ impl UndervoltService {
         } else {
             let val = val.clamp(0, 15);
             if self.available {
-                // FIX #7: Proper read-modify-write for MSR 0x1a2 (Temperature Target).
-                // We must preserve Tj_max (bits 15:8) and reserved bits. A blind write
-                // sets Tj_max to 0, which the CPU silicon rejects with a #GP fault.
-                // On Comet Lake (and most modern Intel), TCC Activation Offset is bits 27:24.
-                let mut write_ok = true;
-                let cpu_count = count_cpus();
-                for cpu in 0..cpu_count {
-                    let path = msr_path(cpu);
-                    if let Ok(mut f) = std::fs::OpenOptions::new().read(true).write(true).open(&path) {
-                        use std::io::{Seek, SeekFrom, Read, Write};
-                        if f.seek(SeekFrom::Start(MSR_TEMPERATURE)).is_ok() {
-                            let mut bytes = [0u8; 8];
-                            if f.read_exact(&mut bytes).is_ok() {
-                                let cur_val = u64::from_le_bytes(bytes);
-                                // Clear bits 27:24 (mask 0x0F000000), then set them to the new offset
-                                let new_val = (cur_val & !0x0F000000u64) | ((val as u64 & 0x0F) << 24);
-                                if f.seek(SeekFrom::Start(MSR_TEMPERATURE)).is_ok() {
-                                    if f.write_all(&new_val.to_le_bytes()).is_err() {
-                                        warn!("SetTccOffset: MSR 0x1a2 write failed on CPU {}", cpu);
-                                        write_ok = false;
-                                    }
-                                } else {
-                                    write_ok = false;
-                                }
-                            } else {
-                                write_ok = false;
-                            }
-                        } else {
-                            write_ok = false;
-                        }
-                    } else {
-                        write_ok = false;
-                    }
-                }
-                if !write_ok {
+                if !write_intel_tcc_offset(val) {
                     warn!("SetTccOffset: MSR 0x1a2 write failed");
                 }
             }

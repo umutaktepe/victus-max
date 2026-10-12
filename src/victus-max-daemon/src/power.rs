@@ -14,6 +14,7 @@
 ///   SetAppProfilesEnabled(enabled: b) -> resp: s
 ///   SetAppProfiles(profiles_json: s)  -> resp: s
 ///   Ping()                      -> resp: s
+use omen_types::{PowerModeLimits, PowerModeProfilesConfig};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
@@ -54,6 +55,10 @@ struct PowerConfig {
     pl2_w: u32,
     pl_enabled: bool,
     gpu_w: u32,
+    #[serde(default)]
+    pub limit_presets: Option<PowerModeProfilesConfig>,
+    #[serde(default)]
+    pub manual_override: bool,
 }
 
 impl Default for PowerConfig {
@@ -69,6 +74,8 @@ impl Default for PowerConfig {
             pl2_w: 80,
             pl_enabled: false,
             gpu_w: 0,
+            limit_presets: None,
+            manual_override: false,
         }
     }
 }
@@ -122,6 +129,14 @@ impl PowerService {
             config.save();
         }
 
+        if config.limit_presets.is_none() {
+            let mut defaults = crate::cpu_tier::build_default_power_presets(&specs.cpu_spec);
+            defaults.active_mode = Some(config.power_profile.clone());
+            config.limit_presets = Some(defaults);
+            config.manual_override = false;
+            config.save();
+        }
+
         let app_state = Arc::new(Mutex::new(AppState {
             active_app: None,
             pre_app_state: None,
@@ -145,9 +160,16 @@ impl PowerService {
 
     async fn apply_startup_tuning(&self) {
         let cfg = self.config.lock().await.clone();
-        if cfg.pl_enabled {
+        if cfg.manual_override && cfg.pl_enabled {
             let slow = if cfg.slow_ppt_w > 0 { Some(cfg.slow_ppt_w) } else { None };
             Self::apply_rapl_limits(cfg.pl1_w, cfg.pl2_w, slow).await;
+        } else if !cfg.manual_override {
+            let mode = cfg
+                .limit_presets
+                .as_ref()
+                .and_then(|p| p.active_mode.clone())
+                .unwrap_or_else(|| cfg.power_profile.clone());
+            self.apply_preset_limits(&mode).await;
         }
     }
 
@@ -556,6 +578,62 @@ impl PowerService {
             info!("Intel RAPL limits set: PL1={}W PL2={}W", pl1, pl2);
         }
     }
+
+    pub async fn apply_preset_limits(&self, mode: &str) -> bool {
+        let (limits, is_amd) = {
+            let cfg = self.config.lock().await;
+            let presets = cfg.limit_presets.as_ref();
+            let norm_mode = Self::normalize_profile(mode);
+            let limits = match norm_mode.as_str() {
+                "power-saver" => presets.map(|p| p.power_saver),
+                "performance" => presets.map(|p| p.performance),
+                _ => presets.map(|p| p.balanced),
+            };
+            let specs = crate::sysmon::get_hardware_specs();
+            let (vendor, _, _) = crate::cpu_tier::classify_cpu(&specs.cpu_spec);
+            (limits, vendor == crate::cpu_tier::CpuVendor::Amd)
+        };
+
+        if let Some(l) = limits {
+            if is_amd {
+                let specs = crate::sysmon::get_hardware_specs();
+                let (_, _, ranges) = crate::cpu_tier::classify_cpu(&specs.cpu_spec);
+                let (norm_stapm, norm_slow, norm_fast) = crate::cpu_tier::normalize_ryzen_limits(
+                    l.stapm_w,
+                    l.slow_ppt_w,
+                    l.fast_ppt_w,
+                    ranges.stapm_fast_linked,
+                );
+                let arg_stapm = format!("--stapm-limit={}", norm_stapm * 1000);
+                let arg_slow = format!("--slow-limit={}", norm_slow * 1000);
+                let arg_fast = format!("--fast-limit={}", norm_fast * 1000);
+                let arg_temp = format!("--tctl-temp={}", l.tctl_temp.clamp(70, 105));
+                let _ = crate::cpu_tier::run_ryzenadj(&[&arg_stapm, &arg_slow, &arg_fast, &arg_temp]).await;
+                info!(
+                    "Enforced AMD Preset '{}': STAPM={}W Slow={}W Fast={}W Temp={}°C",
+                    mode, norm_stapm, norm_slow, norm_fast, l.tctl_temp
+                );
+            } else {
+                let rapl1 = "/sys/class/powercap/intel-rapl/intel-rapl:0/constraint_0_power_limit_uw";
+                let rapl2 = "/sys/class/powercap/intel-rapl/intel-rapl:0/constraint_1_power_limit_uw";
+                if sysfs_exists(rapl1) {
+                    let _ = sysfs_write_async(rapl1, &(l.stapm_w * 1_000_000).to_string()).await;
+                }
+                if sysfs_exists(rapl2) {
+                    let _ = sysfs_write_async(rapl2, &(l.fast_ppt_w * 1_000_000).to_string()).await;
+                }
+                let tcc_offset = 100i32.saturating_sub(l.tctl_temp as i32).clamp(0, 15);
+                crate::undervolt::write_intel_tcc_offset(tcc_offset);
+                info!(
+                    "Enforced Intel Preset '{}': PL1={}W PL2={}W TempTarget={}°C (TCC={})",
+                    mode, l.stapm_w, l.fast_ppt_w, l.tctl_temp, tcc_offset
+                );
+            }
+            true
+        } else {
+            false
+        }
+    }
 }
 
 // ── D-Bus interface ────────────────────────────────────────────────────────────
@@ -830,3 +908,57 @@ impl PowerService {
         "OK".to_string()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_power_config_default_migration() {
+        let legacy_json = r#"{
+            "power_profile": "performance",
+            "app_profiles_enabled": false,
+            "app_profiles": {},
+            "undervolt_mv": 0,
+            "tcc_offset": 0,
+            "pl1_w": 45,
+            "slow_ppt_w": 45,
+            "pl2_w": 80,
+            "pl_enabled": true,
+            "gpu_w": 0
+        }"#;
+        let cfg: PowerConfig = serde_json::from_str(legacy_json).expect("parse legacy config");
+        assert!(cfg.limit_presets.is_none());
+        assert_eq!(cfg.manual_override, false);
+    }
+
+    #[tokio::test]
+    async fn test_apply_preset_limits_mock() {
+        let mut config = PowerConfig::default();
+        let mut presets = crate::cpu_tier::build_default_power_presets("AMD Ryzen 7 7840HS w/ Radeon 780M Graphics");
+        presets.active_mode = Some("balanced".to_string());
+        config.limit_presets = Some(presets);
+        config.manual_override = false;
+
+        let svc = PowerService {
+            config: Arc::new(Mutex::new(config)),
+            app_state: Arc::new(Mutex::new(AppState {
+                active_app: None,
+                pre_app_state: None,
+            })),
+        };
+
+        // When limit_presets is present, applying a known mode returns true
+        assert!(svc.apply_preset_limits("balanced").await);
+        assert!(svc.apply_preset_limits("power-saver").await);
+        assert!(svc.apply_preset_limits("performance").await);
+
+        // If limit_presets is None, apply_preset_limits returns false
+        {
+            let mut cfg = svc.config.lock().await;
+            cfg.limit_presets = None;
+        }
+        assert!(!svc.apply_preset_limits("balanced").await);
+    }
+}
+
