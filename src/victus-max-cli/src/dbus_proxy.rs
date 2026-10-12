@@ -48,6 +48,11 @@ pub trait Power {
     async fn set_tcc_offset(&self, val: i32) -> zbus::Result<String>;
     async fn set_app_profiles_enabled(&self, enabled: bool) -> zbus::Result<String>;
     async fn set_app_profiles(&self, profiles_json: &str) -> zbus::Result<String>;
+    async fn get_power_presets(&self) -> zbus::Result<String>;
+    async fn set_power_preset_mode(&self, mode: &str) -> zbus::Result<String>;
+    async fn save_power_preset(&self, mode: &str, stapm_w: u32, slow_ppt_w: u32, fast_ppt_w: u32, tctl_temp: u32) -> zbus::Result<String>;
+    async fn reset_power_presets(&self) -> zbus::Result<String>;
+    async fn get_power_limits_info(&self) -> zbus::Result<String>;
 }
 
 #[proxy(
