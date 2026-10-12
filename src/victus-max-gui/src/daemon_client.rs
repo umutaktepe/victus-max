@@ -784,6 +784,115 @@ pub fn set_battery_care_sync(limit: u32) {
     });
 }
 
+// ── Power Mode Limit Presets ──────────────────────────────────────────────────
+
+#[allow(dead_code)]
+pub async fn get_power_presets_async() -> Result<String, Box<dyn std::error::Error>> {
+    let conn = get_conn().await?;
+    let proxy = PowerProxy::new(&conn).await?;
+    let res = proxy.get_power_presets().await?;
+    Ok(res)
+}
+
+#[allow(dead_code)]
+pub fn get_power_presets_sync() -> String {
+    let rt = get_runtime();
+    rt.block_on(async {
+        match tokio::time::timeout(std::time::Duration::from_millis(500), get_power_presets_async()).await {
+            Ok(Ok(s)) => s,
+            _ => "{}".to_string(),
+        }
+    })
+}
+
+#[allow(dead_code)]
+pub fn set_power_preset_mode_sync(mode: String) {
+    let rt = get_runtime();
+    rt.spawn(async move {
+        if let Ok(conn) = get_conn().await {
+            if let Ok(proxy) = PowerProxy::new(&conn).await {
+                if let Err(e) = proxy.set_power_preset_mode(&mode).await {
+                    notify_dbus_error("Güç modu uygulanamadı", &e).await;
+                }
+            }
+        }
+    });
+}
+
+#[allow(dead_code)]
+pub async fn set_power_preset_mode_async(mode: &str) -> Result<String, Box<dyn std::error::Error>> {
+    let conn = get_conn().await?;
+    let proxy = PowerProxy::new(&conn).await?;
+    let res = proxy.set_power_preset_mode(mode).await?;
+    Ok(res)
+}
+
+#[allow(dead_code)]
+pub fn save_power_preset_sync(mode: String, stapm: u32, slow: u32, fast: u32, temp: u32) {
+    let rt = get_runtime();
+    rt.spawn(async move {
+        if let Ok(conn) = get_conn().await {
+            if let Ok(proxy) = PowerProxy::new(&conn).await {
+                if let Err(e) = proxy.save_power_preset(&mode, stapm, slow, fast, temp).await {
+                    notify_dbus_error("Güç modu profili kaydedilemedi", &e).await;
+                }
+            }
+        }
+    });
+}
+
+#[allow(dead_code)]
+pub async fn save_power_preset_async(mode: &str, stapm: u32, slow: u32, fast: u32, temp: u32) -> Result<String, Box<dyn std::error::Error>> {
+    let conn = get_conn().await?;
+    let proxy = PowerProxy::new(&conn).await?;
+    let res = proxy.save_power_preset(mode, stapm, slow, fast, temp).await?;
+    Ok(res)
+}
+
+#[allow(dead_code)]
+pub fn reset_power_presets_sync() {
+    let rt = get_runtime();
+    rt.spawn(async move {
+        if let Ok(conn) = get_conn().await {
+            if let Ok(proxy) = PowerProxy::new(&conn).await {
+                if let Err(e) = proxy.reset_power_presets().await {
+                    notify_dbus_error("Güç profilleri sıfırlanamadı", &e).await;
+                }
+            }
+        }
+    });
+}
+
+#[allow(dead_code)]
+pub async fn reset_power_presets_async() -> Result<String, Box<dyn std::error::Error>> {
+    let conn = get_conn().await?;
+    let proxy = PowerProxy::new(&conn).await?;
+    let res = proxy.reset_power_presets().await?;
+    Ok(res)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_power_presets_sync_fallback() {
+        let presets = get_power_presets_sync();
+        assert!(!presets.is_empty());
+        let parsed: serde_json::Value = serde_json::from_str(&presets)
+            .expect("get_power_presets_sync must return valid JSON");
+        assert!(parsed.is_object());
+    }
+
+    #[test]
+    fn test_power_presets_sync_invokers() {
+        set_power_preset_mode_sync("balanced".to_string());
+        save_power_preset_sync("balanced".to_string(), 35, 35, 35, 82);
+        reset_power_presets_sync();
+    }
+}
+
+
 
 
 
