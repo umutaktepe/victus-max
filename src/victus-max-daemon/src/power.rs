@@ -155,6 +155,27 @@ impl PowerService {
             Self::app_monitor_loop(config_clone, app_state).await;
         });
 
+        let svc_watchdog = svc.clone();
+        tokio::spawn(async move {
+            let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(30));
+            loop {
+                interval.tick().await;
+                let (active_mode, manual_override, pl1, pl2, slow, pl_enabled) = {
+                    let cfg = svc_watchdog.config.lock().await;
+                    let active = cfg.limit_presets.as_ref().and_then(|p| p.active_mode.clone());
+                    (active, cfg.manual_override, cfg.pl1_w, cfg.pl2_w, cfg.slow_ppt_w, cfg.pl_enabled)
+                };
+
+                if manual_override {
+                    if pl_enabled {
+                        Self::apply_rapl_limits(pl1, pl2, Some(slow)).await;
+                    }
+                } else if let Some(ref mode) = active_mode {
+                    svc_watchdog.apply_preset_limits(mode).await;
+                }
+            }
+        });
+
         Ok(svc)
     }
 
@@ -809,6 +830,11 @@ impl PowerService {
             cfg.pl1_w = pl1 as u32;
             cfg.slow_ppt_w = pl1 as u32;
             cfg.pl2_w = pl2 as u32;
+            cfg.manual_override = true;
+            if let Some(ref mut p) = cfg.limit_presets {
+                p.active_mode = None;
+                p.manual_override = true;
+            }
             cfg.save();
         }
 
@@ -843,6 +869,11 @@ impl PowerService {
             cfg.pl1_w = norm_stapm;
             cfg.slow_ppt_w = norm_slow;
             cfg.pl2_w = norm_fast;
+            cfg.manual_override = true;
+            if let Some(ref mut p) = cfg.limit_presets {
+                p.active_mode = None;
+                p.manual_override = true;
+            }
             cfg.save();
         }
 
@@ -904,6 +935,115 @@ impl PowerService {
         }
     }
 
+    async fn get_power_presets(&self) -> String {
+        let cfg = self.config.lock().await.clone();
+        let specs = crate::sysmon::get_hardware_specs();
+        let (vendor, _, _) = crate::cpu_tier::classify_cpu(&specs.cpu_spec);
+        let is_amd = vendor == crate::cpu_tier::CpuVendor::Amd;
+        let defaults = crate::cpu_tier::build_default_power_presets(&specs.cpu_spec);
+        let presets = cfg.limit_presets.clone().unwrap_or_else(|| defaults.clone());
+        let active_mode = presets.active_mode.clone();
+        let manual_override = cfg.manual_override;
+        let system_profile = cfg.power_profile.clone();
+
+        let json = serde_json::json!({
+            "is_amd": is_amd,
+            "presets": presets,
+            "defaults": defaults,
+            "active_mode": active_mode,
+            "manual_override": manual_override,
+            "system_profile": system_profile,
+        });
+        json.to_string()
+    }
+
+    async fn set_power_preset_mode(&self, mode: String) -> String {
+        let norm_mode = Self::normalize_profile(&mode);
+        {
+            let mut cfg = self.config.lock().await;
+            cfg.power_profile = norm_mode.clone();
+            cfg.manual_override = false;
+            if let Some(ref mut p) = cfg.limit_presets {
+                p.active_mode = Some(norm_mode.clone());
+                p.manual_override = false;
+            }
+            cfg.save();
+        }
+        self.apply_preset_limits(&norm_mode).await;
+        Self::sync_omen_profile(&norm_mode).await;
+        crate::notifier::DesktopNotifier::send_notification(
+            &format!("Güç Modu: {}", norm_mode.to_uppercase()),
+            &format!("{} profili güç limitleri başarıyla uygulandı ve kilitlendi.", norm_mode),
+            0,
+        ).await;
+        "OK".to_string()
+    }
+
+    async fn save_power_preset(
+        &self,
+        mode: String,
+        stapm_w: u32,
+        slow_ppt_w: u32,
+        fast_ppt_w: u32,
+        tctl_temp: u32,
+    ) -> String {
+        let norm_mode = Self::normalize_profile(&mode);
+        let new_limits = PowerModeLimits {
+            stapm_w,
+            slow_ppt_w,
+            fast_ppt_w,
+            tctl_temp,
+        };
+        let is_active = {
+            let mut cfg = self.config.lock().await;
+            if cfg.limit_presets.is_none() {
+                let specs = crate::sysmon::get_hardware_specs();
+                let defaults = crate::cpu_tier::build_default_power_presets(&specs.cpu_spec);
+                cfg.limit_presets = Some(defaults);
+            }
+            let is_active = if let Some(ref mut p) = cfg.limit_presets {
+                match norm_mode.as_str() {
+                    "power-saver" => p.power_saver = new_limits,
+                    "performance" => p.performance = new_limits,
+                    _ => p.balanced = new_limits,
+                }
+                p.active_mode.as_deref() == Some(&norm_mode) && !cfg.manual_override
+            } else {
+                false
+            };
+            cfg.save();
+            is_active
+        };
+
+        if is_active {
+            self.apply_preset_limits(&norm_mode).await;
+        }
+
+        "OK".to_string()
+    }
+
+    async fn reset_power_presets(&self) -> String {
+        let specs = crate::sysmon::get_hardware_specs();
+        let mut defaults = crate::cpu_tier::build_default_power_presets(&specs.cpu_spec);
+        let active_mode = {
+            let mut cfg = self.config.lock().await;
+            let mode = cfg
+                .limit_presets
+                .as_ref()
+                .and_then(|p| p.active_mode.clone())
+                .unwrap_or_else(|| Self::normalize_profile(&cfg.power_profile));
+            defaults.active_mode = Some(mode.clone());
+            defaults.manual_override = false;
+            cfg.manual_override = false;
+            cfg.limit_presets = Some(defaults);
+            cfg.save();
+            mode
+        };
+
+        self.apply_preset_limits(&active_mode).await;
+        "OK".to_string()
+    }
+
     async fn ping(&self) -> String {
         "OK".to_string()
     }
@@ -959,6 +1099,163 @@ mod tests {
             cfg.limit_presets = None;
         }
         assert!(!svc.apply_preset_limits("balanced").await);
+    }
+
+    #[tokio::test]
+    async fn test_get_power_presets() {
+        let mut config = PowerConfig::default();
+        let mut presets = crate::cpu_tier::build_default_power_presets("AMD Ryzen 7 7840HS w/ Radeon 780M Graphics");
+        presets.active_mode = Some("balanced".to_string());
+        config.limit_presets = Some(presets);
+        config.manual_override = false;
+        config.power_profile = "balanced".to_string();
+
+        let svc = PowerService {
+            config: Arc::new(Mutex::new(config)),
+            app_state: Arc::new(Mutex::new(AppState {
+                active_app: None,
+                pre_app_state: None,
+            })),
+        };
+
+        let raw_json = svc.get_power_presets().await;
+        let parsed: serde_json::Value = serde_json::from_str(&raw_json).expect("valid JSON");
+        assert!(parsed["is_amd"].is_boolean());
+        assert_eq!(parsed["active_mode"], "balanced");
+        assert_eq!(parsed["manual_override"], false);
+        assert_eq!(parsed["system_profile"], "balanced");
+        assert!(parsed["presets"]["balanced"]["stapm_w"].is_number());
+        assert!(parsed["defaults"]["balanced"]["stapm_w"].is_number());
+    }
+
+    #[tokio::test]
+    async fn test_set_power_preset_mode() {
+        let mut config = PowerConfig::default();
+        let mut presets = crate::cpu_tier::build_default_power_presets("AMD Ryzen 7 7840HS w/ Radeon 780M Graphics");
+        presets.active_mode = Some("balanced".to_string());
+        config.limit_presets = Some(presets);
+        config.manual_override = true;
+
+        let svc = PowerService {
+            config: Arc::new(Mutex::new(config)),
+            app_state: Arc::new(Mutex::new(AppState {
+                active_app: None,
+                pre_app_state: None,
+            })),
+        };
+
+        let res = svc.set_power_preset_mode("performance".to_string()).await;
+        assert_eq!(res, "OK");
+
+        let cfg = svc.config.lock().await;
+        assert_eq!(cfg.power_profile, "performance");
+        assert_eq!(cfg.manual_override, false);
+        let p = cfg.limit_presets.as_ref().unwrap();
+        assert_eq!(p.active_mode, Some("performance".to_string()));
+        assert_eq!(p.manual_override, false);
+    }
+
+    #[tokio::test]
+    async fn test_save_power_preset() {
+        let mut config = PowerConfig::default();
+        let mut presets = crate::cpu_tier::build_default_power_presets("AMD Ryzen 7 7840HS w/ Radeon 780M Graphics");
+        presets.active_mode = Some("performance".to_string());
+        config.limit_presets = Some(presets);
+        config.manual_override = false;
+
+        let svc = PowerService {
+            config: Arc::new(Mutex::new(config)),
+            app_state: Arc::new(Mutex::new(AppState {
+                active_app: None,
+                pre_app_state: None,
+            })),
+        };
+
+        let res = svc.save_power_preset("performance".to_string(), 70, 70, 85, 90).await;
+        assert_eq!(res, "OK");
+
+        let cfg = svc.config.lock().await;
+        let p = cfg.limit_presets.as_ref().unwrap();
+        assert_eq!(p.performance.stapm_w, 70);
+        assert_eq!(p.performance.slow_ppt_w, 70);
+        assert_eq!(p.performance.fast_ppt_w, 85);
+        assert_eq!(p.performance.tctl_temp, 90);
+    }
+
+    #[tokio::test]
+    async fn test_reset_power_presets() {
+        let mut config = PowerConfig::default();
+        let mut presets = crate::cpu_tier::build_default_power_presets("AMD Ryzen 7 7840HS w/ Radeon 780M Graphics");
+        presets.performance.stapm_w = 99;
+        presets.active_mode = Some("performance".to_string());
+        config.limit_presets = Some(presets);
+        config.manual_override = true;
+
+        let svc = PowerService {
+            config: Arc::new(Mutex::new(config)),
+            app_state: Arc::new(Mutex::new(AppState {
+                active_app: None,
+                pre_app_state: None,
+            })),
+        };
+
+        let res = svc.reset_power_presets().await;
+        assert_eq!(res, "OK");
+
+        let cfg = svc.config.lock().await;
+        assert_eq!(cfg.manual_override, false);
+        let p = cfg.limit_presets.as_ref().unwrap();
+        assert_eq!(p.manual_override, false);
+        // Default for Ryzen 7840HS performance stapm_w should be restored (not 99)
+        assert_ne!(p.performance.stapm_w, 99);
+    }
+
+    #[tokio::test]
+    async fn test_slider_override_clears_active_preset() {
+        let mut config = PowerConfig::default();
+        let mut presets = crate::cpu_tier::build_default_power_presets("AMD Ryzen 7 7840HS w/ Radeon 780M Graphics");
+        presets.active_mode = Some("balanced".to_string());
+        config.limit_presets = Some(presets);
+        config.manual_override = false;
+
+        let svc = PowerService {
+            config: Arc::new(Mutex::new(config)),
+            app_state: Arc::new(Mutex::new(AppState {
+                active_app: None,
+                pre_app_state: None,
+            })),
+        };
+
+        // 1. Calling set_power_limits overrides preset
+        let res = svc.set_power_limits(true, 50, 80).await;
+        assert_eq!(res, "OK");
+        {
+            let cfg = svc.config.lock().await;
+            assert_eq!(cfg.manual_override, true);
+            let p = cfg.limit_presets.as_ref().unwrap();
+            assert_eq!(p.active_mode, None);
+            assert_eq!(p.manual_override, true);
+        }
+
+        // Reset active_mode for second test
+        {
+            let mut cfg = svc.config.lock().await;
+            cfg.manual_override = false;
+            let p = cfg.limit_presets.as_mut().unwrap();
+            p.active_mode = Some("performance".to_string());
+            p.manual_override = false;
+        }
+
+        // 2. Calling set_ryzen_power_limits overrides preset
+        let res = svc.set_ryzen_power_limits(true, 45, 50, 60).await;
+        assert_eq!(res, "OK");
+        {
+            let cfg = svc.config.lock().await;
+            assert_eq!(cfg.manual_override, true);
+            let p = cfg.limit_presets.as_ref().unwrap();
+            assert_eq!(p.active_mode, None);
+            assert_eq!(p.manual_override, true);
+        }
     }
 }
 
