@@ -328,6 +328,18 @@ fn translate_tr(key: &'static str) -> &'static str {
         "apply_save" => "Uygula & Kaydet",
         "applied_successfully" => "Ayarlar başarıyla uygulandı",
 
+        // Power Mode Presets
+        "power_presets_group" => "Güç Modu Profilleri",
+        "power_presets_desc" => "Sistem performans modları (PPD) ile eşzamanlı çalışan ve korunan donanımsal güç limitleri.",
+        "preset_manual_override" => "Manuel Ayar (Slider Override)",
+        "preset_edit_title" => "Güç Modunu Düzenle",
+        "edit_btn_tooltip" => "Bu modun güç limitlerini düzenle",
+        "save_btn" => "Kaydet",
+        "cancel_btn" => "İptal",
+        "reset_to_default" => "Varsayılana Sıfırla",
+        "active_mode_status" => "Aktif Mod",
+        "mode_power_save" => "Power Save",
+
         // MUX Page
         "mux_desc" => "Ekran kartı çalışma modunu belirleyin. Değişiklikler yeniden başlatma gerektirebilir.",
         "hybrid_title" => "Hybrid",
@@ -742,6 +754,18 @@ fn translate_en(key: &'static str) -> &'static str {
         "apply_save" => "Apply & Save",
         "applied_successfully" => "Settings applied successfully",
 
+        // Power Mode Presets
+        "power_presets_group" => "Power Mode Presets",
+        "power_presets_desc" => "Hardware power limits synchronized and preserved across system power profiles (PPD).",
+        "preset_manual_override" => "Manual Override (Sliders Active)",
+        "preset_edit_title" => "Edit Power Mode",
+        "edit_btn_tooltip" => "Edit power limits for this mode",
+        "save_btn" => "Save",
+        "cancel_btn" => "Cancel",
+        "reset_to_default" => "Reset to Default",
+        "active_mode_status" => "Active Mode",
+        "mode_power_save" => "Power Save",
+
         // MUX Page
         "mux_desc" => "Select GPU operation mode. Changes may require a system restart.",
         "hybrid_title" => "Hybrid",
@@ -1055,4 +1079,36 @@ mod tests {
             "AMD Ryzen SMU Power Limits (Rule: STAPM ≤ PPT Slow ≤ PPT Fast)"
         );
     }
+
+    #[test]
+    fn test_power_presets_i18n_keys() {
+        assert_eq!(translate_tr("power_presets_group"), "Güç Modu Profilleri");
+        assert_eq!(
+            translate_tr("power_presets_desc"),
+            "Sistem performans modları (PPD) ile eşzamanlı çalışan ve korunan donanımsal güç limitleri."
+        );
+        assert_eq!(translate_tr("preset_manual_override"), "Manuel Ayar (Slider Override)");
+        assert_eq!(translate_tr("preset_edit_title"), "Güç Modunu Düzenle");
+        assert_eq!(translate_tr("edit_btn_tooltip"), "Bu modun güç limitlerini düzenle");
+        assert_eq!(translate_tr("save_btn"), "Kaydet");
+        assert_eq!(translate_tr("cancel_btn"), "İptal");
+        assert_eq!(translate_tr("reset_to_default"), "Varsayılana Sıfırla");
+        assert_eq!(translate_tr("active_mode_status"), "Aktif Mod");
+        assert_eq!(translate_tr("mode_power_save"), "Power Save");
+
+        assert_eq!(translate_en("power_presets_group"), "Power Mode Presets");
+        assert_eq!(
+            translate_en("power_presets_desc"),
+            "Hardware power limits synchronized and preserved across system power profiles (PPD)."
+        );
+        assert_eq!(translate_en("preset_manual_override"), "Manual Override (Sliders Active)");
+        assert_eq!(translate_en("preset_edit_title"), "Edit Power Mode");
+        assert_eq!(translate_en("edit_btn_tooltip"), "Edit power limits for this mode");
+        assert_eq!(translate_en("save_btn"), "Save");
+        assert_eq!(translate_en("cancel_btn"), "Cancel");
+        assert_eq!(translate_en("reset_to_default"), "Reset to Default");
+        assert_eq!(translate_en("active_mode_status"), "Active Mode");
+        assert_eq!(translate_en("mode_power_save"), "Power Save");
+    }
 }
+
