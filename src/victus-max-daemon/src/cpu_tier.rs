@@ -1,3 +1,4 @@
+use omen_types::{PowerModeLimits, PowerModeProfilesConfig};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 use std::sync::OnceLock;
@@ -334,3 +335,284 @@ pub fn classify_cpu(cpu_name: &str) -> (CpuVendor, CpuTier, CpuPowerProfileRange
         )
     }
 }
+
+pub fn build_default_power_presets(cpu_spec: &str) -> PowerModeProfilesConfig {
+    let (vendor, tier, ranges) = classify_cpu(cpu_spec);
+
+    match vendor {
+        CpuVendor::Amd => match tier {
+            CpuTier::AmdExtremeHx => PowerModeProfilesConfig {
+                power_saver: PowerModeLimits {
+                    stapm_w: 25,
+                    slow_ppt_w: 25,
+                    fast_ppt_w: 35,
+                    tctl_temp: 72,
+                },
+                balanced: PowerModeLimits {
+                    stapm_w: 45,
+                    slow_ppt_w: 45,
+                    fast_ppt_w: 55,
+                    tctl_temp: 84,
+                },
+                performance: PowerModeLimits {
+                    stapm_w: 65,
+                    slow_ppt_w: 65,
+                    fast_ppt_w: 80,
+                    tctl_temp: 92,
+                },
+                active_mode: Some("balanced".to_string()),
+                manual_override: false,
+            },
+            CpuTier::AmdUltraLow => PowerModeProfilesConfig {
+                power_saver: PowerModeLimits {
+                    stapm_w: 12,
+                    slow_ppt_w: 12,
+                    fast_ppt_w: 15,
+                    tctl_temp: 68,
+                },
+                balanced: PowerModeLimits {
+                    stapm_w: 18,
+                    slow_ppt_w: 18,
+                    fast_ppt_w: 22,
+                    tctl_temp: 78,
+                },
+                performance: PowerModeLimits {
+                    stapm_w: 25,
+                    slow_ppt_w: 25,
+                    fast_ppt_w: 30,
+                    tctl_temp: 85,
+                },
+                active_mode: Some("balanced".to_string()),
+                manual_override: false,
+            },
+            _ => PowerModeProfilesConfig {
+                power_saver: PowerModeLimits {
+                    stapm_w: 20,
+                    slow_ppt_w: 20,
+                    fast_ppt_w: 25,
+                    tctl_temp: 70,
+                },
+                balanced: PowerModeLimits {
+                    stapm_w: 35,
+                    slow_ppt_w: 35,
+                    fast_ppt_w: 35,
+                    tctl_temp: 82,
+                },
+                performance: PowerModeLimits {
+                    stapm_w: 45,
+                    slow_ppt_w: 45,
+                    fast_ppt_w: 45,
+                    tctl_temp: 88,
+                },
+                active_mode: Some("balanced".to_string()),
+                manual_override: false,
+            },
+        },
+        CpuVendor::Intel => match tier {
+            CpuTier::IntelExtreme => PowerModeProfilesConfig {
+                power_saver: PowerModeLimits {
+                    stapm_w: 35,
+                    slow_ppt_w: 35,
+                    fast_ppt_w: 55,
+                    tctl_temp: 75,
+                },
+                balanced: PowerModeLimits {
+                    stapm_w: 55,
+                    slow_ppt_w: 55,
+                    fast_ppt_w: 95,
+                    tctl_temp: 88,
+                },
+                performance: PowerModeLimits {
+                    stapm_w: 80,
+                    slow_ppt_w: 80,
+                    fast_ppt_w: 125,
+                    tctl_temp: 97,
+                },
+                active_mode: Some("balanced".to_string()),
+                manual_override: false,
+            },
+            _ => PowerModeProfilesConfig {
+                power_saver: PowerModeLimits {
+                    stapm_w: 25,
+                    slow_ppt_w: 25,
+                    fast_ppt_w: 35,
+                    tctl_temp: 75,
+                },
+                balanced: PowerModeLimits {
+                    stapm_w: 45,
+                    slow_ppt_w: 45,
+                    fast_ppt_w: 65,
+                    tctl_temp: 85,
+                },
+                performance: PowerModeLimits {
+                    stapm_w: 55,
+                    slow_ppt_w: 55,
+                    fast_ppt_w: 95,
+                    tctl_temp: 97,
+                },
+                active_mode: Some("balanced".to_string()),
+                manual_override: false,
+            },
+        },
+        CpuVendor::Unknown => PowerModeProfilesConfig {
+            power_saver: PowerModeLimits {
+                stapm_w: ranges.sustained_min,
+                slow_ppt_w: ranges.sustained_min,
+                fast_ppt_w: ranges.burst_min,
+                tctl_temp: ranges.temp_min,
+            },
+            balanced: PowerModeLimits {
+                stapm_w: ranges.sustained_default,
+                slow_ppt_w: ranges.sustained_default,
+                fast_ppt_w: ranges.burst_default,
+                tctl_temp: 85,
+            },
+            performance: PowerModeLimits {
+                stapm_w: ranges.sustained_max,
+                slow_ppt_w: ranges.sustained_max,
+                fast_ppt_w: ranges.burst_max,
+                tctl_temp: ranges.temp_max,
+            },
+            active_mode: Some("balanced".to_string()),
+            manual_override: false,
+        },
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_default_power_presets_ryzen_hs() {
+        let presets = build_default_power_presets("AMD Ryzen 7 7840HS w/ Radeon 780M Graphics");
+        assert_eq!(presets.power_saver.stapm_w, 20);
+        assert_eq!(presets.power_saver.slow_ppt_w, 20);
+        assert_eq!(presets.power_saver.fast_ppt_w, 25);
+        assert_eq!(presets.power_saver.tctl_temp, 70);
+
+        assert_eq!(presets.balanced.stapm_w, 35);
+        assert_eq!(presets.balanced.slow_ppt_w, 35);
+        assert_eq!(presets.balanced.fast_ppt_w, 35);
+        assert_eq!(presets.balanced.tctl_temp, 82);
+
+        assert_eq!(presets.performance.stapm_w, 45);
+        assert_eq!(presets.performance.slow_ppt_w, 45);
+        assert_eq!(presets.performance.fast_ppt_w, 45);
+        assert_eq!(presets.performance.tctl_temp, 88);
+
+        assert_eq!(presets.active_mode.as_deref(), Some("balanced"));
+        assert!(!presets.manual_override);
+    }
+
+    #[test]
+    fn test_default_power_presets_ryzen_hx() {
+        let presets = build_default_power_presets("AMD Ryzen 9 7945HX with Radeon Graphics");
+        assert_eq!(presets.power_saver.stapm_w, 25);
+        assert_eq!(presets.power_saver.slow_ppt_w, 25);
+        assert_eq!(presets.power_saver.fast_ppt_w, 35);
+        assert_eq!(presets.power_saver.tctl_temp, 72);
+
+        assert_eq!(presets.balanced.stapm_w, 45);
+        assert_eq!(presets.balanced.slow_ppt_w, 45);
+        assert_eq!(presets.balanced.fast_ppt_w, 55);
+        assert_eq!(presets.balanced.tctl_temp, 84);
+
+        assert_eq!(presets.performance.stapm_w, 65);
+        assert_eq!(presets.performance.slow_ppt_w, 65);
+        assert_eq!(presets.performance.fast_ppt_w, 80);
+        assert_eq!(presets.performance.tctl_temp, 92);
+
+        assert_eq!(presets.active_mode.as_deref(), Some("balanced"));
+        assert!(!presets.manual_override);
+    }
+
+    #[test]
+    fn test_default_power_presets_ryzen_u() {
+        let presets = build_default_power_presets("AMD Ryzen 5 5625U with Radeon Graphics");
+        assert_eq!(presets.power_saver.stapm_w, 12);
+        assert_eq!(presets.power_saver.slow_ppt_w, 12);
+        assert_eq!(presets.power_saver.fast_ppt_w, 15);
+        assert_eq!(presets.power_saver.tctl_temp, 68);
+
+        assert_eq!(presets.balanced.stapm_w, 18);
+        assert_eq!(presets.balanced.slow_ppt_w, 18);
+        assert_eq!(presets.balanced.fast_ppt_w, 22);
+        assert_eq!(presets.balanced.tctl_temp, 78);
+
+        assert_eq!(presets.performance.stapm_w, 25);
+        assert_eq!(presets.performance.slow_ppt_w, 25);
+        assert_eq!(presets.performance.fast_ppt_w, 30);
+        assert_eq!(presets.performance.tctl_temp, 85);
+
+        assert_eq!(presets.active_mode.as_deref(), Some("balanced"));
+        assert!(!presets.manual_override);
+    }
+
+    #[test]
+    fn test_default_power_presets_intel_standard() {
+        let presets = build_default_power_presets("13th Gen Intel(R) Core(TM) i5-13500H");
+        assert_eq!(presets.power_saver.stapm_w, 25);
+        assert_eq!(presets.power_saver.slow_ppt_w, 25);
+        assert_eq!(presets.power_saver.fast_ppt_w, 35);
+        assert_eq!(presets.power_saver.tctl_temp, 75);
+
+        assert_eq!(presets.balanced.stapm_w, 45);
+        assert_eq!(presets.balanced.slow_ppt_w, 45);
+        assert_eq!(presets.balanced.fast_ppt_w, 65);
+        assert_eq!(presets.balanced.tctl_temp, 85);
+
+        assert_eq!(presets.performance.stapm_w, 55);
+        assert_eq!(presets.performance.slow_ppt_w, 55);
+        assert_eq!(presets.performance.fast_ppt_w, 95);
+        assert_eq!(presets.performance.tctl_temp, 97);
+
+        assert_eq!(presets.active_mode.as_deref(), Some("balanced"));
+        assert!(!presets.manual_override);
+    }
+
+    #[test]
+    fn test_default_power_presets_intel_extreme() {
+        let presets = build_default_power_presets("13th Gen Intel(R) Core(TM) i9-13900HX");
+        assert_eq!(presets.power_saver.stapm_w, 35);
+        assert_eq!(presets.power_saver.slow_ppt_w, 35);
+        assert_eq!(presets.power_saver.fast_ppt_w, 55);
+        assert_eq!(presets.power_saver.tctl_temp, 75);
+
+        assert_eq!(presets.balanced.stapm_w, 55);
+        assert_eq!(presets.balanced.slow_ppt_w, 55);
+        assert_eq!(presets.balanced.fast_ppt_w, 95);
+        assert_eq!(presets.balanced.tctl_temp, 88);
+
+        assert_eq!(presets.performance.stapm_w, 80);
+        assert_eq!(presets.performance.slow_ppt_w, 80);
+        assert_eq!(presets.performance.fast_ppt_w, 125);
+        assert_eq!(presets.performance.tctl_temp, 97);
+
+        assert_eq!(presets.active_mode.as_deref(), Some("balanced"));
+        assert!(!presets.manual_override);
+    }
+
+    #[test]
+    fn test_default_power_presets_generic() {
+        let presets = build_default_power_presets("Unknown Custom Chip");
+        assert_eq!(presets.power_saver.stapm_w, 15);
+        assert_eq!(presets.power_saver.slow_ppt_w, 15);
+        assert_eq!(presets.power_saver.fast_ppt_w, 25);
+        assert_eq!(presets.power_saver.tctl_temp, 70);
+
+        assert_eq!(presets.balanced.stapm_w, 45);
+        assert_eq!(presets.balanced.slow_ppt_w, 45);
+        assert_eq!(presets.balanced.fast_ppt_w, 65);
+        assert_eq!(presets.balanced.tctl_temp, 85);
+
+        assert_eq!(presets.performance.stapm_w, 95);
+        assert_eq!(presets.performance.slow_ppt_w, 95);
+        assert_eq!(presets.performance.fast_ppt_w, 115);
+        assert_eq!(presets.performance.tctl_temp, 100);
+
+        assert_eq!(presets.active_mode.as_deref(), Some("balanced"));
+        assert!(!presets.manual_override);
+    }
+}
+
