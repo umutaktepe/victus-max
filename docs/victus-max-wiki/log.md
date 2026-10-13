@@ -367,3 +367,18 @@ grep "^## \[" docs/victus-max-wiki/log.md | tail -5
 - **Mimari Karar:** [[adr-008-power-profile-limit-presets]]
 - **Test ve Doğrulama:** Tüm çalışma alanı testleri (`cargo test --workspace`, 118 test) sıfır hatayla geçti.
 
+---
+
+## [2026-10-14] Fix | Gelişmiş Güç Sekmesinde Dış Profil Değişimlerinin Canlı (Reaktif) Senkronizasyonu
+
+- **İşlem Türü:** Hata Düzeltme & GUI Canlı Durum Eşitleme
+- **Kapsam:** `src/victus-max-gui/src/undervolt.rs`.
+- **Detaylar:**
+  - Kullanıcı Gelişmiş Güç (`undervolt.rs`) sekmesindeyken sistem tepsisinden (Tray), PPD'den veya kısayol tuşlarından performans modunu değiştirdiğinde, aktif preset kartının ve durum rozetinin sadece sekme değiştirip geri dönüldüğünde güncellenmesi kozmetik sorunu giderildi.
+  - Sayfa görünürken (`page.is_mapped()`) her 1000ms'de çalışan asenkron hafif kontrol döngüsü (`glib::timeout_add_local`) eklendi; `get_power_presets_async()` çağrılarak daemon durumu ile UI durumu arasındaki farklar tespit edildiğinde aktif kart seçimi, durum rozeti ve slider değerleri canlı olarak güncellendi.
+  - Kullanıcı slider'ları manuel olarak hareket ettirirken veya preset düzenleme penceresindeyken canlı döngünün kullanıcı girdisini ezmesini engelleyen güvenlik kilidi eklendi.
+  - `set_active_card` içinde butonların mevcut aktiflik durumları kontrol edilerek gereksiz GTK sinyal tetiklemeleri ve yeniden çizimler önlendi.
+- **İlgili Bağlantılar:** [[adr-008-power-profile-limit-presets]], [[power-service]]
+- **Test ve Doğrulama:** `test_external_preset_change_detection` birim testi eklendi; `cargo test --workspace` ile 119 testin tamamı başarıyla geçti.
+
+

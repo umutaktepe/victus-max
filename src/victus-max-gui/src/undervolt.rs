@@ -1145,30 +1145,30 @@ pub fn build_page() -> gtk::Box {
         Rc::new(move |mode: Option<&str>| {
             match mode {
                 Some("power-saver") => {
-                    eco_c.set_active(true);
-                    bal_c.set_active(false);
-                    perf_c.set_active(false);
+                    if !eco_c.is_active() { eco_c.set_active(true); }
+                    if bal_c.is_active() { bal_c.set_active(false); }
+                    if perf_c.is_active() { perf_c.set_active(false); }
                     status_pill_c.set_label(&format!("{}: {}", i18n::t("active_mode_status"), i18n::t("mode_power_save")));
                     status_pill_c.set_css_classes(&["badge-ok"]);
                 }
                 Some("performance") => {
-                    eco_c.set_active(false);
-                    bal_c.set_active(false);
-                    perf_c.set_active(true);
+                    if eco_c.is_active() { eco_c.set_active(false); }
+                    if bal_c.is_active() { bal_c.set_active(false); }
+                    if !perf_c.is_active() { perf_c.set_active(true); }
                     status_pill_c.set_label(&format!("{}: {}", i18n::t("active_mode_status"), i18n::t("mode_performance")));
                     status_pill_c.set_css_classes(&["badge-ok"]);
                 }
                 Some("balanced") => {
-                    eco_c.set_active(false);
-                    bal_c.set_active(true);
-                    perf_c.set_active(false);
+                    if eco_c.is_active() { eco_c.set_active(false); }
+                    if !bal_c.is_active() { bal_c.set_active(true); }
+                    if perf_c.is_active() { perf_c.set_active(false); }
                     status_pill_c.set_label(&format!("{}: {}", i18n::t("active_mode_status"), i18n::t("mode_balanced")));
                     status_pill_c.set_css_classes(&["badge-ok"]);
                 }
                 _ => {
-                    eco_c.set_active(false);
-                    bal_c.set_active(false);
-                    perf_c.set_active(false);
+                    if eco_c.is_active() { eco_c.set_active(false); }
+                    if bal_c.is_active() { bal_c.set_active(false); }
+                    if perf_c.is_active() { perf_c.set_active(false); }
                     status_pill_c.set_label(i18n::t("preset_manual_override"));
                     status_pill_c.set_css_classes(&["badge-warn"]);
                 }
@@ -1660,6 +1660,24 @@ pub fn build_page() -> gtk::Box {
                     set_active_load(None);
                 } else {
                     set_active_load(data.active_mode.as_deref());
+                    let limits = match data.active_mode.as_deref() {
+                        Some("power-saver") => data.presets.power_saver,
+                        Some("performance") => data.presets.performance,
+                        _ => data.presets.balanced,
+                    };
+                    apply_preset_limits_to_sliders(
+                        &limits,
+                        *is_amd_load.borrow(),
+                        &sync_load,
+                        &pl1_s_load,
+                        &slow_s_load,
+                        &pl2_s_load,
+                        &tcc_s_load,
+                        &pl1_lbl_load,
+                        &slow_lbl_load,
+                        &pl2_lbl_load,
+                        &tcc_lbl_load,
+                    );
                 }
             }
         });
@@ -1669,6 +1687,109 @@ pub fn build_page() -> gtk::Box {
     let refresh_on_map = refresh_state.clone();
     page.connect_map(move |_| {
         refresh_on_map();
+    });
+
+    // Periodic live sync for power presets when tab is actively visible/mapped
+    let page_poll = page.clone();
+    let presets_state_poll = presets_state.clone();
+    let is_amd_poll = is_amd_flag.clone();
+    let set_active_poll = set_active_card.clone();
+    let eco_sub_poll = eco_sub.clone();
+    let bal_sub_poll = bal_sub.clone();
+    let perf_sub_poll = perf_sub.clone();
+    let pl1_s_poll = pl1_scale.clone();
+    let slow_s_poll = slow_scale.clone();
+    let pl2_s_poll = pl2_scale.clone();
+    let tcc_s_poll = tcc_scale.clone();
+    let pl1_lbl_poll = pl1_lbl.clone();
+    let slow_lbl_poll = slow_lbl.clone();
+    let pl2_lbl_poll = pl2_lbl.clone();
+    let tcc_lbl_poll = tcc_lbl.clone();
+    let sync_poll = syncing_sliders.clone();
+
+    glib::timeout_add_local(std::time::Duration::from_millis(1000), move || {
+        if !page_poll.is_mapped() {
+            return glib::ControlFlow::Continue;
+        }
+
+        if sync_poll.get() {
+            return glib::ControlFlow::Continue;
+        }
+
+        #[allow(deprecated)]
+        let (tx, rx) = glib::MainContext::channel::<Option<PowerPresetsData>>(glib::Priority::default());
+
+        let presets_state_c = presets_state_poll.clone();
+        let is_amd_c = is_amd_poll.clone();
+        let set_active_c = set_active_poll.clone();
+        let eco_sub_c = eco_sub_poll.clone();
+        let bal_sub_c = bal_sub_poll.clone();
+        let perf_sub_c = perf_sub_poll.clone();
+        let pl1_s_c = pl1_s_poll.clone();
+        let slow_s_c = slow_s_poll.clone();
+        let pl2_s_c = pl2_s_poll.clone();
+        let tcc_s_c = tcc_s_poll.clone();
+        let pl1_lbl_c = pl1_lbl_poll.clone();
+        let slow_lbl_c = slow_lbl_poll.clone();
+        let pl2_lbl_c = pl2_lbl_poll.clone();
+        let tcc_lbl_c = tcc_lbl_poll.clone();
+        let sync_c = sync_poll.clone();
+
+        rx.attach(None, move |maybe_data| {
+            if let Some(data) = maybe_data {
+                let (mode_changed, override_changed, presets_changed) = {
+                    let cur = presets_state_c.borrow();
+                    (
+                        cur.active_mode != data.active_mode,
+                        cur.manual_override != data.manual_override,
+                        cur.presets != data.presets,
+                    )
+                };
+
+                if mode_changed || override_changed || presets_changed {
+                    *presets_state_c.borrow_mut() = data.clone();
+
+                    eco_sub_c.set_label(&format_preset_subtitle(&data.presets.power_saver));
+                    bal_sub_c.set_label(&format_preset_subtitle(&data.presets.balanced));
+                    perf_sub_c.set_label(&format_preset_subtitle(&data.presets.performance));
+
+                    if data.manual_override {
+                        set_active_c(None);
+                    } else {
+                        set_active_c(data.active_mode.as_deref());
+                        let limits = match data.active_mode.as_deref() {
+                            Some("power-saver") => data.presets.power_saver,
+                            Some("performance") => data.presets.performance,
+                            _ => data.presets.balanced,
+                        };
+                        apply_preset_limits_to_sliders(
+                            &limits,
+                            *is_amd_c.borrow(),
+                            &sync_c,
+                            &pl1_s_c,
+                            &slow_s_c,
+                            &pl2_s_c,
+                            &tcc_s_c,
+                            &pl1_lbl_c,
+                            &slow_lbl_c,
+                            &pl2_lbl_c,
+                            &tcc_lbl_c,
+                        );
+                    }
+                }
+            }
+            glib::ControlFlow::Break
+        });
+
+        let is_amd_val = *is_amd_poll.borrow();
+        let rt = crate::daemon_client::get_runtime();
+        rt.spawn(async move {
+            let res = crate::daemon_client::get_power_presets_async().await;
+            let data = res.ok().map(|json| parse_power_presets_json(&json, is_amd_val));
+            let _ = tx.send(data);
+        });
+
+        glib::ControlFlow::Continue
     });
 
     page
@@ -1981,6 +2102,41 @@ mod tests {
         }
         assert_eq!(active_stapm, 50);
         assert_eq!(format_preset_subtitle(&data.balanced), "50W / 70W · 90°C");
+    }
+
+    #[test]
+    fn test_external_preset_change_detection() {
+        use super::*;
+        let mut local = default_power_presets_data(true);
+        assert_eq!(local.active_mode.as_deref(), Some("balanced"));
+        assert!(!local.manual_override);
+
+        // Incoming data from daemon switched to "performance" via Tray
+        let incoming = PowerPresetsData {
+            is_amd: true,
+            presets: local.presets.clone(),
+            defaults: local.defaults.clone(),
+            active_mode: Some("performance".to_string()),
+            manual_override: false,
+        };
+
+        let mode_changed = local.active_mode != incoming.active_mode;
+        let override_changed = local.manual_override != incoming.manual_override;
+        let presets_changed = local.presets != incoming.presets;
+
+        assert!(mode_changed);
+        assert!(!override_changed);
+        assert!(!presets_changed);
+
+        // Apply sync
+        local = incoming;
+        assert_eq!(local.active_mode.as_deref(), Some("performance"));
+
+        // Next poll returns same data
+        let incoming2 = local.clone();
+        assert_eq!(local.active_mode, incoming2.active_mode);
+        assert_eq!(local.manual_override, incoming2.manual_override);
+        assert_eq!(local.presets, incoming2.presets);
     }
 }
 
