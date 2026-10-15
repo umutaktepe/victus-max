@@ -53,6 +53,7 @@ pub trait Power {
     async fn save_power_preset(&self, mode: &str, stapm_w: u32, slow_ppt_w: u32, fast_ppt_w: u32, tctl_temp: u32) -> zbus::Result<String>;
     async fn reset_power_presets(&self) -> zbus::Result<String>;
     async fn get_power_limits_info(&self) -> zbus::Result<String>;
+    async fn set_auto_ac_profile(&self, enabled: bool, ac_mode: &str, bat_mode: &str) -> zbus::Result<String>;
 }
 
 #[proxy(

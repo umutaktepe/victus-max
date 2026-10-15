@@ -42,6 +42,18 @@ async fn sysfs_read_async(path: &str) -> Option<String> {
 const CONFIG_PATH: &str = "/etc/victus-max/power.json";
 const LEGACY_CONFIG_PATH: &str = "/etc/omen-space/power.json";
 
+fn default_true() -> bool {
+    true
+}
+
+fn default_ac_profile() -> String {
+    "performance".to_string()
+}
+
+fn default_battery_profile() -> String {
+    "power-saver".to_string()
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct PowerConfig {
     power_profile: String,
@@ -59,6 +71,12 @@ struct PowerConfig {
     pub limit_presets: Option<PowerModeProfilesConfig>,
     #[serde(default)]
     pub manual_override: bool,
+    #[serde(default = "default_true")]
+    pub auto_ac_profile_enabled: bool,
+    #[serde(default = "default_ac_profile")]
+    pub ac_power_profile: String,
+    #[serde(default = "default_battery_profile")]
+    pub battery_power_profile: String,
 }
 
 impl Default for PowerConfig {
@@ -76,6 +94,9 @@ impl Default for PowerConfig {
             gpu_w: 0,
             limit_presets: None,
             manual_override: false,
+            auto_ac_profile_enabled: true,
+            ac_power_profile: "performance".to_string(),
+            battery_power_profile: "power-saver".to_string(),
         }
     }
 }
@@ -953,8 +974,25 @@ impl PowerService {
             "active_mode": active_mode,
             "manual_override": manual_override,
             "system_profile": system_profile,
+            "auto_ac_profile_enabled": cfg.auto_ac_profile_enabled,
+            "ac_power_profile": cfg.ac_power_profile,
+            "battery_power_profile": cfg.battery_power_profile,
         });
         json.to_string()
+    }
+
+    async fn set_auto_ac_profile(&self, enabled: bool, ac_mode: &str, bat_mode: &str) -> String {
+        let norm_ac = Self::normalize_profile(ac_mode);
+        let norm_bat = Self::normalize_profile(bat_mode);
+        {
+            let mut cfg = self.config.lock().await;
+            cfg.auto_ac_profile_enabled = enabled;
+            cfg.ac_power_profile = norm_ac.clone();
+            cfg.battery_power_profile = norm_bat.clone();
+            cfg.save();
+        }
+        info!("SetAutoAcProfile: enabled={}, ac={}, bat={}", enabled, norm_ac, norm_bat);
+        "OK".to_string()
     }
 
     async fn set_power_preset_mode(&self, mode: String) -> String {
@@ -1256,6 +1294,30 @@ mod tests {
             assert_eq!(p.active_mode, None);
             assert_eq!(p.manual_override, true);
         }
+    }
+
+    #[tokio::test]
+    async fn test_set_auto_ac_profile() {
+        let mut config = PowerConfig::default();
+        config.auto_ac_profile_enabled = true;
+        config.ac_power_profile = "performance".to_string();
+        config.battery_power_profile = "power-saver".to_string();
+
+        let svc = PowerService {
+            config: Arc::new(Mutex::new(config)),
+            app_state: Arc::new(Mutex::new(AppState {
+                active_app: None,
+                pre_app_state: None,
+            })),
+        };
+
+        let res = svc.set_auto_ac_profile(false, "balanced", "balanced").await;
+        assert_eq!(res, "OK");
+
+        let cfg = svc.config.lock().await;
+        assert_eq!(cfg.auto_ac_profile_enabled, false);
+        assert_eq!(cfg.ac_power_profile, "balanced");
+        assert_eq!(cfg.battery_power_profile, "balanced");
     }
 }
 

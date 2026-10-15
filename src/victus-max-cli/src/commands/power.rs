@@ -38,6 +38,15 @@ pub enum PowerCommand {
     },
     /// Show live CPU power limits and thermal limits (replaces legacy ryzen-limits)
     Limits,
+    /// Configure auto power profile switching on AC/Battery (e.g. 'on', 'off', or with --ac-mode / --bat-mode)
+    AutoAc {
+        #[arg(help = "Status: on or off")]
+        status: Option<String>,
+        #[arg(long, help = "AC target profile (performance, balanced, power-saver)")]
+        ac_mode: Option<String>,
+        #[arg(long, help = "Battery target profile (power-saver, balanced, performance)")]
+        bat_mode: Option<String>,
+    },
 }
 
 pub fn format_presets_table(json: &serde_json::Value) -> (Table, bool) {
@@ -206,6 +215,14 @@ pub async fn handle(cmd: &PowerCommand, conn: &Connection) -> Result<()> {
                         let (table, manual_override) = format_presets_table(&json);
                         println!("{}", table);
                         println!("Manuel Override: {}", if manual_override { "Evet" } else { "Hayır" });
+                        let auto_ac = json.get("auto_ac_profile_enabled").and_then(|v| v.as_bool()).unwrap_or(true);
+                        let ac_mode = json.get("ac_power_profile").and_then(|v| v.as_str()).unwrap_or("performance");
+                        let bat_mode = json.get("battery_power_profile").and_then(|v| v.as_str()).unwrap_or("power-saver");
+                        if auto_ac {
+                            println!("Otomatik Şarj Geçişi: Açık (Priz: {}, Pil: {})", ac_mode, bat_mode);
+                        } else {
+                            println!("Otomatik Şarj Geçişi: Kapalı (Priz: {}, Pil: {})", ac_mode, bat_mode);
+                        }
                     } else {
                         println!("{}", res);
                     }
@@ -228,6 +245,54 @@ pub async fn handle(cmd: &PowerCommand, conn: &Connection) -> Result<()> {
                 println!("{}", table);
             } else {
                 println!("{}", res);
+            }
+        }
+        PowerCommand::AutoAc { status, ac_mode, bat_mode } => {
+            let res = proxy.get_power_presets().await?;
+            let mut current_enabled = true;
+            let mut current_ac = "performance".to_string();
+            let mut current_bat = "power-saver".to_string();
+
+            if let Ok(json) = serde_json::from_str::<serde_json::Value>(&res) {
+                if let Some(en) = json.get("auto_ac_profile_enabled").and_then(|v| v.as_bool()) {
+                    current_enabled = en;
+                }
+                if let Some(ac) = json.get("ac_power_profile").and_then(|v| v.as_str()) {
+                    current_ac = ac.to_string();
+                }
+                if let Some(bat) = json.get("battery_power_profile").and_then(|v| v.as_str()) {
+                    current_bat = bat.to_string();
+                }
+            }
+
+            let new_enabled = match status.as_deref().map(|s| s.to_lowercase()).as_deref() {
+                Some("on") | Some("enable") | Some("true") | Some("1") => true,
+                Some("off") | Some("disable") | Some("false") | Some("0") => false,
+                Some(other) => {
+                    eprintln!("Invalid status '{}'. Use 'on' or 'off'.", other);
+                    std::process::exit(1);
+                }
+                None => current_enabled,
+            };
+
+            let new_ac = ac_mode.as_deref().unwrap_or(&current_ac);
+            let new_bat = bat_mode.as_deref().unwrap_or(&current_bat);
+
+            if status.is_none() && ac_mode.is_none() && bat_mode.is_none() {
+                if current_enabled {
+                    println!("Otomatik Şarj Geçişi: Açık (Priz: {}, Pil: {})", current_ac, current_bat);
+                } else {
+                    println!("Otomatik Şarj Geçişi: Kapalı (Priz: {}, Pil: {})", current_ac, current_bat);
+                }
+            } else {
+                let r = proxy.set_auto_ac_profile(new_enabled, new_ac, new_bat).await?;
+                println!("Response: {}", r);
+                println!(
+                    "Otomatik Şarj Geçişi güncellendi: {} (Priz: {}, Pil: {})",
+                    if new_enabled { "Açık" } else { "Kapalı" },
+                    new_ac,
+                    new_bat
+                );
             }
         }
     }

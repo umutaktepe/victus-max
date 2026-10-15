@@ -339,6 +339,12 @@ fn translate_tr(key: &'static str) -> &'static str {
         "reset_to_default" => "Varsayılana Sıfırla",
         "active_mode_status" => "Aktif Mod",
         "mode_power_save" => "Power Save",
+        "auto_ac_profile" => "Şarja Göre Otomatik Güç Modu",
+        "auto_ac_profile_sub" => "Şarj kablosu takıldığında veya çıkarıldığında güç modunu otomatik olarak değiştir",
+        "ac_profile_title" => "Şarjdayken (Priz) Güç Modu",
+        "ac_profile_sub" => "Şarj aleti takılıyken uygulanacak profil",
+        "bat_profile_title" => "Pildeyken (Batarya) Güç Modu",
+        "bat_profile_sub" => "Şarj aletinden çıkarıldığında uygulanacak profil",
 
         // MUX Page
         "mux_desc" => "Ekran kartı çalışma modunu belirleyin. Değişiklikler yeniden başlatma gerektirebilir.",
@@ -765,6 +771,12 @@ fn translate_en(key: &'static str) -> &'static str {
         "reset_to_default" => "Reset to Default",
         "active_mode_status" => "Active Mode",
         "mode_power_save" => "Power Save",
+        "auto_ac_profile" => "Auto Switch Power Mode on AC/Battery",
+        "auto_ac_profile_sub" => "Automatically switch power mode when AC adapter is connected or disconnected",
+        "ac_profile_title" => "Plugged in (AC) Power Mode",
+        "ac_profile_sub" => "Profile applied when connected to AC power",
+        "bat_profile_title" => "On Battery Power Mode",
+        "bat_profile_sub" => "Profile applied when running on battery power",
 
         // MUX Page
         "mux_desc" => "Select GPU operation mode. Changes may require a system restart.",
@@ -1095,6 +1107,9 @@ mod tests {
         assert_eq!(translate_tr("reset_to_default"), "Varsayılana Sıfırla");
         assert_eq!(translate_tr("active_mode_status"), "Aktif Mod");
         assert_eq!(translate_tr("mode_power_save"), "Power Save");
+        assert_eq!(translate_tr("auto_ac_profile"), "Şarja Göre Otomatik Güç Modu");
+        assert_eq!(translate_tr("ac_profile_title"), "Şarjdayken (Priz) Güç Modu");
+        assert_eq!(translate_tr("bat_profile_title"), "Pildeyken (Batarya) Güç Modu");
 
         assert_eq!(translate_en("power_presets_group"), "Power Mode Presets");
         assert_eq!(
@@ -1109,6 +1124,9 @@ mod tests {
         assert_eq!(translate_en("reset_to_default"), "Reset to Default");
         assert_eq!(translate_en("active_mode_status"), "Active Mode");
         assert_eq!(translate_en("mode_power_save"), "Power Save");
+        assert_eq!(translate_en("auto_ac_profile"), "Auto Switch Power Mode on AC/Battery");
+        assert_eq!(translate_en("ac_profile_title"), "Plugged in (AC) Power Mode");
+        assert_eq!(translate_en("bat_profile_title"), "On Battery Power Mode");
     }
 }
 

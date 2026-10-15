@@ -381,4 +381,20 @@ grep "^## \[" docs/victus-max-wiki/log.md | tail -5
 - **İlgili Bağlantılar:** [[adr-008-power-profile-limit-presets]], [[power-service]]
 - **Test ve Doğrulama:** `test_external_preset_change_detection` birim testi eklendi; `cargo test --workspace` ile 119 testin tamamı başarıyla geçti.
 
+---
+
+## [2026-10-15] Feature | Şarja Göre Otomatik Güç Modu Geçişinin Yapılandırılması (Auto AC Profile)
+
+- **İşlem Türü:** Yeni Özellik & Güç Otomasyonu Özelleştirme
+- **Kapsam:** `src/victus-max-types/`, `src/victus-max-daemon/`, `src/victus-max-gui/`, `src/victus-max-cli/`, `docs/victus-max-wiki/`.
+- **Detaylar:**
+  - `PowerConfig` (`power.json`) içine `auto_ac_profile_enabled`, `ac_power_profile` ve `battery_power_profile` alanları eklendi.
+  - `PowerAutomationService` (`power_automation.rs`) AC şarj takma/çıkarma döngüsü güncellendi: Otomasyon açıksa prizde ve pilde kullanıcının belirlediği hedef modlara (varsayılan: Prizde Performans, Pilde Güç Tasarrufu) otomatik geçiş yapılması; kapalıysa modun asla değiştirilmemesi ve yalnızca donanımsal limitlerin EC resetlerine karşı tazelenmesi sağlandı.
+  - `PowerService` ve `omen_types` içine `SetAutoAcProfile(enabled, ac_mode, bat_mode)` D-Bus metodu eklendi.
+  - GTK4 Libadwaita Ayarlar (`settings.rs`) sayfasındaki **Performans Davranışı** grubuna `auto_ac_row`, `ac_mode_row` ve `bat_mode_row` arayüz kontrolleri eklendi; `settings.json` ve D-Bus ile senkronize edildi.
+  - `victus-max-cli power auto-ac` komutu eklendi ve `victus-max-cli power presets list` çıktısına otomatik şarj geçiş durumu dahil edildi.
+- **İlgili Bağlantılar:** [[adr-008-power-profile-limit-presets]], [[power-service]]
+- **Test ve Doğrulama:** Çalışma alanı genelindeki tüm testler (`cargo test --workspace`, 120 test) sıfır hatayla geçti.
+
+
 

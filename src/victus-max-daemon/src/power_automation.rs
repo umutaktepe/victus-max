@@ -84,18 +84,45 @@ impl PowerAutomationService {
                 if let Some(prev) = *state_lock {
                     if prev != current_ac {
                         *state_lock = Some(current_ac);
-                        if current_ac {
-                            info!("AC Power connected. Applying AC Performance Profile...");
-                            if let Ok(conn) = zbus::Connection::system().await {
-                                if let Ok(pwr_proxy) = omen_types::PowerProxy::new(&conn).await {
-                                    let _ = pwr_proxy.set_power_preset_mode("performance").await;
+                        if let Ok(conn) = zbus::Connection::system().await {
+                            if let Ok(pwr_proxy) = omen_types::PowerProxy::new(&conn).await {
+                                let mut auto_enabled = true;
+                                let mut ac_target = "performance".to_string();
+                                let mut bat_target = "power-saver".to_string();
+                                let mut current_active = "balanced".to_string();
+
+                                if let Ok(presets_json) = pwr_proxy.get_power_presets().await {
+                                    if let Ok(val) = serde_json::from_str::<serde_json::Value>(&presets_json) {
+                                        if let Some(en) = val.get("auto_ac_profile_enabled").and_then(|v| v.as_bool()) {
+                                            auto_enabled = en;
+                                        }
+                                        if let Some(ac) = val.get("ac_power_profile").and_then(|v| v.as_str()) {
+                                            ac_target = ac.to_string();
+                                        }
+                                        if let Some(bat) = val.get("battery_power_profile").and_then(|v| v.as_str()) {
+                                            bat_target = bat.to_string();
+                                        }
+                                        if let Some(act) = val.get("active_mode").and_then(|v| v.as_str()) {
+                                            current_active = act.to_string();
+                                        }
+                                    }
                                 }
-                            }
-                        } else {
-                            info!("Battery Power connected. Applying Battery Saver Profile...");
-                            if let Ok(conn) = zbus::Connection::system().await {
-                                if let Ok(pwr_proxy) = omen_types::PowerProxy::new(&conn).await {
-                                    let _ = pwr_proxy.set_power_preset_mode("power-saver").await;
+
+                                if auto_enabled {
+                                    let target = if current_ac { &ac_target } else { &bat_target };
+                                    info!(
+                                        "{} power connected. Auto switching to preset '{}'...",
+                                        if current_ac { "AC" } else { "Battery" },
+                                        target
+                                    );
+                                    let _ = pwr_proxy.set_power_preset_mode(target).await;
+                                } else {
+                                    info!(
+                                        "{} power connected (auto-switch disabled). Re-applying active '{}' preset limits...",
+                                        if current_ac { "AC" } else { "Battery" },
+                                        current_active
+                                    );
+                                    let _ = pwr_proxy.set_power_preset_mode(&current_active).await;
                                 }
                             }
                         }

@@ -16,10 +16,35 @@ pub fn build_page(window: &adw::ApplicationWindow, on_lang_changed: Option<Rc<dy
     let mut init_thermal_alerts = true;
     let mut init_zone_override = 0u32;
     let mut init_appearance_mode = 0u32;
+    let mut init_auto_ac_profile = true;
+    let mut init_ac_profile = 2u32; // 0: power-saver, 1: balanced, 2: performance
+    let mut init_bat_profile = 0u32; // 0: power-saver, 1: balanced, 2: performance
     
     let specs = crate::daemon_client::get_hardware_specs_sync();
     let _prod_lower = specs.product_name.to_lowercase();
     let mut init_lightbar = true; // Always show by default so users see "Unsupported" explicitly
+
+    // Read live daemon settings if available
+    let presets_raw = crate::daemon_client::get_power_presets_sync();
+    if let Ok(presets_val) = serde_json::from_str::<serde_json::Value>(&presets_raw) {
+        if let Some(en) = presets_val.get("auto_ac_profile_enabled").and_then(|v| v.as_bool()) {
+            init_auto_ac_profile = en;
+        }
+        if let Some(ac) = presets_val.get("ac_power_profile").and_then(|v| v.as_str()) {
+            init_ac_profile = match ac {
+                "performance" => 2,
+                "balanced" => 1,
+                _ => 0,
+            };
+        }
+        if let Some(bat) = presets_val.get("battery_power_profile").and_then(|v| v.as_str()) {
+            init_bat_profile = match bat {
+                "performance" => 2,
+                "balanced" => 1,
+                _ => 0,
+            };
+        }
+    }
 
     if let Ok(home) = std::env::var("HOME") {
         let path = format!("{}/.config/victus-max/settings.json", home);
@@ -35,6 +60,9 @@ pub fn build_page(window: &adw::ApplicationWindow, on_lang_changed: Option<Rc<dy
                 if let Some(zo) = json.get("zone_override").and_then(|v| v.as_u64()) { init_zone_override = zo as u32; }
                 if let Some(am) = json.get("appearance_mode").and_then(|v| v.as_u64()) { init_appearance_mode = am as u32; }
                 if let Some(lb) = json.get("lightbar_enabled").and_then(|v| v.as_bool()) { init_lightbar = lb; }
+                if let Some(aac) = json.get("auto_ac_profile").and_then(|v| v.as_bool()) { init_auto_ac_profile = aac; }
+                if let Some(ac) = json.get("ac_profile").and_then(|v| v.as_u64()) { init_ac_profile = ac as u32; }
+                if let Some(bp) = json.get("battery_profile").and_then(|v| v.as_u64()) { init_bat_profile = bp as u32; }
             }
         }
     }
@@ -233,6 +261,41 @@ pub fn build_page(window: &adw::ApplicationWindow, on_lang_changed: Option<Rc<dy
     thermal_row.set_active(init_thermal_alerts);
     perf_group.add(&thermal_row);
 
+    let auto_ac_row = adw::SwitchRow::builder()
+        .title(i18n::t("auto_ac_profile"))
+        .subtitle(i18n::t("auto_ac_profile_sub"))
+        .build();
+    auto_ac_row.set_active(init_auto_ac_profile);
+    perf_group.add(&auto_ac_row);
+
+    let ac_mode_model = gtk::StringList::new(&[
+        i18n::t("mode_power_save"),
+        i18n::t("mode_balanced"),
+        i18n::t("mode_performance"),
+    ]);
+    let ac_mode_row = adw::ComboRow::builder()
+        .title(i18n::t("ac_profile_title"))
+        .subtitle(i18n::t("ac_profile_sub"))
+        .model(&ac_mode_model)
+        .selected(init_ac_profile)
+        .sensitive(init_auto_ac_profile)
+        .build();
+    perf_group.add(&ac_mode_row);
+
+    let bat_mode_model = gtk::StringList::new(&[
+        i18n::t("mode_power_save"),
+        i18n::t("mode_balanced"),
+        i18n::t("mode_performance"),
+    ]);
+    let bat_mode_row = adw::ComboRow::builder()
+        .title(i18n::t("bat_profile_title"))
+        .subtitle(i18n::t("bat_profile_sub"))
+        .model(&bat_mode_model)
+        .selected(init_bat_profile)
+        .sensitive(init_auto_ac_profile)
+        .build();
+    perf_group.add(&bat_mode_row);
+
     page.append(&perf_group);
 
 
@@ -244,6 +307,9 @@ pub fn build_page(window: &adw::ApplicationWindow, on_lang_changed: Option<Rc<dy
     let thm_row_clone = thermal_row.clone();
     let zone_row_clone = zone_override_row.clone();
     let lb_row_clone = lightbar_row.clone();
+    let auto_ac_c = auto_ac_row.clone();
+    let ac_m_c = ac_mode_row.clone();
+    let bat_m_c = bat_mode_row.clone();
 
     let save_settings = move || {
         let hb = hb_spin_clone.value();
@@ -253,6 +319,9 @@ pub fn build_page(window: &adw::ApplicationWindow, on_lang_changed: Option<Rc<dy
         let ta = thm_row_clone.is_active();
         let zo = zone_row_clone.selected();
         let lb = lb_row_clone.is_active();
+        let aac = auto_ac_c.is_active();
+        let ac_idx = ac_m_c.selected();
+        let bat_idx = bat_m_c.selected();
         if let Ok(home) = std::env::var("HOME") {
             let dir = format!("{}/.config/victus-max", home);
             let _ = std::fs::create_dir_all(&dir);
@@ -270,6 +339,9 @@ pub fn build_page(window: &adw::ApplicationWindow, on_lang_changed: Option<Rc<dy
             json["thermal_alerts"] = serde_json::json!(ta);
             json["zone_override"] = serde_json::json!(zo);
             json["lightbar_enabled"] = serde_json::json!(lb);
+            json["auto_ac_profile"] = serde_json::json!(aac);
+            json["ac_profile"] = serde_json::json!(ac_idx);
+            json["battery_profile"] = serde_json::json!(bat_idx);
 
             let _ = std::fs::write(path, serde_json::to_string_pretty(&json).unwrap_or_default());
         }
@@ -295,6 +367,52 @@ pub fn build_page(window: &adw::ApplicationWindow, on_lang_changed: Option<Rc<dy
     thermal_row.connect_active_notify(move |r| {
         s5();
         crate::daemon_client::set_thermal_protection_sync(r.is_active());
+    });
+
+    let sync_auto_ac_to_daemon = {
+        let auto_ac_r = auto_ac_row.clone();
+        let ac_r = ac_mode_row.clone();
+        let bat_r = bat_mode_row.clone();
+        Rc::new(move || {
+            let enabled = auto_ac_r.is_active();
+            let ac_mode = match ac_r.selected() {
+                0 => "power-saver",
+                1 => "balanced",
+                _ => "performance",
+            };
+            let bat_mode = match bat_r.selected() {
+                0 => "power-saver",
+                1 => "balanced",
+                _ => "performance",
+            };
+            crate::daemon_client::set_auto_ac_profile_sync(enabled, ac_mode.to_string(), bat_mode.to_string());
+        })
+    };
+
+    let s_aac = save_settings_rc.clone();
+    let ac_m_sens = ac_mode_row.clone();
+    let bat_m_sens = bat_mode_row.clone();
+    let daemon_ac1 = sync_auto_ac_to_daemon.clone();
+    auto_ac_row.connect_active_notify(move |r| {
+        s_aac();
+        let is_act = r.is_active();
+        ac_m_sens.set_sensitive(is_act);
+        bat_m_sens.set_sensitive(is_act);
+        daemon_ac1();
+    });
+
+    let s_ac = save_settings_rc.clone();
+    let daemon_ac2 = sync_auto_ac_to_daemon.clone();
+    ac_mode_row.connect_selected_notify(move |_| {
+        s_ac();
+        daemon_ac2();
+    });
+
+    let s_bat = save_settings_rc.clone();
+    let daemon_ac3 = sync_auto_ac_to_daemon.clone();
+    bat_mode_row.connect_selected_notify(move |_| {
+        s_bat();
+        daemon_ac3();
     });
     
     let s6 = save_settings_rc.clone();

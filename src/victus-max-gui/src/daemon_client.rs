@@ -871,6 +871,28 @@ pub async fn reset_power_presets_async() -> Result<String, Box<dyn std::error::E
     Ok(res)
 }
 
+#[allow(dead_code)]
+pub fn set_auto_ac_profile_sync(enabled: bool, ac_mode: String, bat_mode: String) {
+    let rt = get_runtime();
+    rt.spawn(async move {
+        if let Ok(conn) = get_conn().await {
+            if let Ok(proxy) = PowerProxy::new(&conn).await {
+                if let Err(e) = proxy.set_auto_ac_profile(enabled, &ac_mode, &bat_mode).await {
+                    notify_dbus_error("Otomatik şarj güç profili ayarlanamadı", &e).await;
+                }
+            }
+        }
+    });
+}
+
+#[allow(dead_code)]
+pub async fn set_auto_ac_profile_async(enabled: bool, ac_mode: &str, bat_mode: &str) -> Result<String, Box<dyn std::error::Error>> {
+    let conn = get_conn().await?;
+    let proxy = PowerProxy::new(&conn).await?;
+    let res = proxy.set_auto_ac_profile(enabled, ac_mode, bat_mode).await?;
+    Ok(res)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -889,6 +911,7 @@ mod tests {
         set_power_preset_mode_sync("balanced".to_string());
         save_power_preset_sync("balanced".to_string(), 35, 35, 35, 82);
         reset_power_presets_sync();
+        set_auto_ac_profile_sync(true, "performance".to_string(), "power-saver".to_string());
     }
 }
 
